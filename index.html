@@ -227,7 +227,7 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
       <div class="page-body">
         <div class="stat-grid" id="dash-stats"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
         <div class="dashboard-grid">
-          <div class="section-card">
+          <div class="section-card" style="margin-bottom:.9rem"><div class="section-card-header"><div class="section-card-title"><i class="ti ti-target"></i> Strategic Objectives</div></div><div id="dash-objectives"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div><div class="section-card">
             <div class="section-card-header"><div class="section-card-title"><i class="ti ti-chart-line"></i> Recent KPIs</div></div>
             <div id="dash-kpis"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
           </div>
@@ -402,7 +402,8 @@ async function loadDashboard() {
       <table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th></tr>
       ${d.recent.risks.map(r=>`<tr><td><span class="code-badge">${r.risk_code}</span></td><td>${r.title}</td><td>${r.risk_type}</td></tr>`).join('')}
       </table>` : '<div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>No risks yet</p></div>';
-    document.getElementById('dash-projects').innerHTML = d.recent.projects.length ? `
+    document.getElementById('dash-objectives').innerHTML = d.objectives && d.objectives.length ? '<table class="data-table"><tr><th>Code</th><th>Title</th><th>Perspective</th></tr>' + d.objectives.map(function(o){return '<tr><td><span class="code-badge">'+o.objective_code+'</span></td><td style="font-weight:500">'+o.title+'</td><td>'+(o.perspective_number||'&mdash;')+'</td></tr>';}).join('') + '</table>' : '<div class="empty-state"><i class="ti ti-target"></i><p>No objectives yet</p></div>';
+      document.getElementById('dash-projects').innerHTML = d.recent.projects.length ? `
       <table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th><th>Phase</th></tr>
       ${d.recent.projects.map(p=>`<tr><td><span class="code-badge">${p.project_code}</span></td><td>${p.title}</td><td>${p.project_type}</td><td>${p.current_phase||'—'}</td></tr>`).join('')}
       </table>` : '<div class="empty-state"><i class="ti ti-clipboard-list"></i><p>No projects yet</p></div>';
@@ -608,3 +609,5 @@ document.getElementById('modal-overlay').addEventListener('click', e=>{ if(e.tar
 </script>
 </body>
 </html>
+
+
