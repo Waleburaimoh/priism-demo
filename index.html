@@ -738,36 +738,37 @@ async function loadDashboard() {
         fetch(`${API}/organisations/${SESSION.org_id}/projects`).then(r=>r.json()).then(x=>{_projectsData=x.projects||[];})
       ]);
     }
-    // Compute unit-specific counts
-    const kpiStat  = !currentUnitPrefix ? d.summary.kpi_count     : _kpisData.filter(k=>(k.kpi_code||'').startsWith(currentUnitPrefix+'-')).length;
-    const riskStat = !currentUnitPrefix ? d.summary.risk_count     : _risksData.filter(r=>(r.risk_code||'').startsWith(currentUnitPrefix+'-')).length;
-    const projStat = !currentUnitPrefix ? d.summary.project_count  : _projectsData.filter(p=>(p.project_code||'').startsWith(currentUnitPrefix+'-')).length;
+    // Compute filtered arrays once — shared by stat counts and dashboard widgets
+    const filteredKpis  = currentUnitPrefix ? _kpisData.filter(k=>(k.kpi_code||'').startsWith(currentUnitPrefix+'-')) : null;
+    const filteredRisks = currentUnitPrefix ? _risksData.filter(r=>(r.risk_code||'').startsWith(currentUnitPrefix+'-')) : null;
+    const filteredProjs = currentUnitPrefix ? _projectsData.filter(p=>(p.project_code||'').startsWith(currentUnitPrefix+'-')) : null;
+    const kpiStat  = !currentUnitPrefix ? d.summary.kpi_count     : filteredKpis.length;
+    const riskStat = !currentUnitPrefix ? d.summary.risk_count     : filteredRisks.length;
+    const projStat = !currentUnitPrefix ? d.summary.project_count  : filteredProjs.length;
     document.getElementById('dash-stats').innerHTML = `
       <div class="stat-card"><div class="stat-label"><i class="ti ti-chart-line" style="font-size:12px"></i> KPIs</div><div class="stat-value">${kpiStat}</div></div>
       <div class="stat-card"><div class="stat-label"><i class="ti ti-shield-exclamation" style="font-size:12px"></i> Risks</div><div class="stat-value">${riskStat}</div></div>
       <div class="stat-card"><div class="stat-label"><i class="ti ti-clipboard-list" style="font-size:12px"></i> Projects</div><div class="stat-value">${projStat}</div></div>
       <div class="stat-card"><div class="stat-label"><i class="ti ti-building" style="font-size:12px"></i> Org Type</div><div class="stat-value" style="font-size:15px;margin-top:5px">${d.organisation.org_type}</div></div>
     `;
-    // "View all X" helper — uses filtered counts for unit views
-    const _va = (globalCount, noun, page) => {
-      const count = !currentUnitPrefix ? globalCount : (noun==='KPIs'?kpiStat:noun==='risks'?riskStat:noun==='projects'?projStat:globalCount);
+    // "View all X" helper — count is always pre-computed, passed as first arg
+    const _va = (count, noun, page) => {
       const unitLabel = currentUnitPrefix ? (UNIT_LABELS[currentUnitPrefix]||currentUnitPrefix)+' ' : '';
       return `<div style="padding:.5rem 1.1rem;border-top:1px solid var(--border)"><a href="#" onclick="showPage('${page}');return false" style="font-size:12px;color:var(--gold);text-decoration:none;font-weight:500">View all ${count} ${unitLabel}${noun} →</a></div>`;
     };
-    // For unit views use the full fetched lists (already in _*Data) so we get
-    // actual unit items, not just whatever happened to be in the API's top-5
-    const dashKpis     = !currentUnitPrefix ? d.recent.kpis     : _kpisData.filter(k=>(k.kpi_code||'').startsWith(currentUnitPrefix+'-')).slice(0,5);
-    const dashRisks    = !currentUnitPrefix ? d.recent.risks    : _risksData.filter(r=>(r.risk_code||'').startsWith(currentUnitPrefix+'-')).slice(0,5);
-    const dashProjects = !currentUnitPrefix ? d.recent.projects : _projectsData.filter(p=>(p.project_code||'').startsWith(currentUnitPrefix+'-')).slice(0,5);
+    // Widget rows — unit views use filtered arrays (already computed above)
+    const dashKpis     = !currentUnitPrefix ? d.recent.kpis     : filteredKpis.slice(0,5);
+    const dashRisks    = !currentUnitPrefix ? d.recent.risks    : filteredRisks.slice(0,5);
+    const dashProjects = !currentUnitPrefix ? d.recent.projects : filteredProjs.slice(0,5);
     document.getElementById('dash-kpis').innerHTML = dashKpis.length
       ? '<div style="max-height:300px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Unit</th></tr>'
         + dashKpis.map(k=>`<tr><td><span class="code-badge">${k.kpi_code}</span></td><td>${k.title}</td><td>${k.unit}</td></tr>`).join('')
-        + '</table></div>' + _va(d.summary.kpi_count,'KPIs','kpis')
+        + '</table></div>' + _va(kpiStat,'KPIs','kpis')
       : '<div class="empty-state"><i class="ti ti-chart-line"></i><p>No KPIs yet</p></div>';
     document.getElementById('dash-risks').innerHTML = dashRisks.length
       ? '<div style="max-height:300px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th></tr>'
         + [...dashRisks].sort((a,b)=>((b.initial_likelihood||0)*(b.initial_impact_overall||0))-((a.initial_likelihood||0)*(a.initial_impact_overall||0))).map(r=>`<tr><td><span class="code-badge">${r.risk_code}</span></td><td>${r.title}</td><td>${r.risk_type}</td></tr>`).join('')
-        + '</table></div>' + _va(d.summary.risk_count,'risks','risks')
+        + '</table></div>' + _va(riskStat,'risks','risks')
       : '<div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>No risks yet</p></div>';
     const _dashObjs = (d.objectives||[]).filter(o => currentUnitPrefix
       ? o.objective_code.startsWith(currentUnitPrefix+'-')
@@ -775,12 +776,12 @@ async function loadDashboard() {
     document.getElementById('dash-objectives').innerHTML = _dashObjs.length
       ? '<div style="max-height:320px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Perspective</th></tr>'
         + _dashObjs.map(function(o){var pl=({1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'})[+o.perspective_number]||o.perspective_number||'&mdash;';return '<tr><td><span class="code-badge">'+o.objective_code+'</span></td><td style="font-weight:500">'+o.title+'</td><td>'+pl+'</td></tr>';}).join('')
-        + '</table></div>' + _va(d.summary?.objective_count||d.summary?.objectives_count||_dashObjs.length,'objectives','objectives')
+        + '</table></div>' + _va(_dashObjs.length,'objectives','objectives')
       : `<div class="empty-state"><i class="ti ti-target"></i><p>No ${UNIT_LABELS[currentUnit]||currentUnit} objectives found</p></div>`;
     document.getElementById('dash-projects').innerHTML = dashProjects.length
       ? '<div style="max-height:300px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th><th>Phase</th></tr>'
         + [...dashProjects].sort((a,b)=>{const o={Active:0,active:0,Planning:1,planning:1,'On Hold':2,'on hold':2,Complete:3,complete:3,Closed:3,closed:3};return (o[a.status]??4)-(o[b.status]??4);}).map(p=>`<tr><td><span class="code-badge">${p.project_code}</span></td><td>${p.title}</td><td>${p.project_type}</td><td>${p.current_phase||'—'}</td></tr>`).join('')
-        + '</table></div>' + _va(d.summary.project_count,'projects','projects')
+        + '</table></div>' + _va(projStat,'projects','projects')
       : '<div class="empty-state"><i class="ti ti-clipboard-list"></i><p>No projects yet</p></div>';
   } catch(e) { document.getElementById('dash-stats').innerHTML='<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load dashboard</p>'; }
 }
