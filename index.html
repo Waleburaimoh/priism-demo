@@ -295,12 +295,34 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
         <button class="btn-sm" onclick="alert('Operating Plans endpoint coming soon')"><i class="ti ti-plus"></i> Add Plan</button>
       </div>
       <div class="page-body">
-        <div class="section-card">
-          <div class="empty-state">
-            <i class="ti ti-sitemap"></i>
-            <p style="font-size:14px;font-weight:500;color:var(--cream);margin-bottom:6px">Operating Plans</p>
-            <p>Link departmental operating plans to strategic objectives, KPIs, and risks.<br>This module connects strategy to day-to-day execution.</p>
-            <p style="margin-top:14px;font-size:11px;opacity:.4">Endpoint in development — available before go-live</p>
+        <div class="section-card" style="padding:2rem">
+          <div style="display:flex;align-items:flex-start;gap:1.5rem;flex-wrap:wrap">
+            <div style="flex-shrink:0;width:56px;height:56px;border-radius:14px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center">
+              <i class="ti ti-sitemap" style="font-size:26px;color:var(--accent)"></i>
+            </div>
+            <div style="flex:1;min-width:220px">
+              <div style="font-size:16px;font-weight:600;color:var(--cream);margin-bottom:.4rem">Operating Plans — Coming Soon</div>
+              <div style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.7;margin-bottom:1.2rem">This module will connect departmental operating plans directly to your strategic objectives, KPIs, and risk register — giving every team a clear line of sight from day-to-day activities to institutional strategy.</div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.75rem">
+                <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:.75rem 1rem">
+                  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:.3rem">Plan → Objective</div>
+                  <div style="font-size:12px;color:rgba(255,255,255,.5)">Each operating plan mapped to one or more strategic objectives</div>
+                </div>
+                <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:.75rem 1rem">
+                  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:.3rem">KPI Linkage</div>
+                  <div style="font-size:12px;color:rgba(255,255,255,.5)">Operational KPIs rolled up to institutional scorecard</div>
+                </div>
+                <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:.75rem 1rem">
+                  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:.3rem">Risk Alignment</div>
+                  <div style="font-size:12px;color:rgba(255,255,255,.5)">Departmental risks tied to institutional risk register</div>
+                </div>
+                <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:.75rem 1rem">
+                  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:.3rem">Progress Tracking</div>
+                  <div style="font-size:12px;color:rgba(255,255,255,.5)">Activity completion tracked against plan milestones</div>
+                </div>
+              </div>
+              <div style="margin-top:1.2rem;font-size:11px;color:rgba(255,255,255,.28)">Module in development — available before go-live</div>
+            </div>
           </div>
         </div>
       </div>
@@ -506,7 +528,7 @@ async function loadProjects() {
 // ── MODALS ──
 function openModal(type) {
   currentModal = type;
-  const titles = {kpi:'Add KPI', risk:'Add Risk', project:'Add Project'};
+  const titles = {kpi:'Add KPI', risk:'Add Risk', project:'Add Project', objective:'Add Objective'};
   document.getElementById('modal-title').textContent = titles[type];
   document.getElementById('modal-body').innerHTML = getModalForm(type);
   document.getElementById('modal-submit-btn').disabled = false;
@@ -545,7 +567,7 @@ function getModalForm(type) {
     </div>
     <div class="form-row">
       <div class="form-group"><label>Trend *</label>
-        <select id="f-trend_preference"><option value="increasing">Increasing</option><option value="decreasing">Decreasing</option><option value="stable">Stable</option></select>
+        <select id="f-trend_preference"><option value="higher">Higher is Better</option><option value="lower">Lower is Better</option><option value="target">On Target</option></select>
       </div>
       <div class="form-group"><label>Frequency *</label>
         <select id="f-measurement_frequency"><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="annual">Annual</option></select>
@@ -561,11 +583,41 @@ function getModalForm(type) {
         <select id="f-risk_type"><option value="strategic">Strategic</option><option value="financial">Financial</option><option value="operational">Operational</option><option value="reputational">Reputational</option><option value="people">People</option><option value="legal">Legal</option></select>
       </div>
     </div>
-    <div class="form-group"><label>Title *</label><input id="f-title" placeholder="Risk title"></div>
-    <div class="form-group"><label>Description</label><input id="f-description" placeholder="Optional"></div>
     <div class="form-row">
-      <div class="form-group"><label>Likelihood (1–5)</label><input id="f-initial_likelihood" type="number" min="1" max="5" placeholder="1–5"></div>
-      <div class="form-group"><label>Impact (1–5)</label><input id="f-initial_impact_overall" type="number" min="1" max="5" placeholder="1–5"></div>
+      <div class="form-group"><label>Title *</label><input id="f-title" placeholder="Risk title"></div>
+      <div class="form-group"><label>Department</label><input id="f-department" placeholder="Owning department"></div>
+    </div>
+    <div class="form-group"><label>Description</label><textarea id="f-description" rows="2" placeholder="Overview of the risk" style="width:100%;resize:vertical"></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label>Cause</label><input id="f-cause" placeholder="Root cause"></div>
+      <div class="form-group"><label>Consequences</label><input id="f-consequences" placeholder="Potential consequences"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Likelihood</label>
+        <select id="f-initial_likelihood">
+          <option value="">— Select —</option>
+          <option value="5">Almost Certain</option>
+          <option value="4">Likely</option>
+          <option value="3">Possible</option>
+          <option value="2">Unlikely</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Impact</label>
+        <select id="f-initial_impact_overall">
+          <option value="">— Select —</option>
+          <option value="5">Catastrophic</option>
+          <option value="4">Major</option>
+          <option value="3">Moderate</option>
+          <option value="2">Minor</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label>Mitigation</label><textarea id="f-mitigation" rows="2" placeholder="Mitigation actions" style="width:100%;resize:vertical"></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label>Control Rating</label>
+        <select id="f-control_rating"><option value="">— Select —</option><option value="Good">Good</option><option value="Partial">Partial</option><option value="Insufficient">Insufficient</option></select>
+      </div>
+      <div class="form-group"><label>KRI Title</label><input id="f-kri_title" placeholder="Key Risk Indicator"></div>
     </div>`;
 
   if (type==='project') return `
@@ -578,6 +630,23 @@ function getModalForm(type) {
       </div>
     </div>
     <div class="form-group"><label>Title *</label><input id="f-title" placeholder="Project name"></div>
+    <div class="form-group"><label>Description</label><textarea id="f-description" rows="2" placeholder="Project overview" style="width:100%;resize:vertical"></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label>Project Manager</label><input id="f-project_manager" placeholder="Manager name"></div>
+      <div class="form-group"><label>Priority</label>
+        <select id="f-priority"><option value="">— Select —</option><option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Start Date</label><input id="f-start_date" type="date"></div>
+      <div class="form-group"><label>End Date</label><input id="f-end_date" type="date"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Budget Amount</label><input id="f-budget_amount" type="number" step="any" placeholder="e.g. 500000"></div>
+      <div class="form-group"><label>Budget Currency</label>
+        <select id="f-budget_currency"><option value="AED">AED</option><option value="USD">USD</option><option value="GBP">GBP</option></select>
+      </div>
+    </div>
     <div class="form-row">
       <div class="form-group"><label>Methodology *</label>
         <select id="f-methodology"><option value="agile">Agile</option><option value="waterfall">Waterfall</option><option value="hybrid">Hybrid</option></select>
@@ -592,6 +661,30 @@ function getModalForm(type) {
       </div>
       <div class="form-group"><label>Status *</label>
         <select id="f-status"><option value="planning">Planning</option><option value="active">Active</option><option value="on_hold">On Hold</option><option value="completed">Completed</option></select>
+      </div>
+    </div>`;
+
+  if (type==='objective') return `
+    <div id="modal-msg-success" class="msg-success"></div>
+    <div id="modal-msg-error" class="msg-error"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Objective Code *</label><input id="f-objective_code" placeholder="OBJ001"></div>
+      <div class="form-group"><label>Perspective</label>
+        <select id="f-perspective_number">
+          <option value="">— Select —</option>
+          <option value="1">1 — Academic Excellence</option>
+          <option value="2">2 — Student &amp; Stakeholder</option>
+          <option value="3">3 — Internal Processes</option>
+          <option value="4">4 — Learning &amp; Growth</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label>Title *</label><input id="f-title" placeholder="Objective title"></div>
+    <div class="form-group"><label>Description</label><textarea id="f-description" rows="3" placeholder="What this objective aims to achieve" style="width:100%;resize:vertical"></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label>Owner Name</label><input id="f-owner_name_free" placeholder="Responsible person"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="f-status"><option value="active">Active</option><option value="suspended">Suspended</option><option value="archived">Archived</option></select>
       </div>
     </div>`;
 }
@@ -626,15 +719,37 @@ async function submitModal() {
     url = `${API}/risks`;
     body = {org_id:SESSION.org_id,register_id:REGISTER_ID,
       risk_code:val('f-risk_code'),title:val('f-title'),risk_type:val('f-risk_type'),
-      description:val('f-description'),
+      department:val('f-department')||null,
+      description:val('f-description')||null,
+      cause:val('f-cause')||null,
+      consequences:val('f-consequences')||null,
       initial_likelihood:val('f-initial_likelihood')?parseInt(val('f-initial_likelihood')):null,
-      initial_impact_overall:val('f-initial_impact_overall')?parseInt(val('f-initial_impact_overall')):null};
+      initial_impact_overall:val('f-initial_impact_overall')?parseInt(val('f-initial_impact_overall')):null,
+      mitigation:val('f-mitigation')||null,
+      control_rating:val('f-control_rating')||null,
+      kri_title:val('f-kri_title')||null};
+  } else if (currentModal==='objective') {
+    if (!val('f-objective_code')||!val('f-title')) { showModalError('Please fill required fields'); btn.disabled=false; btn.textContent='Save'; return; }
+    url = `${API}/objectives`;
+    body = {org_id:SESSION.org_id,
+      objective_code:val('f-objective_code'),title:val('f-title'),
+      description:val('f-description')||null,
+      perspective_number:val('f-perspective_number')?parseInt(val('f-perspective_number')):null,
+      owner_name_free:val('f-owner_name_free')||null,
+      status:val('f-status')||null};
   } else if (currentModal==='project') {
     if (!val('f-project_code')||!val('f-title')) { showModalError('Please fill required fields'); btn.disabled=false; btn.textContent='Save'; return; }
     url = `${API}/projects`;
     body = {org_id:SESSION.org_id,project_code:val('f-project_code'),title:val('f-title'),
       project_type:val('f-project_type'),methodology:val('f-methodology'),
-      register_type:val('f-register_type'),budget_source:val('f-budget_source'),status:val('f-status')};
+      register_type:val('f-register_type'),budget_source:val('f-budget_source'),status:val('f-status'),
+      description:val('f-description')||null,
+      project_manager_name_free:val('f-project_manager')||null,
+      priority:val('f-priority')||null,
+      start_date:val('f-start_date')||null,
+      end_date:val('f-end_date')||null,
+      budget_amount:val('f-budget_amount')?parseFloat(val('f-budget_amount')):null,
+      budget_currency:val('f-budget_currency')||null};
   }
 
   try {
@@ -647,6 +762,7 @@ async function submitModal() {
       if (currentModal==='kpi') loadKpis();
       if (currentModal==='risk') loadRisks();
       if (currentModal==='project') loadProjects();
+      if (currentModal==='objective') loadObjectives();
       loadDashboard();
     },700);
   } catch(e) { showModalError('Network error'); btn.disabled=false; btn.textContent='Save'; }
