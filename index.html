@@ -103,6 +103,24 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
 .badge-amber{background:rgba(201,168,76,.14);color:var(--gold-light)}
 .badge-red{background:rgba(239,68,68,.12);color:#FCA5A5}
 .badge-grey{background:rgba(245,240,232,.07);color:var(--muted)}
+.badge-teal{background:rgba(77,114,128,.25);color:#7dd3e8}
+.badge-gold{background:rgba(201,168,76,.14);color:var(--gold-light)}
+.badge-purple{background:rgba(139,92,246,.12);color:#c4b5fd}
+.badge-blue{background:rgba(59,130,246,.12);color:#93c5fd}
+
+/* ── FILTER BAR ── */
+.filter-bar{display:flex;gap:.65rem;align-items:center;margin-bottom:.85rem;flex-wrap:wrap}
+.filter-bar input,.filter-bar select{background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:7px;padding:7px 11px;font-size:13px;font-family:var(--font-body);color:var(--cream);outline:none;transition:border-color .2s}
+.filter-bar input{min-width:240px}
+.filter-bar input:focus,.filter-bar select:focus{border-color:var(--gold)}
+.filter-bar select option{background:var(--teal-dark)}
+.filter-bar input::placeholder{color:rgba(245,240,232,.3)}
+
+/* ── TABS ── */
+.tab-bar{display:flex;gap:0;margin-bottom:.9rem;border-bottom:1px solid var(--border)}
+.tab-btn{background:none;border:none;border-bottom:2px solid transparent;padding:8px 16px;font-size:13px;font-family:var(--font-body);color:var(--muted);cursor:pointer;margin-bottom:-1px;transition:all .15s;white-space:nowrap}
+.tab-btn:hover{color:var(--cream)}
+.tab-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
 
 /* ── EMPTY ── */
 .empty-state{text-align:center;padding:3rem 2rem;color:var(--muted)}
@@ -251,7 +269,11 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
         <button class="btn-sm" onclick="openModal('objective')"><i class="ti ti-plus"></i> Add Objective</button>
       </div>
       <div class="page-body">
-        <div class="section-card"><div id="objectives-table"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>
+        <div class="tab-bar">
+          <button class="tab-btn active" id="obj-tab-inst" onclick="switchObjTab('institutional')">Institutional</button>
+          <button class="tab-btn" id="obj-tab-dept" onclick="switchObjTab('dept')">By College &amp; Department</button>
+        </div>
+        <div id="objectives-table"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
       </div>
     </div>
 
@@ -262,6 +284,9 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
         <button class="btn-sm" onclick="openModal('kpi')"><i class="ti ti-plus"></i> Add KPI</button>
       </div>
       <div class="page-body">
+        <div class="filter-bar">
+          <input id="kpi-search" type="text" placeholder="Filter by title…" oninput="filterKpis()">
+        </div>
         <div class="section-card"><div id="kpis-table"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>
       </div>
     </div>
@@ -273,6 +298,17 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
         <button class="btn-sm" onclick="openModal('risk')"><i class="ti ti-plus"></i> Add Risk</button>
       </div>
       <div class="page-body">
+        <div class="filter-bar">
+          <select id="risk-type-filter" onchange="filterRisks()">
+            <option value="">All Types</option>
+            <option value="strategic">Strategic</option>
+            <option value="operational">Operational</option>
+            <option value="financial">Financial</option>
+            <option value="people">People</option>
+            <option value="legal">Legal</option>
+            <option value="reputational">Reputational</option>
+          </select>
+        </div>
         <div class="section-card"><div id="risks-table"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>
       </div>
     </div>
@@ -284,6 +320,15 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
         <button class="btn-sm" onclick="openModal('project')"><i class="ti ti-plus"></i> Add Project</button>
       </div>
       <div class="page-body">
+        <div class="filter-bar">
+          <select id="project-status-filter" onchange="filterProjects()">
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="pipeline">Pipeline</option>
+            <option value="on_hold">On Hold</option>
+            <option value="complete">Complete</option>
+          </select>
+        </div>
         <div class="section-card"><div id="projects-table"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>
       </div>
     </div>
@@ -360,6 +405,7 @@ const REGISTER_ID = '73e664f1-96e4-40c2-8e74-c67ac49f99fc';
 
 let SESSION = null;
 let currentModal = null;
+let _kpisData = [], _risksData = [], _projectsData = [], _objectivesData = [], _objTab = 'institutional';
 
 // ── AUTH ──
 async function doLogin() {
@@ -430,12 +476,12 @@ async function loadDashboard() {
       <div class="stat-card"><div class="stat-label"><i class="ti ti-building" style="font-size:12px"></i> Org Type</div><div class="stat-value" style="font-size:15px;margin-top:5px">${d.organisation.org_type}</div></div>
     `;
     document.getElementById('dash-kpis').innerHTML = d.recent.kpis.length
-      ? '<div style="max-height:220px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Unit</th></tr>'
+      ? '<div style="max-height:300px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Unit</th></tr>'
         + d.recent.kpis.map(k=>`<tr><td><span class="code-badge">${k.kpi_code}</span></td><td>${k.title}</td><td>${k.unit}</td></tr>`).join('')
         + '</table></div>'
       : '<div class="empty-state"><i class="ti ti-chart-line"></i><p>No KPIs yet</p></div>';
     document.getElementById('dash-risks').innerHTML = d.recent.risks.length
-      ? '<div style="max-height:220px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th></tr>'
+      ? '<div style="max-height:300px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th></tr>'
         + [...d.recent.risks].sort((a,b)=>((b.initial_likelihood||0)*(b.initial_impact_overall||0))-((a.initial_likelihood||0)*(a.initial_impact_overall||0))).map(r=>`<tr><td><span class="code-badge">${r.risk_code}</span></td><td>${r.title}</td><td>${r.risk_type}</td></tr>`).join('')
         + '</table></div>'
       : '<div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>No risks yet</p></div>';
@@ -446,30 +492,61 @@ async function loadDashboard() {
         + (d.objectives.length > 10 ? '<div style="padding:.55rem 1.1rem;border-top:1px solid var(--border)"><a href="#" style="font-size:12px;color:var(--gold);text-decoration:none;opacity:.8" onclick="showPage(\'objectives\');return false">View all '+d.objectives.length+' objectives →</a></div>' : '')
       : '<div class="empty-state"><i class="ti ti-target"></i><p>No objectives yet</p></div>';
     document.getElementById('dash-projects').innerHTML = d.recent.projects.length
-      ? '<div style="max-height:220px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th><th>Phase</th></tr>'
+      ? '<div style="max-height:300px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th><th>Phase</th></tr>'
         + [...d.recent.projects].sort((a,b)=>{const o={Active:0,active:0,Planning:1,planning:1,'On Hold':2,'on hold':2,Complete:3,complete:3,Closed:3,closed:3};return (o[a.status]??4)-(o[b.status]??4);}).map(p=>`<tr><td><span class="code-badge">${p.project_code}</span></td><td>${p.title}</td><td>${p.project_type}</td><td>${p.current_phase||'—'}</td></tr>`).join('')
         + '</table></div>'
       : '<div class="empty-state"><i class="ti ti-clipboard-list"></i><p>No projects yet</p></div>';
   } catch(e) { document.getElementById('dash-stats').innerHTML='<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load dashboard</p>'; }
 }
 
-// OBJECTIVES
+// ── HELPER: badge classes ──
+function riskTypeBadge(t){const m={strategic:'badge-amber',operational:'badge-teal',financial:'badge-green',people:'badge-purple',legal:'badge-grey',reputational:'badge-red'};return `<span class="status-badge ${m[t]||'badge-grey'}">${t||'—'}</span>`;}
+function kpiCatBadge(c){const m={Strategic:'badge-gold',Operational:'badge-teal',Common:'badge-grey'};return c?`<span class="status-badge ${m[c]||'badge-grey'}">${c}</span>`:'—';}
+function projectStatusBadge(s){const m={active:'badge-green',pipeline:'badge-amber',on_hold:'badge-grey',complete:'badge-blue',planning:'badge-amber',completed:'badge-blue',on_hold:'badge-grey'};return `<span class="status-badge ${m[(s||'').toLowerCase()]||'badge-grey'}">${s||'—'}</span>`;}
+function phaseBadge(p){return p?`<span class="status-badge badge-grey">${p}</span>`:'—';}
+
+// ── OBJECTIVES ──
 async function loadObjectives() {
   document.getElementById('objectives-table').innerHTML = '<div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
   try {
     const res = await fetch(API + '/organisations/' + SESSION.org_id + '/dashboard');
     const d = await res.json();
-    if (d.objectives && d.objectives.length) {
-      let rows = d.objectives.map(function(o) {
-        var pl=({1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'})[o.perspective_number]||o.perspective_number||'&mdash;';
-        return '<tr><td><span class="code-badge">' + o.objective_code + '</span></td><td style="font-weight:500">' + o.title + '</td><td>' + pl + '</td></tr>';
-      }).join('');
-      document.getElementById('objectives-table').innerHTML = '<table class="data-table"><tr><th>Code</th><th>Title</th><th>Perspective</th></tr>' + rows + '</table>';
-    } else {
-      document.getElementById('objectives-table').innerHTML = '<div class="empty-state"><i class="ti ti-target"></i><p>No objectives recorded yet.</p></div>';
-    }
+    _objectivesData = d.objectives || [];
+    renderObjectivesTab();
   } catch(e) {
     document.getElementById('objectives-table').innerHTML = '<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load objectives</p>';
+  }
+}
+
+function switchObjTab(tab) {
+  _objTab = tab;
+  document.getElementById('obj-tab-inst').className = tab==='institutional' ? 'tab-btn active' : 'tab-btn';
+  document.getElementById('obj-tab-dept').className = tab==='dept' ? 'tab-btn active' : 'tab-btn';
+  renderObjectivesTab();
+}
+
+function renderObjectivesTab() {
+  const PMAP = {1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'};
+  const DMAP = {CA:'College of Agriculture',CVM:'Veterinary Medicine',BA:'Business Administration',CL:'Law',CI:'Computing & Intelligent Systems',CS:'Arts Humanities & Social Sciences',COE:'Centre of Excellence',SA:'Student Affairs',AD:'Admissions & Registration',HR:'Human Resources',FN:'Finance',PC:'Procurement',IT:'Information Technology',GS:'Facilities',RI:'Research & Innovation',LB:'Library',SP:'Strategy & Institutional Development',IEA:'Institutional Effectiveness',IA:'Internal Audit',LA:'Legal Affairs',CD:'Corporate Communications',VCA:'Vice Chancellor Academic Affairs',IN:'International Relations',VCCA:'Vice Chancellor Community Affairs',VCAF:'Vice Chancellor Admin & Finance'};
+  const el = document.getElementById('objectives-table');
+  if (!_objectivesData.length) { el.innerHTML='<div class="empty-state"><i class="ti ti-target"></i><p>No objectives recorded yet.</p></div>'; return; }
+
+  if (_objTab === 'institutional') {
+    const inst = _objectivesData.filter(o => /^OBJ/i.test(o.objective_code));
+    if (!inst.length) { el.innerHTML='<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No institutional objectives found.</p></div></div>'; return; }
+    el.innerHTML = '<div class="section-card"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Perspective</th></tr>'
+      + inst.map(o=>`<tr><td><span class="code-badge">${o.objective_code}</span></td><td style="font-weight:500">${o.title}</td><td>${PMAP[o.perspective_number]||o.perspective_number||'—'}</td></tr>`).join('')
+      + '</table></div>';
+  } else {
+    const dept = _objectivesData.filter(o => !/^OBJ/i.test(o.objective_code));
+    if (!dept.length) { el.innerHTML='<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No departmental objectives found.</p></div></div>'; return; }
+    const groups = {};
+    dept.forEach(o => { const p = o.objective_code.replace(/\d.*$/,''); if(!groups[p]) groups[p]=[]; groups[p].push(o); });
+    el.innerHTML = Object.keys(groups).sort().map(prefix => {
+      const label = DMAP[prefix] || prefix;
+      const rows = groups[prefix].map(o=>`<tr><td><span class="code-badge">${o.objective_code}</span></td><td style="font-weight:500">${o.title}</td><td>${PMAP[o.perspective_number]||o.perspective_number||'—'}</td></tr>`).join('');
+      return `<div class="section-card" style="margin-bottom:.75rem"><div class="section-card-header"><div class="section-card-title"><i class="ti ti-building"></i> ${label} <span style="font-size:12px;opacity:.5;font-family:var(--font-body);font-weight:400">(${prefix})</span></div></div><table class="data-table"><tr><th>Code</th><th>Title</th><th>Perspective</th></tr>${rows}</table></div>`;
+    }).join('');
   }
 }
 
@@ -479,18 +556,26 @@ async function loadKpis() {
   try {
     const res = await fetch(`${API}/organisations/${SESSION.org_id}/kpis`);
     const d   = await res.json();
-    document.getElementById('kpis-table').innerHTML = d.kpis.length ? `
-      <table class="data-table">
-        <tr><th>Code</th><th>Title</th><th>Unit</th><th>Frequency</th><th>Trend</th></tr>
-        ${d.kpis.map(k=>`<tr>
-          <td><span class="code-badge">${k.kpi_code}</span></td>
-          <td style="font-weight:500">${k.title}</td>
-          <td>${k.unit}</td>
-          <td>${k.measurement_frequency||'—'}</td>
-          <td><span class="status-badge badge-grey">${k.trend_preference||'—'}</span></td>
-        </tr>`).join('')}
-      </table>` : '<div class="empty-state"><i class="ti ti-chart-line"></i><p>No KPIs recorded yet. Add your first KPI.</p></div>';
+    _kpisData = d.kpis || [];
+    renderKpis();
   } catch(e) { document.getElementById('kpis-table').innerHTML='<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load KPIs</p>'; }
+}
+
+function filterKpis() { renderKpis(); }
+
+function renderKpis() {
+  const q = (document.getElementById('kpi-search')?.value||'').toLowerCase();
+  const rows = _kpisData.filter(k => !q || k.title.toLowerCase().includes(q) || (k.kpi_code||'').toLowerCase().includes(q));
+  document.getElementById('kpis-table').innerHTML = rows.length
+    ? `<table class="data-table"><tr><th>Code</th><th>Title</th><th>Category</th><th>Unit</th><th>Frequency</th><th>Trend</th></tr>${rows.map(k=>`<tr>
+        <td><span class="code-badge">${k.kpi_code}</span></td>
+        <td style="font-weight:500">${k.title}</td>
+        <td>${kpiCatBadge(k.kpi_category)}</td>
+        <td>${k.unit}</td>
+        <td>${k.measurement_frequency||'—'}</td>
+        <td><span class="status-badge badge-grey">${k.trend_preference||'—'}</span></td>
+      </tr>`).join('')}</table>`
+    : '<div class="empty-state"><i class="ti ti-chart-line"></i><p>No KPIs match your filter.</p></div>';
 }
 
 // ── RISKS ──
@@ -499,18 +584,26 @@ async function loadRisks() {
   try {
     const res = await fetch(`${API}/organisations/${SESSION.org_id}/risks`);
     const d   = await res.json();
-    document.getElementById('risks-table').innerHTML = d.risks.length ? `
-      <table class="data-table">
-        <tr><th>Code</th><th>Title</th><th>Type</th><th>Category</th><th>Likelihood</th></tr>
-        ${d.risks.map(r=>`<tr>
-          <td><span class="code-badge">${r.risk_code}</span></td>
-          <td style="font-weight:500">${r.title}</td>
-          <td>${r.risk_type}</td>
-          <td>${r.risk_category||'—'}</td>
-          <td>${r.initial_likelihood!=null?`<span class="status-badge ${r.initial_likelihood<=2?'badge-green':r.initial_likelihood<=3?'badge-amber':'badge-red'}">${r.initial_likelihood}</span>`:'—'}</td>
-        </tr>`).join('')}
-      </table>` : '<div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>No risks recorded yet. Add your first risk.</p></div>';
+    _risksData = [...(d.risks||[])].sort((a,b)=>((b.initial_likelihood||0)*(b.initial_impact_overall||0))-((a.initial_likelihood||0)*(a.initial_impact_overall||0)));
+    renderRisks();
   } catch(e) { document.getElementById('risks-table').innerHTML='<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load risks</p>'; }
+}
+
+function filterRisks() { renderRisks(); }
+
+function renderRisks() {
+  const f = document.getElementById('risk-type-filter')?.value||'';
+  const rows = _risksData.filter(r => !f || r.risk_type===f);
+  document.getElementById('risks-table').innerHTML = rows.length
+    ? `<table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th><th>Likelihood</th><th>Impact</th><th>Score</th></tr>${rows.map(r=>`<tr>
+        <td><span class="code-badge">${r.risk_code}</span></td>
+        <td style="font-weight:500">${r.title}</td>
+        <td>${riskTypeBadge(r.risk_type)}</td>
+        <td>${r.initial_likelihood!=null?`<span class="status-badge ${r.initial_likelihood<=2?'badge-green':r.initial_likelihood<=3?'badge-amber':'badge-red'}">${r.initial_likelihood}</span>`:'—'}</td>
+        <td>${r.initial_impact_overall!=null?`<span class="status-badge ${r.initial_impact_overall<=2?'badge-green':r.initial_impact_overall<=3?'badge-amber':'badge-red'}">${r.initial_impact_overall}</span>`:'—'}</td>
+        <td>${r.initial_likelihood&&r.initial_impact_overall?`<span class="status-badge ${r.initial_likelihood*r.initial_impact_overall>=15?'badge-red':r.initial_likelihood*r.initial_impact_overall>=8?'badge-amber':'badge-green'}">${r.initial_likelihood*r.initial_impact_overall}</span>`:'—'}</td>
+      </tr>`).join('')}</table>`
+    : '<div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>No risks match your filter.</p></div>';
 }
 
 // ── PROJECTS ──
@@ -519,18 +612,25 @@ async function loadProjects() {
   try {
     const res = await fetch(`${API}/organisations/${SESSION.org_id}/projects`);
     const d   = await res.json();
-    document.getElementById('projects-table').innerHTML = d.projects.length ? `
-      <table class="data-table">
-        <tr><th>Code</th><th>Title</th><th>Type</th><th>Phase</th><th>Status</th></tr>
-        ${d.projects.map(p=>`<tr>
-          <td><span class="code-badge">${p.project_code}</span></td>
-          <td style="font-weight:500">${p.title}</td>
-          <td>${p.project_type}</td>
-          <td>${p.current_phase||'—'}</td>
-          <td><span class="status-badge badge-grey">${p.status||'—'}</span></td>
-        </tr>`).join('')}
-      </table>` : '<div class="empty-state"><i class="ti ti-clipboard-list"></i><p>No projects recorded yet. Add your first project.</p></div>';
+    _projectsData = d.projects || [];
+    renderProjects();
   } catch(e) { document.getElementById('projects-table').innerHTML='<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load projects</p>'; }
+}
+
+function filterProjects() { renderProjects(); }
+
+function renderProjects() {
+  const f = (document.getElementById('project-status-filter')?.value||'').toLowerCase();
+  const rows = _projectsData.filter(p => !f || (p.status||'').toLowerCase()===f);
+  document.getElementById('projects-table').innerHTML = rows.length
+    ? `<table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th><th>Phase</th><th>Status</th></tr>${rows.map(p=>`<tr>
+        <td><span class="code-badge">${p.project_code}</span></td>
+        <td style="font-weight:500">${p.title}</td>
+        <td>${p.project_type||'—'}</td>
+        <td>${phaseBadge(p.current_phase)}</td>
+        <td>${projectStatusBadge(p.status)}</td>
+      </tr>`).join('')}</table>`
+    : '<div class="empty-state"><i class="ti ti-clipboard-list"></i><p>No projects match your filter.</p></div>';
 }
 
 // ── MODALS ──
