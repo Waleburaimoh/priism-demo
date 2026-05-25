@@ -194,11 +194,15 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
 .rag-chip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:500;padding:4px 10px;border-radius:4px}
 .dp-grid2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
 @media(max-width:900px){.detail-panel{width:60%;min-width:0}}
+@media(max-width:480px){.detail-panel{width:90%;min-width:0}}
 
 /* ── PROGRESS BAR ── */
 .prog-wrap{display:flex;align-items:center;gap:.4rem}
 .prog-track{flex:1;height:5px;background:rgba(255,255,255,.09);border-radius:3px;min-width:36px;overflow:hidden}
 .prog-fill{height:100%;border-radius:3px;transition:width .3s}
+
+/* ── ROW HIGHLIGHT ── */
+tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background .15s}
 
 @media(max-width:700px){
   .sidebar{width:180px}
@@ -882,7 +886,7 @@ function renderObjectivesTab() {
       el.innerHTML = limitBanner + `<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No objectives found for ${label}${pf?' with this perspective filter':''} in current dataset.</p></div></div>`;
       return;
     }
-    const rows = unitObjs.map(o => `<tr ondblclick="openDetailPanel('objective','obj_${o.objective_id}')" style="cursor:pointer" title="Double-click for details">
+    const rows = unitObjs.map(o => `<tr onclick="openDetailPanel('objective','obj_${o.objective_id}',this)" style="cursor:pointer" title="Click to view details">
       <td><span class="code-badge">${o.objective_code}</span></td>
       <td style="font-weight:500">${o.title}</td>
       <td>${pLabel(o)}</td>
@@ -904,7 +908,7 @@ function renderObjectivesTab() {
       el.innerHTML = limitBanner + '<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No institutional objectives match the current filter.</p></div></div>';
       return;
     }
-    const rows = inst.map(o => `<tr ondblclick="openDetailPanel('objective','obj_${o.objective_id}')" style="cursor:pointer" title="Double-click for details">
+    const rows = inst.map(o => `<tr onclick="openDetailPanel('objective','obj_${o.objective_id}',this)" style="cursor:pointer" title="Click to view details">
       <td><span class="code-badge">${o.objective_code}</span></td>
       <td style="font-weight:500">${o.title}</td>
       <td>${pLabel(o)}</td>
@@ -926,7 +930,7 @@ function renderObjectivesTab() {
       const label = UNIT_LABELS[prefix] || prefix;
       const items = groups[prefix];
       const gid = 'ogrp-' + prefix;
-      const rows = items.map(o => `<tr ondblclick="openDetailPanel('objective','obj_${o.objective_id}')" style="cursor:pointer" title="Double-click for details">
+      const rows = items.map(o => `<tr onclick="openDetailPanel('objective','obj_${o.objective_id}',this)" style="cursor:pointer" title="Click to view details">
         <td><span class="code-badge">${o.objective_code}</span></td>
         <td style="font-weight:500">${o.title}</td>
         <td>${pLabel(o)}</td>
@@ -971,7 +975,7 @@ function renderKpis() {
   );
   rows.forEach(k => { _dpMap['kpi_'+k.kpi_id] = k; });
   document.getElementById('kpis-table').innerHTML = rows.length
-    ? `<table class="data-table"><tr><th>Code</th><th>Title</th><th>Category</th><th>Unit</th><th>Frequency</th><th>Trend</th></tr>${rows.map(k=>`<tr ondblclick="openDetailPanel('kpi','kpi_${k.kpi_id}')" style="cursor:pointer" title="Double-click for details">
+    ? `<table class="data-table"><tr><th>Code</th><th>Title</th><th>Category</th><th>Unit</th><th>Frequency</th><th>Trend</th></tr>${rows.map(k=>`<tr onclick="openDetailPanel('kpi','kpi_${k.kpi_id}',this)" style="cursor:pointer" title="Click to view details">
         <td><span class="code-badge">${k.kpi_code}</span></td>
         <td><div style="font-weight:500">${k.title}</div>${k.owner_name_free?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${k.owner_name_free}</div>`:''}</td>
         <td>${kpiCatBadge(k.kpi_category)}</td>
@@ -1017,7 +1021,7 @@ function renderRisks() {
     const scoreColor = s => s>=15?'badge-red':s>=8?'badge-amber':'badge-green';
     const liBadge = v => v!=null?`<span class="status-badge ${v<=2?'badge-green':v<=3?'badge-amber':'badge-red'}">${v}</span>`:'—';
     items.forEach(r => { _dpMap['risk_'+r.risk_id] = r; });
-    const rows = items.map(r => `<tr ondblclick="openDetailPanel('risk','risk_${r.risk_id}')" style="cursor:pointer" title="Double-click for details">
+    const rows = items.map(r => `<tr onclick="openDetailPanel('risk','risk_${r.risk_id}',this)" style="cursor:pointer" title="Click to view details">
       <td><span class="code-badge">${r.risk_code}</span></td>
       <td style="font-weight:500">${r.title}</td>
       <td style="font-size:12px;color:var(--muted)">${r.owner_name_free||'—'}</td>
@@ -1066,7 +1070,7 @@ function renderProjects() {
     const items = groups[type];
     const gid = 'pgrp-' + type.replace(/\s+/g,'-');
     items.forEach(p => { _dpMap['proj_'+p.project_id] = p; });
-    const rows = items.map(p => `<tr ondblclick="openDetailPanel('project','proj_${p.project_id}')" style="cursor:pointer" title="Double-click for details">
+    const rows = items.map(p => `<tr onclick="openDetailPanel('project','proj_${p.project_id}',this)" style="cursor:pointer" title="Click to view details">
       <td><span class="code-badge">${p.project_code}</span></td>
       <td style="font-weight:500">${p.title}</td>
       <td>${phaseBadge(p.current_phase)}</td>
@@ -1166,7 +1170,7 @@ function renderActivities() {
 
   if (currentUnitPrefix) {
     // Flat table for single-unit view
-    const rows = filtered.map(a => `<tr onclick="openDetailPanel('activity','act_${a.activity_id}')" style="cursor:pointer" title="Click for details">
+    const rows = filtered.map(a => `<tr onclick="openDetailPanel('activity','act_${a.activity_id}',this)" style="cursor:pointer" title="Click to view details">
       <td style="color:var(--muted);font-size:11px;text-align:right">${a.sort_order||'—'}</td>
       <td style="font-size:12px;color:var(--muted)">${trunc(a.department_name,25)}</td>
       <td style="font-size:12px" title="${(a.objective_text||'').replace(/"/g,'&quot;')}">${trunc(a.objective_text,40)}</td>
@@ -1190,7 +1194,7 @@ function renderActivities() {
     el.innerHTML = Object.keys(groups).sort().map(dept => {
       const { code, items } = groups[dept];
       const gid = 'agrp-' + (code||dept).replace(/\W+/g,'-');
-      const rows = items.map(a => `<tr onclick="openDetailPanel('activity','act_${a.activity_id}')" style="cursor:pointer" title="Click for details">
+      const rows = items.map(a => `<tr onclick="openDetailPanel('activity','act_${a.activity_id}',this)" style="cursor:pointer" title="Click to view details">
         <td style="color:var(--muted);font-size:11px;text-align:right">${a.sort_order||'—'}</td>
         <td style="font-size:12px;color:var(--muted)">${trunc(a.department_name,25)}</td>
         <td style="font-size:12px" title="${(a.objective_text||'').replace(/"/g,'&quot;')}">${trunc(a.objective_text,40)}</td>
@@ -1519,10 +1523,12 @@ function showModalError(msg) {
 }
 
 // ── DETAIL PANEL ──
-function openDetailPanel(type, key) {
+function openDetailPanel(type, key, rowEl) {
   const item = _dpMap[key];
   if (!item) return;
-  const PMAP = {1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'};
+  document.querySelectorAll('tr.row-active').forEach(r => r.classList.remove('row-active'));
+  if (rowEl) rowEl.classList.add('row-active');
+  const PMAP  = {1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'};
   const PBADGE = {1:'badge-teal',2:'badge-purple',3:'badge-amber',4:'badge-green'};
   const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   let codeText = '', bodyHtml = '';
@@ -1530,43 +1536,72 @@ function openDetailPanel(type, key) {
   if (type === 'objective') {
     const o = item;
     const pNum = parseInt(o.perspective_number);
-    const pLabel = PMAP[pNum] || o.perspective_number || '—';
+    const pLbl = PMAP[pNum] || o.perspective_number || '—';
     const pClass = PBADGE[pNum] || 'badge-grey';
-    const objPrefix = (o.objective_code.split('-')[0]||'').toUpperCase();
-    const linkedKpis = _kpisData.filter(k => (k.kpi_code||'').startsWith(objPrefix+'-'));
+    const objPrefix = (o.objective_code||'').split('-')[0].toUpperCase();
+    const linkedKpis  = _kpisData.filter(k  => (k.kpi_code||'').startsWith(objPrefix+'-'));
+    const linkedRisks = _risksData.filter(r  => (r.risk_code||'').startsWith(objPrefix+'-'));
+    const linkedProjs = _projectsData.filter(p => (p.project_code||'').startsWith(objPrefix+'-'));
     codeText = o.objective_code;
     bodyHtml = `
       <div class="dp-title">${esc(o.title)}</div>
       <div class="dp-badges">
-        <span class="status-badge ${pClass}">${pLabel}</span>
+        <span class="status-badge ${pClass}">${pLbl}</span>
+        ${o.tier?`<span class="status-badge badge-grey">Tier ${esc(String(o.tier))}</span>`:''}
         ${o.status?`<span class="status-badge badge-grey">${esc(o.status)}</span>`:''}
       </div>
       ${o.description?`<div class="dp-section"><div class="dp-label">Description</div><div class="dp-value">${esc(o.description)}</div></div>`:''}
+      ${o.strategic_theme?`<div class="dp-section"><div class="dp-label">Strategic Theme</div><div class="dp-value">${esc(o.strategic_theme)}</div></div>`:''}
       ${o.owner_name_free?`<div class="dp-section"><div class="dp-label">Owner</div><div class="dp-value">${esc(o.owner_name_free)}</div></div>`:''}
       <hr class="dp-divider">
-      <div class="dp-section">
-        <div class="dp-label">Linked KPIs <span style="opacity:.5;font-size:9px">${objPrefix} prefix</span></div>
-        ${linkedKpis.length
-          ? linkedKpis.map(k=>`<div class="dp-linked"><span class="code-badge">${k.kpi_code}</span> ${esc(k.title)}</div>`).join('')
-          : '<div style="font-size:12px;color:var(--muted);padding:.35rem 0">No KPIs found for this unit</div>'}
-      </div>`;
+      <div class="dp-label" style="margin-bottom:.6rem">Performance Linkage</div>
+      <div class="dp-grid2" style="margin-bottom:1rem">
+        <div style="background:rgba(125,211,232,.08);border:1px solid rgba(125,211,232,.2);border-radius:6px;padding:.6rem .9rem;text-align:center">
+          <div style="font-size:22px;font-weight:600;color:#7dd3e8">${linkedKpis.length}</div>
+          <div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)">KPIs</div>
+        </div>
+        <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:.6rem .9rem;text-align:center">
+          <div style="font-size:22px;font-weight:600;color:#FCA5A5">${linkedRisks.length}</div>
+          <div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)">Risks</div>
+        </div>
+        <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:6px;padding:.6rem .9rem;text-align:center">
+          <div style="font-size:22px;font-weight:600;color:#6EE7B7">${linkedProjs.length}</div>
+          <div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)">Projects</div>
+        </div>
+      </div>
+      ${linkedKpis.length?`<div class="dp-section"><div class="dp-label">KPIs</div>${linkedKpis.map(k=>`<div class="dp-linked"><span class="code-badge">${k.kpi_code}</span> ${esc(k.title)}</div>`).join('')}</div>`:''}`;
 
   } else if (type === 'kpi') {
     const k = item;
     const trendIcon = k.trend_preference==='higher'?'↑':k.trend_preference==='lower'?'↓':'~';
-    const trendClass = k.trend_preference==='higher'?'badge-green':k.trend_preference==='lower'?'badge-red':'badge-grey';
+    const trendCol  = k.trend_preference==='higher'?'#6EE7B7':k.trend_preference==='lower'?'#FCA5A5':'var(--muted)';
     const objPrefix = (k.kpi_code||'').split('-')[0].toUpperCase();
-    const parentObj = _objectivesData.find(o => o.objective_code.startsWith(objPrefix+'-'));
+    const parentObj = _objectivesData.find(o => (o.objective_code||'').startsWith(objPrefix+'-'));
+    const pNum2     = parentObj ? parseInt(parentObj.perspective_number) : null;
+    const pctAchieved = (k.current_value!=null && k.target_value!=null && Number(k.target_value)!==0)
+      ? Math.round((Number(k.current_value)/Number(k.target_value))*100) : null;
+    const progCol   = pctAchieved==null?'var(--gold)':pctAchieved>=80?'#6EE7B7':pctAchieved>=50?'var(--gold)':'#FCA5A5';
+    const ragStatus = k.rag_status||null;
+    const ragColor  = {green:'#6EE7B7',amber:'var(--gold-light)',red:'#FCA5A5'}[ragStatus]||'var(--muted)';
+    const ragBg     = {green:'rgba(16,185,129,.12)',amber:'rgba(201,168,76,.14)',red:'rgba(239,68,68,.14)'}[ragStatus]||'rgba(255,255,255,.06)';
     codeText = k.kpi_code;
     bodyHtml = `
       <div class="dp-title">${esc(k.title)}</div>
       <div class="dp-badges">
-        ${k.unit?`<span class="status-badge badge-grey">${esc(k.unit)}</span>`:''}
-        ${k.trend_preference?`<span class="status-badge ${trendClass}">${trendIcon} ${esc(k.trend_preference)}</span>`:''}
+        ${k.unit?`<span class="status-badge badge-grey">Unit: ${esc(k.unit)}</span>`:''}
         ${k.measurement_frequency?`<span class="status-badge badge-teal">${esc(k.measurement_frequency)}</span>`:''}
+        ${k.trend_preference?`<span class="status-badge" style="background:rgba(255,255,255,.07);color:${trendCol}">${trendIcon} ${esc(k.trend_preference)}</span>`:''}
+        ${ragStatus?`<span class="status-badge" style="background:${ragBg};color:${ragColor}">${ragStatus.toUpperCase()}</span>`:''}
       </div>
       ${k.description?`<div class="dp-section"><div class="dp-label">Description</div><div class="dp-value">${esc(k.description)}</div></div>`:''}
-      ${k.baseline_value!=null?`<div class="dp-section"><div class="dp-label">Baseline</div><div class="dp-value">${k.baseline_value}${k.baseline_year?' ('+k.baseline_year+')':''}</div></div>`:''}
+      <hr class="dp-divider">
+      <div class="dp-grid2" style="margin-bottom:${pctAchieved!=null?'.5rem':'1rem'}">
+        ${k.baseline_value!=null?`<div class="dp-section"><div class="dp-label">Baseline${k.baseline_year?' ('+k.baseline_year+')':''}</div><div class="dp-value" style="font-size:18px;font-weight:600;color:var(--cream)">${k.baseline_value}</div></div>`:''}
+        ${k.target_value!=null?`<div class="dp-section"><div class="dp-label">Target</div><div class="dp-value" style="font-size:18px;font-weight:600;color:#6EE7B7">${k.target_value}</div></div>`:''}
+        ${k.current_value!=null?`<div class="dp-section"><div class="dp-label">Current</div><div class="dp-value" style="font-size:18px;font-weight:600;color:${progCol}">${k.current_value}</div></div>`:''}
+        ${pctAchieved!=null?`<div class="dp-section"><div class="dp-label">Achievement</div><div class="dp-value" style="font-size:18px;font-weight:600;color:${progCol}">${pctAchieved}%</div></div>`:''}
+      </div>
+      ${pctAchieved!=null?`<div style="margin-bottom:1rem"><div class="prog-track" style="height:7px"><div class="prog-fill" style="width:${Math.min(pctAchieved,100)}%;background:${progCol}"></div></div></div>`:''}
       ${(k.rag_red_threshold!=null||k.rag_amber_threshold!=null||k.rag_green_threshold!=null)?`
       <div class="dp-section"><div class="dp-label">RAG Thresholds</div>
         <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.35rem">
@@ -1575,57 +1610,85 @@ function openDetailPanel(type, key) {
           ${k.rag_green_threshold!=null?`<span class="rag-chip" style="background:rgba(16,185,129,.12);color:#6EE7B7">🟢 Green ≥ ${k.rag_green_threshold}</span>`:''}
         </div>
       </div>`:''}
+      ${k.data_source?`<div class="dp-section"><div class="dp-label">Data Source</div><div class="dp-value">${esc(k.data_source)}</div></div>`:''}
       ${k.owner_name_free?`<div class="dp-section"><div class="dp-label">Owner</div><div class="dp-value">${esc(k.owner_name_free)}</div></div>`:''}
-      ${parentObj?`<hr class="dp-divider"><div class="dp-section"><div class="dp-label">Parent Objective</div><div class="dp-linked"><span class="code-badge">${parentObj.objective_code}</span> ${esc(parentObj.title)}</div></div>`:''}`;
+      ${parentObj?`<hr class="dp-divider"><div class="dp-section"><div class="dp-label">Parent Objective</div><div class="dp-linked"><span class="code-badge">${parentObj.objective_code}</span><div><div style="font-size:12.5px">${esc(parentObj.title)}</div>${pNum2?`<span class="status-badge ${PBADGE[pNum2]||'badge-grey'}" style="margin-top:3px;font-size:10px">${PMAP[pNum2]}</span>`:''}</div></div></div>`:''}`;
 
   } else if (type === 'risk') {
     const r = item;
-    const score = (r.initial_likelihood||0)*(r.initial_impact_overall||0);
-    const scoreClass = score>=17?'badge-red':score>=10?'badge-amber':score>=5?'badge-gold':'badge-green';
-    const scoreLabel = score>=17?'EXTREME':score>=10?'HIGH':score>=5?'MODERATE':'LOW';
+    const L = r.initial_likelihood||0;
+    const I = r.initial_impact_overall||0;
+    const score = L*I;
+    const sev   = score>=20?'Critical':score>=12?'High':score>=6?'Moderate':'Low';
+    const sevCol = {Critical:'#FCA5A5',High:'#FB923C',Moderate:'var(--gold-light)',Low:'#6EE7B7'}[sev];
+    const sevBg  = {Critical:'rgba(239,68,68,.14)',High:'rgba(251,146,60,.14)',Moderate:'rgba(201,168,76,.14)',Low:'rgba(16,185,129,.12)'}[sev];
     const rtColors = {strategic:'badge-red',operational:'badge-amber',financial:'badge-gold',reputational:'badge-purple',people:'badge-blue',legal:'badge-grey'};
-    const llabels = {1:'Rare',2:'Unlikely',3:'Possible',4:'Likely',5:'Almost Certain'};
-    const ilabels = {1:'Negligible',2:'Minor',3:'Moderate',4:'Major',5:'Catastrophic'};
-    const scoreBadge = v => `<span class="status-badge ${v<=2?'badge-green':v<=3?'badge-amber':'badge-red'}">${v}/5</span>`;
+    const llabels  = {1:'Rare',2:'Unlikely',3:'Possible',4:'Likely',5:'Almost Certain'};
+    const ilabels  = {1:'Negligible',2:'Minor',3:'Moderate',4:'Major',5:'Catastrophic'};
+    const cellBg   = s => s>=20?'rgba(239,68,68,.7)':s>=15?'rgba(239,68,68,.45)':s>=10?'rgba(251,146,60,.5)':s>=6?'rgba(201,168,76,.5)':'rgba(16,185,129,.35)';
+    const heatRows = [5,4,3,2,1].map(l =>
+      `<tr><td style="font-size:9px;color:var(--muted);text-align:right;padding:1px 3px 1px 0">${l}</td>${[1,2,3,4,5].map(i=>{
+        const s=l*i,isHere=l===L&&i===I;
+        return `<td style="background:${cellBg(s)};border:1px solid rgba(0,0,0,.2);height:22px;text-align:center;font-size:${isHere?11:9}px;font-weight:${isHere?700:400};color:#fff;${isHere?'outline:2px solid rgba(255,255,255,.8);outline-offset:-1px;':''}">${isHere?'✕':s}</td>`;
+      }).join('')}</tr>`
+    ).join('');
+    const heatMap = `<table style="border-collapse:collapse;width:100%;table-layout:fixed;margin-top:.4rem"><thead><tr><td style="width:20px"></td>${[1,2,3,4,5].map(i=>`<td style="font-size:9px;color:var(--muted);text-align:center;padding-bottom:2px">${i}</td>`).join('')}</tr></thead><tbody>${heatRows}</tbody><tfoot><tr><td></td><td colspan="5" style="font-size:9px;color:var(--muted);text-align:center;padding-top:3px">← Impact →</td></tr></tfoot></table>`;
     codeText = r.risk_code;
     bodyHtml = `
       <div class="dp-title">${esc(r.title)}</div>
       <div class="dp-badges">
-        ${r.risk_type?`<span class="status-badge ${rtColors[r.risk_type]||'badge-grey'}">${esc(r.risk_type)}</span>`:''}
-        ${score?`<span class="status-badge ${scoreClass}">Score ${score} · ${scoreLabel}</span>`:''}
+        ${r.risk_type?`<span class="status-badge ${rtColors[(r.risk_type||'').toLowerCase()]||'badge-grey'}">${esc(r.risk_type)}</span>`:''}
+        ${score?`<span class="status-badge" style="background:${sevBg};color:${sevCol}">${sev} · Score ${score}</span>`:''}
       </div>
       ${r.description?`<div class="dp-section"><div class="dp-label">Description</div><div class="dp-value">${esc(r.description)}</div></div>`:''}
       ${r.causes?`<div class="dp-section"><div class="dp-label">Causes</div><div class="dp-value">${esc(r.causes)}</div></div>`:''}
       ${r.consequences?`<div class="dp-section"><div class="dp-label">Consequences</div><div class="dp-value">${esc(r.consequences)}</div></div>`:''}
-      ${r.existing_controls?`<div class="dp-section"><div class="dp-label">Existing Controls</div><div class="dp-value">${esc(r.existing_controls)}</div></div>`:''}
-      ${r.owner_name_free?`<div class="dp-section"><div class="dp-label">Owner / Department</div><div class="dp-value">${esc(r.owner_name_free)}</div></div>`:''}
-      <hr class="dp-divider">
-      <div class="dp-grid2">
-        ${r.initial_likelihood!=null?`<div class="dp-section"><div class="dp-label">Likelihood</div><div class="dp-value">${scoreBadge(r.initial_likelihood)} <span style="font-size:12px;color:var(--muted)">${llabels[r.initial_likelihood]||''}</span></div></div>`:''}
-        ${r.initial_impact_overall!=null?`<div class="dp-section"><div class="dp-label">Impact</div><div class="dp-value">${scoreBadge(r.initial_impact_overall)} <span style="font-size:12px;color:var(--muted)">${ilabels[r.initial_impact_overall]||''}</span></div></div>`:''}
-      </div>`;
+      ${(L||I)?`<hr class="dp-divider">
+        <div class="dp-label" style="margin-bottom:.4rem">Risk Matrix <span style="font-size:9px;opacity:.6">(Likelihood × Impact)</span></div>
+        <div class="dp-grid2" style="margin-bottom:.6rem">
+          <div class="dp-section"><div class="dp-label">Likelihood</div><div class="dp-value"><span style="font-size:18px;font-weight:600;color:${sevCol}">${L||'—'}/5</span><div style="font-size:11px;color:var(--muted)">${llabels[L]||''}</div></div></div>
+          <div class="dp-section"><div class="dp-label">Impact</div><div class="dp-value"><span style="font-size:18px;font-weight:600;color:${sevCol}">${I||'—'}/5</span><div style="font-size:11px;color:var(--muted)">${ilabels[I]||''}</div></div></div>
+        </div>
+        ${L&&I?heatMap:''}`:''}
+      ${r.existing_controls?`<hr class="dp-divider"><div class="dp-section"><div class="dp-label">Existing Controls</div><div class="dp-value">${esc(r.existing_controls)}</div></div>`:''}
+      ${r.owner_name_free?`<div class="dp-section"><div class="dp-label">Owner / Department</div><div class="dp-value">${esc(r.owner_name_free)}</div></div>`:''}`;
 
   } else if (type === 'project') {
     const p = item;
     const fmt = d => d ? new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
+    const budget   = p.approved_budget!=null ? Number(p.approved_budget) : null;
+    const spent    = p.actual_spend!=null    ? Number(p.actual_spend)    : null;
+    const variance = (budget!=null && spent!=null) ? budget - spent : null;
+    const varCol   = variance==null?'var(--muted)':variance>=0?'#6EE7B7':'#FCA5A5';
+    const objPfx   = (p.project_code||'').split('-')[0].toUpperCase();
+    const linkedObj = _objectivesData.find(o => (o.objective_code||'').startsWith(objPfx+'-'));
+    const phaseCols = {Planning:'badge-teal',Execution:'badge-amber',Monitoring:'badge-purple',Closure:'badge-green',Initiation:'badge-grey'};
+    const hFields   = ['schedule','cost','scope','quality','risk'].filter(f => p['health_'+f]!=null);
+    const hBg  = v => v==='green'?'rgba(16,185,129,.15)':v==='red'?'rgba(239,68,68,.15)':'rgba(201,168,76,.15)';
+    const hCol = v => v==='green'?'#6EE7B7':v==='red'?'#FCA5A5':'var(--gold-light)';
     codeText = p.project_code;
     bodyHtml = `
       <div class="dp-title">${esc(p.title)}</div>
       <div class="dp-badges">
         ${p.project_type?`<span class="status-badge badge-teal">${esc(p.project_type)}</span>`:''}
-        ${p.current_phase?`<span class="status-badge badge-grey">${esc(p.current_phase)}</span>`:''}
+        ${p.current_phase?`<span class="status-badge ${phaseCols[p.current_phase]||'badge-grey'}">${esc(p.current_phase)}</span>`:''}
         ${p.status?projectStatusBadge(p.status):''}
+        ${p.methodology?`<span class="status-badge badge-grey">${esc(p.methodology)}</span>`:''}
       </div>
       ${p.description?`<div class="dp-section"><div class="dp-label">Description</div><div class="dp-value">${esc(p.description)}</div></div>`:''}
-      ${p.methodology?`<div class="dp-section"><div class="dp-label">Methodology</div><div class="dp-value">${esc(p.methodology)}</div></div>`:''}
+      ${p.project_manager_name||p.owner_name_free?`<div class="dp-section"><div class="dp-label">Project Manager</div><div class="dp-value">${esc(p.project_manager_name||p.owner_name_free)}</div></div>`:''}
       <hr class="dp-divider">
       <div class="dp-grid2">
         <div class="dp-section"><div class="dp-label">Planned Start</div><div class="dp-value">${fmt(p.planned_start_date)}</div></div>
         <div class="dp-section"><div class="dp-label">Planned End</div><div class="dp-value">${fmt(p.planned_end_date)}</div></div>
-        ${p.approved_budget!=null?`<div class="dp-section"><div class="dp-label">Budget</div><div class="dp-value">${Number(p.approved_budget).toLocaleString()} ${esc(p.budget_currency||'')}</div></div>`:''}
-        ${p.budget_source?`<div class="dp-section"><div class="dp-label">Budget Source</div><div class="dp-value">${esc(p.budget_source)}</div></div>`:''}
-        ${p.register_type?`<div class="dp-section"><div class="dp-label">Register Type</div><div class="dp-value">${esc(p.register_type)}</div></div>`:''}
-      </div>`;
+        ${p.actual_start_date?`<div class="dp-section"><div class="dp-label">Actual Start</div><div class="dp-value">${fmt(p.actual_start_date)}</div></div>`:''}
+        ${p.actual_end_date?`<div class="dp-section"><div class="dp-label">Actual End</div><div class="dp-value">${fmt(p.actual_end_date)}</div></div>`:''}
+        ${budget!=null?`<div class="dp-section"><div class="dp-label">Budget</div><div class="dp-value">${budget.toLocaleString()} ${esc(p.budget_currency||'')}</div></div>`:''}
+        ${spent!=null?`<div class="dp-section"><div class="dp-label">Actual Spend</div><div class="dp-value">${spent.toLocaleString()} ${esc(p.budget_currency||'')}</div></div>`:''}
+        ${variance!=null?`<div class="dp-section"><div class="dp-label">Budget Variance</div><div class="dp-value" style="color:${varCol};font-weight:600">${variance>=0?'+':''}${variance.toLocaleString()} ${esc(p.budget_currency||'')}</div></div>`:''}
+      </div>
+      ${hFields.length?`<hr class="dp-divider"><div class="dp-label" style="margin-bottom:.5rem">Health Indicators</div><div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.5rem">${hFields.map(f=>`<span style="background:${hBg(p['health_'+f])};color:${hCol(p['health_'+f])};border-radius:4px;padding:3px 10px;font-size:11px;font-weight:500;text-transform:capitalize">${f}: ${p['health_'+f]}</span>`).join('')}</div>`:''}
+      ${linkedObj?`<hr class="dp-divider"><div class="dp-section"><div class="dp-label">Linked Objective</div><div class="dp-linked"><span class="code-badge">${linkedObj.objective_code}</span> ${esc(linkedObj.title)}</div></div>`:''}`;
 
   } else if (type === 'activity') {
     const a = item;
@@ -1683,6 +1746,7 @@ function openDetailPanel(type, key) {
 
 function closeDetailPanel(e) {
   if (e && e.target !== document.getElementById('dp-overlay')) return;
+  document.querySelectorAll('tr.row-active').forEach(r => r.classList.remove('row-active'));
   document.getElementById('dp-overlay').classList.remove('open');
   document.getElementById('detail-panel').classList.remove('open');
 }
@@ -1691,6 +1755,7 @@ function closeDetailPanel(e) {
 document.getElementById('login-email').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
 document.getElementById('login-org').addEventListener('keydown',   e=>{ if(e.key==='Enter') doLogin(); });
 document.getElementById('modal-overlay').addEventListener('click', e=>{ if(e.target===document.getElementById('modal-overlay')) closeModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeDetailPanel(); });
 </script>
 </body>
 </html>
