@@ -195,6 +195,11 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
 .dp-grid2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
 @media(max-width:900px){.detail-panel{width:60%;min-width:0}}
 
+/* ── PROGRESS BAR ── */
+.prog-wrap{display:flex;align-items:center;gap:.4rem}
+.prog-track{flex:1;height:5px;background:rgba(255,255,255,.09);border-radius:3px;min-width:36px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .3s}
+
 @media(max-width:700px){
   .sidebar{width:180px}
   .dashboard-grid{grid-template-columns:1fr}
@@ -425,40 +430,26 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
     <!-- OPERATING PLANS -->
     <div id="page-opplans" class="page" style="display:none">
       <div class="page-header">
-        <div><div class="page-title">Operating Plans</div><div class="page-subtitle">Departmental execution plans linked to strategy</div></div>
-        <button class="btn-sm" onclick="alert('Operating Plans endpoint coming soon')"><i class="ti ti-plus"></i> Add Plan</button>
-      </div>
-      <div class="page-body">
-        <div class="section-card" style="padding:2rem">
-          <div style="display:flex;align-items:flex-start;gap:1.5rem;flex-wrap:wrap">
-            <div style="flex-shrink:0;width:56px;height:56px;border-radius:14px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center">
-              <i class="ti ti-sitemap" style="font-size:26px;color:var(--accent)"></i>
-            </div>
-            <div style="flex:1;min-width:220px">
-              <div style="font-size:16px;font-weight:600;color:var(--cream);margin-bottom:.4rem">Operating Plans — Coming Soon</div>
-              <div style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.7;margin-bottom:1.2rem">This module will connect departmental operating plans directly to your strategic objectives, KPIs, and risk register — giving every team a clear line of sight from day-to-day activities to institutional strategy.</div>
-              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.75rem">
-                <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:.75rem 1rem">
-                  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:.3rem">Plan → Objective</div>
-                  <div style="font-size:12px;color:rgba(255,255,255,.5)">Each operating plan mapped to one or more strategic objectives</div>
-                </div>
-                <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:.75rem 1rem">
-                  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:.3rem">KPI Linkage</div>
-                  <div style="font-size:12px;color:rgba(255,255,255,.5)">Operational KPIs rolled up to institutional scorecard</div>
-                </div>
-                <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:.75rem 1rem">
-                  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:.3rem">Risk Alignment</div>
-                  <div style="font-size:12px;color:rgba(255,255,255,.5)">Departmental risks tied to institutional risk register</div>
-                </div>
-                <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:.75rem 1rem">
-                  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:.3rem">Progress Tracking</div>
-                  <div style="font-size:12px;color:rgba(255,255,255,.5)">Activity completion tracked against plan milestones</div>
-                </div>
-              </div>
-              <div style="margin-top:1.2rem;font-size:11px;color:rgba(255,255,255,.28)">Module in development — available before go-live</div>
-            </div>
-          </div>
+        <div>
+          <div class="page-title">Operating Plans</div>
+          <div class="page-subtitle" id="opplan-subtitle">Loading…</div>
         </div>
+        <button class="btn-sm" onclick="openModal('activity')"><i class="ti ti-plus"></i> Add Activity</button>
+      </div>
+      <div class="unit-banner" id="unit-banner-opplans"></div>
+      <div class="page-body">
+        <div class="stat-grid" id="opplan-stats" style="margin-bottom:1.1rem"></div>
+        <div class="filter-bar">
+          <input type="text" id="opplan-search" placeholder="Search activities or core process…" oninput="filterActivities()">
+          <select id="opplan-status-filter" onchange="filterActivities()">
+            <option value="">All Statuses</option>
+            <option value="not_started">Not Started</option>
+            <option value="in_progress">In Progress</option>
+            <option value="complete">Complete</option>
+            <option value="on_hold">On Hold</option>
+          </select>
+        </div>
+        <div id="opplans-table"></div>
       </div>
     </div>
 
@@ -673,6 +664,7 @@ let SESSION = null;
 let currentModal = null;
 let _dpMap = {};
 let _kpisData = [], _risksData = [], _projectsData = [], _objectivesData = [], _objTab = 'institutional', _objectivesTotalCount = 0;
+let _activitiesData = [], _currentPlanId = null, _planYear = null;
 let currentUnit = 'INST';
 let currentUnitPrefix = null; // null = Institutional (show all); otherwise the prefix code, e.g. 'CA'
 const UNIT_LABELS = {INST:'Institutional',CA:'College of Agriculture',CVM:'College of Veterinary Medicine',BA:'College of Business Administration',CL:'College of Law',CI:'College of Computing & Intelligent Systems',CS:'College of Arts Humanities & Social Sciences',COE:'Centre of Excellence',SA:'Student Affairs',AD:'Admissions & Registration',RI:'Research & Innovation',LB:'Library',FN:'Finance',PC:'Procurement',IT:'Information Technology',HR:'Human Resources',GS:'Facilities',CD:'Corporate Communications',IEA:'Institutional Effectiveness',IA:'Internal Audit',SP:'Strategy & Development',LA:'Legal Affairs',VCA:'Vice Chancellor Academic',IN:'International Relations',VCCA:'Vice Chancellor Community',VCAF:'Vice Chancellor Admin & Finance'};
@@ -732,6 +724,7 @@ function showPage(page) {
   if (page==='kpis')      loadKpis();
   if (page==='risks')     loadRisks();
   if (page==='projects')  loadProjects();
+  if (page==='opplans')   loadOpplans();
 }
 
 function setUnit(unit) {
@@ -755,6 +748,7 @@ function setUnit(unit) {
   else if (pid==='kpis') loadKpis();
   else if (pid==='risks') loadRisks();
   else if (pid==='projects') loadProjects();
+  else if (pid==='opplans') renderActivities();
 }
 
 // ── DASHBOARD ──
@@ -1089,6 +1083,143 @@ function renderProjects() {
   }).join('');
 }
 
+// ── OPERATING PLANS ──
+async function loadOpplans() {
+  const tbl = document.getElementById('opplans-table');
+  const stats = document.getElementById('opplan-stats');
+  tbl.innerHTML = '<div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  stats.innerHTML = '';
+  try {
+    const pRes = await fetch(`${API}/organisations/${SESSION.org_id}/operating-plans`);
+    const pData = await pRes.json();
+    const plan = pData.plan;
+    if (!plan) {
+      document.getElementById('opplan-subtitle').textContent = 'No operating plan found';
+      tbl.innerHTML = '<div class="empty-state"><i class="ti ti-sitemap"></i><p>No operating plan has been set up yet.</p></div>';
+      return;
+    }
+    _currentPlanId = plan.aop_id;
+    _planYear = plan.plan_year;
+    document.getElementById('opplan-subtitle').textContent = `Annual Operating Plan ${plan.plan_year}`;
+    const aRes = await fetch(`${API}/organisations/${SESSION.org_id}/operating-plans/${_currentPlanId}/activities`);
+    const aData = await aRes.json();
+    _activitiesData = aData.activities || [];
+    renderActivities();
+  } catch(e) {
+    tbl.innerHTML = '<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load operating plans</p>';
+  }
+}
+
+function filterActivities() { renderActivities(); }
+
+function renderActivities() {
+  if (!_currentPlanId) return;
+  const q  = (document.getElementById('opplan-search')?.value||'').toLowerCase();
+  const sf = document.getElementById('opplan-status-filter')?.value||'';
+  const el = document.getElementById('opplans-table');
+  const stats = document.getElementById('opplan-stats');
+
+  const filtered = _activitiesData.filter(a =>
+    (!currentUnitPrefix || (a.department_code||'').toUpperCase() === currentUnitPrefix) &&
+    (!sf || a.status === sf) &&
+    (!q || (a.activity_name||'').toLowerCase().includes(q) ||
+           (a.core_process||'').toLowerCase().includes(q) ||
+           (a.department_name||'').toLowerCase().includes(q))
+  );
+
+  // Stat cards — unit-aware counts
+  const base = currentUnitPrefix
+    ? _activitiesData.filter(a => (a.department_code||'').toUpperCase() === currentUnitPrefix)
+    : _activitiesData;
+  const cnt = (s) => base.filter(a => a.status === s).length;
+  stats.innerHTML = `
+    <div class="stat-card"><div class="stat-label"><i class="ti ti-sitemap" style="font-size:12px"></i> Total Activities</div><div class="stat-value">${base.length}</div></div>
+    <div class="stat-card"><div class="stat-label"><i class="ti ti-circle-dashed" style="font-size:12px"></i> Not Started</div><div class="stat-value">${cnt('not_started')}</div></div>
+    <div class="stat-card"><div class="stat-label"><i class="ti ti-progress" style="font-size:12px"></i> In Progress</div><div class="stat-value">${cnt('in_progress')}</div></div>
+    <div class="stat-card"><div class="stat-label"><i class="ti ti-circle-check" style="font-size:12px"></i> Complete</div><div class="stat-value">${cnt('complete')}</div></div>`;
+
+  filtered.forEach(a => { _dpMap['act_'+a.activity_id] = a; });
+
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty-state"><i class="ti ti-sitemap"></i><p>No activities match your filter.</p></div>';
+    return;
+  }
+
+  const fmtDate = d => {
+    if (!d) return '<span class="status-badge badge-grey" style="font-size:10px;padding:2px 7px">TBD</span>';
+    const dt = new Date(d);
+    return dt.toLocaleDateString('en-GB',{month:'short',year:'numeric'});
+  };
+  const statusBadge = s => {
+    const m = {not_started:'badge-grey',in_progress:'badge-blue',complete:'badge-green',on_hold:'badge-amber',cancelled:'badge-red'};
+    const l = {not_started:'Not Started',in_progress:'In Progress',complete:'Complete',on_hold:'On Hold',cancelled:'Cancelled'};
+    return `<span class="status-badge ${m[s]||'badge-grey'}">${l[s]||s||'—'}</span>`;
+  };
+  const prog = pct => {
+    const p = pct||0;
+    const col = p>=100?'#6EE7B7':p>=50?'var(--gold)':'#7dd3e8';
+    return `<div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:${p}%;background:${col}"></div></div><span style="font-size:11px;color:var(--muted);white-space:nowrap">${p}%</span></div>`;
+  };
+  const trunc = (s,n) => s&&s.length>n?s.slice(0,n)+'…':(s||'—');
+
+  const TH = `<tr><th style="width:38px">#</th><th>Department</th><th>Objective</th><th>Core Process</th><th>Activity</th><th>KPI</th><th style="width:86px">Start</th><th style="width:86px">End</th><th style="width:100px">Status</th><th style="width:72px">%</th></tr>`;
+
+  if (currentUnitPrefix) {
+    // Flat table for single-unit view
+    const rows = filtered.map(a => `<tr onclick="openDetailPanel('activity','act_${a.activity_id}')" style="cursor:pointer" title="Click for details">
+      <td style="color:var(--muted);font-size:11px;text-align:right">${a.sort_order||'—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${trunc(a.department_name,25)}</td>
+      <td style="font-size:12px" title="${(a.objective_text||'').replace(/"/g,'&quot;')}">${trunc(a.objective_text,40)}</td>
+      <td style="font-size:12px;color:var(--muted)">${trunc(a.core_process,30)}</td>
+      <td style="font-weight:500;font-size:13px">${trunc(a.activity_name,55)}</td>
+      <td style="font-size:12px;color:var(--muted)">${trunc(a.activity_kpi,35)}</td>
+      <td style="font-size:12px">${fmtDate(a.start_date)}</td>
+      <td style="font-size:12px">${fmtDate(a.end_date)}</td>
+      <td>${statusBadge(a.status)}</td>
+      <td>${prog(a.completion_pct)}</td>
+    </tr>`).join('');
+    el.innerHTML = `<div class="section-card" style="overflow-x:auto"><table class="data-table" style="min-width:900px">${TH}${rows}</table></div>`;
+  } else {
+    // Grouped by department for institutional view
+    const groups = {};
+    filtered.forEach(a => {
+      const key = a.department_name || 'Unknown';
+      if (!groups[key]) groups[key] = { code: a.department_code||'', items: [] };
+      groups[key].items.push(a);
+    });
+    el.innerHTML = Object.keys(groups).sort().map(dept => {
+      const { code, items } = groups[dept];
+      const gid = 'agrp-' + (code||dept).replace(/\W+/g,'-');
+      const rows = items.map(a => `<tr onclick="openDetailPanel('activity','act_${a.activity_id}')" style="cursor:pointer" title="Click for details">
+        <td style="color:var(--muted);font-size:11px;text-align:right">${a.sort_order||'—'}</td>
+        <td style="font-size:12px;color:var(--muted)">${trunc(a.department_name,25)}</td>
+        <td style="font-size:12px" title="${(a.objective_text||'').replace(/"/g,'&quot;')}">${trunc(a.objective_text,40)}</td>
+        <td style="font-size:12px;color:var(--muted)">${trunc(a.core_process,30)}</td>
+        <td style="font-weight:500;font-size:13px">${trunc(a.activity_name,55)}</td>
+        <td style="font-size:12px;color:var(--muted)">${trunc(a.activity_kpi,35)}</td>
+        <td style="font-size:12px">${fmtDate(a.start_date)}</td>
+        <td style="font-size:12px">${fmtDate(a.end_date)}</td>
+        <td>${statusBadge(a.status)}</td>
+        <td>${prog(a.completion_pct)}</td>
+      </tr>`).join('');
+      return `<div class="section-card" style="margin-bottom:.75rem">
+        <div class="section-card-header" style="cursor:pointer" onclick="toggleSection('${gid}')">
+          <div class="section-card-title">
+            <i class="ti ti-building"></i>
+            ${dept}
+            ${code?`<span class="code-badge" style="font-size:10px">${code}</span>`:''}
+            <span style="margin-left:6px;font-size:12px;font-family:var(--font-body);font-weight:400;opacity:.6">${items.length} activit${items.length!==1?'ies':'y'}</span>
+          </div>
+          <i class="ti ti-chevron-down" id="icon-${gid}" style="color:var(--muted);font-size:14px;transition:transform .2s"></i>
+        </div>
+        <div id="${gid}" style="overflow-x:auto">
+          <table class="data-table" style="min-width:900px">${TH}${rows}</table>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
 // ── MODALS ──
 function unitDropdown() {
   const opts = Object.entries(UNIT_LABELS).map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
@@ -1097,7 +1228,7 @@ function unitDropdown() {
 
 function openModal(type) {
   currentModal = type;
-  const titles = {kpi:'Add KPI', risk:'Add Risk', project:'Add Project', objective:'Add Objective'};
+  const titles = {kpi:'Add KPI', risk:'Add Risk', project:'Add Project', objective:'Add Objective', activity:'Add Activity'};
   document.getElementById('modal-title').textContent = titles[type];
   document.getElementById('modal-body').innerHTML = getModalForm(type);
   const unitSel = document.getElementById('f-modal-unit');
@@ -1261,6 +1392,28 @@ function getModalForm(type) {
         <select id="f-status"><option value="active">Active</option><option value="suspended">Suspended</option><option value="archived">Archived</option></select>
       </div>
     </div>`;
+
+  if (type==='activity') {
+    const deptOpts = Object.entries(UNIT_LABELS).map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+    return `
+    <div id="modal-msg-success" class="msg-success"></div>
+    <div id="modal-msg-error" class="msg-error"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Department *</label><select id="f-dept-code"><option value="">— Select —</option>${deptOpts}</select></div>
+      <div class="form-group"><label>Owner Name</label><input id="f-owner_name" placeholder="Responsible person"></div>
+    </div>
+    <div class="form-group"><label>Activity Title *</label><input id="f-activity_name" placeholder="What will be done"></div>
+    <div class="form-group"><label>Objective</label><input id="f-objective_text" placeholder="Linked strategic objective"></div>
+    <div class="form-group"><label>Core Process</label><input id="f-core_process" placeholder="Core process this supports"></div>
+    <div class="form-group"><label>Description</label><textarea id="f-description" rows="3" placeholder="Full activity description" style="width:100%;resize:vertical"></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label>Start Date</label><input id="f-start_date" type="date"></div>
+      <div class="form-group"><label>End Date</label><input id="f-end_date" type="date"></div>
+    </div>
+    <div class="form-group"><label>Activity KPI</label><input id="f-activity_kpi" placeholder="How success will be measured"></div>
+    <div class="form-group"><label>Inputs Required</label><textarea id="f-inputs_required" rows="2" placeholder="Resources needed" style="width:100%;resize:vertical"></textarea></div>
+    <div class="form-group"><label>Outputs to Deliver</label><textarea id="f-outputs_to_deliver" rows="2" placeholder="Expected deliverables" style="width:100%;resize:vertical"></textarea></div>`;
+  }
 }
 
 function val(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
@@ -1322,6 +1475,25 @@ async function submitModal() {
       end_date:val('f-end_date')||null,
       budget_amount:val('f-budget_amount')?parseFloat(val('f-budget_amount')):null,
       budget_currency:val('f-budget_currency')||null};
+  } else if (currentModal==='activity') {
+    if (!val('f-activity_name')) { showModalError('Activity title is required'); btn.disabled=false; btn.textContent='Save'; return; }
+    if (!_currentPlanId) { showModalError('No operating plan loaded'); btn.disabled=false; btn.textContent='Save'; return; }
+    const deptCode = val('f-dept-code');
+    url = `${API}/organisations/${SESSION.org_id}/operating-plans/${_currentPlanId}/activities`;
+    body = {
+      department_code: deptCode||null,
+      department_name: deptCode ? (UNIT_LABELS[deptCode]||deptCode) : null,
+      objective_text: val('f-objective_text')||null,
+      core_process:   val('f-core_process')||null,
+      activity_name:  val('f-activity_name'),
+      description:    val('f-description')||null,
+      start_date:     val('f-start_date')||null,
+      end_date:       val('f-end_date')||null,
+      activity_kpi:   val('f-activity_kpi')||null,
+      owner_name:     val('f-owner_name')||null,
+      inputs_required:    val('f-inputs_required')||null,
+      outputs_to_deliver: val('f-outputs_to_deliver')||null
+    };
   }
 
   try {
@@ -1335,7 +1507,8 @@ async function submitModal() {
       if (currentModal==='risk') loadRisks();
       if (currentModal==='project') loadProjects();
       if (currentModal==='objective') loadObjectives();
-      loadDashboard();
+      if (currentModal==='activity') loadOpplans();
+      if (currentModal!=='activity') loadDashboard();
     },700);
   } catch(e) { showModalError('Network error'); btn.disabled=false; btn.textContent='Save'; }
 }
@@ -1453,6 +1626,53 @@ function openDetailPanel(type, key) {
         ${p.budget_source?`<div class="dp-section"><div class="dp-label">Budget Source</div><div class="dp-value">${esc(p.budget_source)}</div></div>`:''}
         ${p.register_type?`<div class="dp-section"><div class="dp-label">Register Type</div><div class="dp-value">${esc(p.register_type)}</div></div>`:''}
       </div>`;
+
+  } else if (type === 'activity') {
+    const a = item;
+    const statusLabels = {not_started:'Not Started',in_progress:'In Progress',complete:'Complete',on_hold:'On Hold',cancelled:'Cancelled'};
+    const statusClasses = {not_started:'badge-grey',in_progress:'badge-blue',complete:'badge-green',on_hold:'badge-amber',cancelled:'badge-red'};
+    const pct = a.completion_pct||0;
+    const progCol = pct>=100?'#6EE7B7':pct>=50?'var(--gold)':'#7dd3e8';
+    const fmtD = d => d ? new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '<span style="color:var(--muted);font-size:12px">Not recorded</span>';
+    codeText = a.department_code ? `${a.department_code} · #${a.sort_order||'?'}` : `#${a.sort_order||'?'}`;
+    bodyHtml = `
+      <div class="dp-title">${esc(a.activity_name)}</div>
+      <div class="dp-badges">
+        <span class="status-badge ${statusClasses[a.status]||'badge-grey'}">${statusLabels[a.status]||a.status||'—'}</span>
+        <span class="status-badge badge-grey">${esc(a.department_name||'—')}</span>
+      </div>
+      <div style="margin-bottom:1.1rem">
+        <div class="dp-label" style="margin-bottom:.4rem">Completion</div>
+        <div class="prog-wrap" style="gap:.6rem">
+          <div class="prog-track" style="height:8px;flex:1"><div class="prog-fill" style="width:${pct}%;background:${progCol}"></div></div>
+          <span style="font-size:13px;font-weight:500;color:var(--cream)">${pct}%</span>
+        </div>
+      </div>
+      <hr class="dp-divider">
+      <div style="font-size:10px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold);opacity:.65;margin-bottom:.6rem">Activity Details</div>
+      ${a.objective_text?`<div class="dp-section"><div class="dp-label">Objective</div><div class="dp-value">${esc(a.objective_text)}</div></div>`:''}
+      ${a.core_process?`<div class="dp-section"><div class="dp-label">Core Process</div><div class="dp-value">${esc(a.core_process)}</div></div>`:''}
+      ${a.description?`<div class="dp-section"><div class="dp-label">Description</div><div class="dp-value">${esc(a.description)}</div></div>`:''}
+      ${a.activity_kpi?`<div class="dp-section"><div class="dp-label">Activity KPI</div><div class="dp-value">${esc(a.activity_kpi)}</div></div>`:''}
+      <hr class="dp-divider">
+      <div style="font-size:10px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold);opacity:.65;margin-bottom:.6rem">Timeline</div>
+      <div class="dp-grid2">
+        <div class="dp-section"><div class="dp-label">Planned Start</div><div class="dp-value">${fmtD(a.start_date)}</div></div>
+        <div class="dp-section"><div class="dp-label">Planned End</div><div class="dp-value">${fmtD(a.end_date)}</div></div>
+        <div class="dp-section"><div class="dp-label">Actual Start</div><div class="dp-value">${fmtD(a.actual_start_date)}</div></div>
+        <div class="dp-section"><div class="dp-label">Actual End</div><div class="dp-value">${fmtD(a.actual_end_date)}</div></div>
+      </div>
+      <hr class="dp-divider">
+      <div style="font-size:10px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold);opacity:.65;margin-bottom:.6rem">Resources</div>
+      ${a.owner_name?`<div class="dp-section"><div class="dp-label">Owner</div><div class="dp-value">${esc(a.owner_name)}</div></div>`:''}
+      ${a.manpower_requirement?`<div class="dp-section"><div class="dp-label">Manpower Requirement</div><div class="dp-value">${esc(a.manpower_requirement)}</div></div>`:''}
+      ${a.procurement_description?`<div class="dp-section"><div class="dp-label">Procurement</div><div class="dp-value">${esc(a.procurement_description)}${a.estimated_procurement_value?` <span style="font-size:11px;color:var(--muted)">(Est. ${Number(a.estimated_procurement_value).toLocaleString()} ${a.budget_currency||'AED'})</span>`:''}</div></div>`:''}
+      <div class="dp-section"><div class="dp-label">Budget Required</div><div class="dp-value">${a.budget_amount!=null?Number(a.budget_amount).toLocaleString()+' '+(a.budget_currency||'AED'):'<span style="color:var(--muted)">TBD</span>'}</div></div>
+      <div class="dp-section"><div class="dp-label">Actual Spend</div><div class="dp-value">${a.actual_spend!=null?Number(a.actual_spend).toLocaleString()+' '+(a.budget_currency||'AED'):'—'}</div></div>
+      <hr class="dp-divider">
+      <div style="font-size:10px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold);opacity:.65;margin-bottom:.6rem">Delivery</div>
+      ${a.inputs_required?`<div class="dp-section"><div class="dp-label">Inputs Required</div><div class="dp-value">${esc(a.inputs_required)}</div></div>`:''}
+      ${a.outputs_to_deliver?`<div class="dp-section"><div class="dp-label">Outputs to Deliver</div><div class="dp-value">${esc(a.outputs_to_deliver)}</div></div>`:''}`;
   }
 
   document.getElementById('dp-header-code').textContent = codeText;
