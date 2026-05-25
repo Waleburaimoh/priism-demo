@@ -528,7 +528,21 @@ function getModalForm(type) {
       <div class="form-group"><label>Unit *</label><input id="f-unit" placeholder="%, AED, count"></div>
     </div>
     <div class="form-group"><label>Title *</label><input id="f-title" placeholder="KPI name"></div>
-    <div class="form-group"><label>Description</label><input id="f-description" placeholder="Optional"></div>
+    <div class="form-group"><label>Description</label><textarea id="f-description" rows="3" placeholder="Optional" style="width:100%;resize:vertical"></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label>Calculation Method</label><input id="f-calculation_method" placeholder="How this KPI is calculated"></div>
+      <div class="form-group"><label>Target Value</label><input id="f-target_value" type="number" step="any" placeholder="e.g. 95"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>KPI Category</label>
+        <select id="f-kpi_category"><option value="">— Select —</option><option value="Strategic">Strategic</option><option value="Operational">Operational</option><option value="Common">Common</option></select>
+      </div>
+      <div class="form-group"><label>Data Source</label><input id="f-data_source" placeholder="e.g. SIS, Finance system"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Baseline Value</label><input id="f-baseline_value" type="number" step="any" placeholder="Current baseline"></div>
+      <div class="form-group"><label>Owner Name</label><input id="f-owner_name_free" placeholder="Responsible person"></div>
+    </div>
     <div class="form-row">
       <div class="form-group"><label>Trend *</label>
         <select id="f-trend_preference"><option value="increasing">Increasing</option><option value="decreasing">Decreasing</option><option value="stable">Stable</option></select>
@@ -595,10 +609,18 @@ async function submitModal() {
   if (currentModal==='kpi') {
     if (!val('f-kpi_code')||!val('f-title')||!val('f-unit')) { showModalError('Please fill required fields'); btn.disabled=false; btn.textContent='Save'; return; }
     url = `${API}/kpis`;
+    const _desc = val('f-description'), _calc = val('f-calculation_method');
+    const _combinedDesc = [_desc, _calc ? 'Calculation Method: ' + _calc : ''].filter(Boolean).join('\n\n');
     body = {org_id:SESSION.org_id,cycle_id:CYCLE_ID,objective_id:OBJECTIVE_ID,
       kpi_code:val('f-kpi_code'),title:val('f-title'),unit:val('f-unit'),
-      description:val('f-description'),trend_preference:val('f-trend_preference'),
-      measurement_frequency:val('f-measurement_frequency')};
+      description:_combinedDesc||null,
+      trend_preference:val('f-trend_preference'),
+      measurement_frequency:val('f-measurement_frequency'),
+      target_value:val('f-target_value')?parseFloat(val('f-target_value')):null,
+      kpi_category:val('f-kpi_category')||null,
+      data_source:val('f-data_source')||null,
+      baseline_value:val('f-baseline_value')?parseFloat(val('f-baseline_value')):null,
+      owner_name_free:val('f-owner_name_free')||null};
   } else if (currentModal==='risk') {
     if (!val('f-risk_code')||!val('f-title')) { showModalError('Please fill required fields'); btn.disabled=false; btn.textContent='Save'; return; }
     url = `${API}/risks`;
