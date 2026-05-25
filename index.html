@@ -429,19 +429,27 @@ async function loadDashboard() {
       <div class="stat-card"><div class="stat-label"><i class="ti ti-clipboard-list" style="font-size:12px"></i> Projects</div><div class="stat-value">${d.summary.project_count}</div></div>
       <div class="stat-card"><div class="stat-label"><i class="ti ti-building" style="font-size:12px"></i> Org Type</div><div class="stat-value" style="font-size:15px;margin-top:5px">${d.organisation.org_type}</div></div>
     `;
-    document.getElementById('dash-kpis').innerHTML = d.recent.kpis.length ? `
-      <table class="data-table"><tr><th>Code</th><th>Title</th><th>Unit</th></tr>
-      ${d.recent.kpis.map(k=>`<tr><td><span class="code-badge">${k.kpi_code}</span></td><td>${k.title}</td><td>${k.unit}</td></tr>`).join('')}
-      </table>` : '<div class="empty-state"><i class="ti ti-chart-line"></i><p>No KPIs yet</p></div>';
-    document.getElementById('dash-risks').innerHTML = d.recent.risks.length ? `
-      <table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th></tr>
-      ${[...d.recent.risks].sort((a,b)=>((b.initial_likelihood||0)*(b.initial_impact_overall||0))-((a.initial_likelihood||0)*(a.initial_impact_overall||0))).map(r=>`<tr><td><span class="code-badge">${r.risk_code}</span></td><td>${r.title}</td><td>${r.risk_type}</td></tr>`).join('')}
-      </table>` : '<div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>No risks yet</p></div>';
-    document.getElementById('dash-objectives').innerHTML = d.objectives && d.objectives.length ? '<table class="data-table"><tr><th>Code</th><th>Title</th><th>Perspective</th></tr>' + d.objectives.map(function(o){var pl=({1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'})[o.perspective_number]||o.perspective_number||'&mdash;';return '<tr><td><span class="code-badge">'+o.objective_code+'</span></td><td style="font-weight:500">'+o.title+'</td><td>'+pl+'</td></tr>';}).join('') + '</table>' : '<div class="empty-state"><i class="ti ti-target"></i><p>No objectives yet</p></div>';
-      document.getElementById('dash-projects').innerHTML = d.recent.projects.length ? `
-      <table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th><th>Phase</th></tr>
-      ${[...d.recent.projects].sort((a,b)=>{const o={Active:0,active:0,Planning:1,planning:1,'On Hold':2,'on hold':2,Complete:3,complete:3,Closed:3,closed:3};return (o[a.status]??4)-(o[b.status]??4);}).map(p=>`<tr><td><span class="code-badge">${p.project_code}</span></td><td>${p.title}</td><td>${p.project_type}</td><td>${p.current_phase||'—'}</td></tr>`).join('')}
-      </table>` : '<div class="empty-state"><i class="ti ti-clipboard-list"></i><p>No projects yet</p></div>';
+    document.getElementById('dash-kpis').innerHTML = d.recent.kpis.length
+      ? '<div style="max-height:220px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Unit</th></tr>'
+        + d.recent.kpis.map(k=>`<tr><td><span class="code-badge">${k.kpi_code}</span></td><td>${k.title}</td><td>${k.unit}</td></tr>`).join('')
+        + '</table></div>'
+      : '<div class="empty-state"><i class="ti ti-chart-line"></i><p>No KPIs yet</p></div>';
+    document.getElementById('dash-risks').innerHTML = d.recent.risks.length
+      ? '<div style="max-height:220px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th></tr>'
+        + [...d.recent.risks].sort((a,b)=>((b.initial_likelihood||0)*(b.initial_impact_overall||0))-((a.initial_likelihood||0)*(a.initial_impact_overall||0))).map(r=>`<tr><td><span class="code-badge">${r.risk_code}</span></td><td>${r.title}</td><td>${r.risk_type}</td></tr>`).join('')
+        + '</table></div>'
+      : '<div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>No risks yet</p></div>';
+    document.getElementById('dash-objectives').innerHTML = d.objectives && d.objectives.length
+      ? '<table class="data-table"><tr><th>Code</th><th>Title</th><th>Perspective</th></tr>'
+        + d.objectives.slice(0,10).map(function(o){var pl=({1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'})[o.perspective_number]||o.perspective_number||'&mdash;';return '<tr><td><span class="code-badge">'+o.objective_code+'</span></td><td style="font-weight:500">'+o.title+'</td><td>'+pl+'</td></tr>';}).join('')
+        + '</table>'
+        + (d.objectives.length > 10 ? '<div style="padding:.55rem 1.1rem;border-top:1px solid var(--border)"><a href="#" style="font-size:12px;color:var(--gold);text-decoration:none;opacity:.8" onclick="showPage(\'objectives\');return false">View all '+d.objectives.length+' objectives →</a></div>' : '')
+      : '<div class="empty-state"><i class="ti ti-target"></i><p>No objectives yet</p></div>';
+    document.getElementById('dash-projects').innerHTML = d.recent.projects.length
+      ? '<div style="max-height:220px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th><th>Phase</th></tr>'
+        + [...d.recent.projects].sort((a,b)=>{const o={Active:0,active:0,Planning:1,planning:1,'On Hold':2,'on hold':2,Complete:3,complete:3,Closed:3,closed:3};return (o[a.status]??4)-(o[b.status]??4);}).map(p=>`<tr><td><span class="code-badge">${p.project_code}</span></td><td>${p.title}</td><td>${p.project_type}</td><td>${p.current_phase||'—'}</td></tr>`).join('')
+        + '</table></div>'
+      : '<div class="empty-state"><i class="ti ti-clipboard-list"></i><p>No projects yet</p></div>';
   } catch(e) { document.getElementById('dash-stats').innerHTML='<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load dashboard</p>'; }
 }
 
