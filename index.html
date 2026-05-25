@@ -286,6 +286,13 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
       <div class="page-body">
         <div class="filter-bar">
           <input id="kpi-search" type="text" placeholder="Filter by title…" oninput="filterKpis()">
+          <select id="kpi-freq-filter" onchange="filterKpis()">
+            <option value="">All Frequencies</option>
+            <option value="annual">Annual</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="monthly">Monthly</option>
+            <option value="weekly">Weekly</option>
+          </select>
         </div>
         <div class="section-card"><div id="kpis-table"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>
       </div>
@@ -299,6 +306,7 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
       </div>
       <div class="page-body">
         <div class="filter-bar">
+          <input id="risk-search" type="text" placeholder="Filter by title…" oninput="filterRisks()">
           <select id="risk-type-filter" onchange="filterRisks()">
             <option value="">All Types</option>
             <option value="strategic">Strategic</option>
@@ -309,7 +317,7 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
             <option value="reputational">Reputational</option>
           </select>
         </div>
-        <div class="section-card"><div id="risks-table"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>
+        <div id="risks-table"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
       </div>
     </div>
 
@@ -321,6 +329,7 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
       </div>
       <div class="page-body">
         <div class="filter-bar">
+          <input id="project-search" type="text" placeholder="Filter by title…" oninput="filterProjects()">
           <select id="project-status-filter" onchange="filterProjects()">
             <option value="">All Statuses</option>
             <option value="active">Active</option>
@@ -329,7 +338,7 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
             <option value="complete">Complete</option>
           </select>
         </div>
-        <div class="section-card"><div id="projects-table"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>
+        <div id="projects-table"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
       </div>
     </div>
 
@@ -525,27 +534,78 @@ function switchObjTab(tab) {
   renderObjectivesTab();
 }
 
+function toggleSection(id) {
+  const body = document.getElementById(id);
+  const icon = document.getElementById('icon-' + id);
+  if (!body) return;
+  const hide = body.style.display !== 'none';
+  body.style.display = hide ? 'none' : '';
+  if (icon) icon.style.transform = hide ? 'rotate(-90deg)' : '';
+}
+
 function renderObjectivesTab() {
   const PMAP = {1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'};
-  const DMAP = {CA:'College of Agriculture',CVM:'Veterinary Medicine',BA:'Business Administration',CL:'Law',CI:'Computing & Intelligent Systems',CS:'Arts Humanities & Social Sciences',COE:'Centre of Excellence',SA:'Student Affairs',AD:'Admissions & Registration',HR:'Human Resources',FN:'Finance',PC:'Procurement',IT:'Information Technology',GS:'Facilities',RI:'Research & Innovation',LB:'Library',SP:'Strategy & Institutional Development',IEA:'Institutional Effectiveness',IA:'Internal Audit',LA:'Legal Affairs',CD:'Corporate Communications',VCA:'Vice Chancellor Academic Affairs',IN:'International Relations',VCCA:'Vice Chancellor Community Affairs',VCAF:'Vice Chancellor Admin & Finance'};
+  const DMAP = {
+    CA:'College of Agriculture', CVM:'Veterinary Medicine', BA:'Business Administration',
+    CL:'College of Law', CI:'Computing & Intelligent Systems', CS:'Arts Humanities & Social Sciences',
+    COE:'Centre of Excellence in Education', SA:'Student Affairs', AD:'Admissions & Registration',
+    HR:'Human Resources', FN:'Finance', PC:'Procurement', IT:'Information Technology',
+    GS:'Facilities', RI:'Research & Innovation', LB:'Library',
+    SP:'Strategy & Institutional Development', IEA:'Institutional Effectiveness & Accreditation',
+    IA:'Internal Audit', LA:'Legal Affairs', CD:'Corporate Communications',
+    VCA:'Vice Chancellor Academic Affairs', IN:'International Relations',
+    VCCA:'Vice Chancellor Community Affairs', VCAF:'Vice Chancellor Admin & Finance'
+  };
   const el = document.getElementById('objectives-table');
-  if (!_objectivesData.length) { el.innerHTML='<div class="empty-state"><i class="ti ti-target"></i><p>No objectives recorded yet.</p></div>'; return; }
+  if (!_objectivesData.length) {
+    el.innerHTML = '<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No objectives recorded yet.</p></div></div>';
+    return;
+  }
 
   if (_objTab === 'institutional') {
     const inst = _objectivesData.filter(o => /^OBJ/i.test(o.objective_code));
-    if (!inst.length) { el.innerHTML='<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No institutional objectives found.</p></div></div>'; return; }
-    el.innerHTML = '<div class="section-card"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Perspective</th></tr>'
-      + inst.map(o=>`<tr><td><span class="code-badge">${o.objective_code}</span></td><td style="font-weight:500">${o.title}</td><td>${PMAP[o.perspective_number]||o.perspective_number||'—'}</td></tr>`).join('')
-      + '</table></div>';
+    if (!inst.length) {
+      el.innerHTML = '<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No institutional objectives found.</p></div></div>';
+      return;
+    }
+    const rows = inst.map(o => `<tr>
+      <td><span class="code-badge">${o.objective_code}</span></td>
+      <td style="font-weight:500">${o.title}</td>
+      <td>${PMAP[o.perspective_number] || o.perspective_number || '—'}</td>
+    </tr>`).join('');
+    el.innerHTML = `<div class="section-card"><table class="data-table"><tr><th>Code</th><th>Title</th><th>BSC Perspective</th></tr>${rows}</table></div>`;
   } else {
     const dept = _objectivesData.filter(o => !/^OBJ/i.test(o.objective_code));
-    if (!dept.length) { el.innerHTML='<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No departmental objectives found.</p></div></div>'; return; }
+    if (!dept.length) {
+      el.innerHTML = '<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No departmental objectives found.</p></div></div>';
+      return;
+    }
     const groups = {};
-    dept.forEach(o => { const p = o.objective_code.replace(/\d.*$/,''); if(!groups[p]) groups[p]=[]; groups[p].push(o); });
+    dept.forEach(o => {
+      const prefix = o.objective_code.replace(/[\d\-].*$/, '').toUpperCase();
+      if (!groups[prefix]) groups[prefix] = [];
+      groups[prefix].push(o);
+    });
     el.innerHTML = Object.keys(groups).sort().map(prefix => {
       const label = DMAP[prefix] || prefix;
-      const rows = groups[prefix].map(o=>`<tr><td><span class="code-badge">${o.objective_code}</span></td><td style="font-weight:500">${o.title}</td><td>${PMAP[o.perspective_number]||o.perspective_number||'—'}</td></tr>`).join('');
-      return `<div class="section-card" style="margin-bottom:.75rem"><div class="section-card-header"><div class="section-card-title"><i class="ti ti-building"></i> ${label} <span style="font-size:12px;opacity:.5;font-family:var(--font-body);font-weight:400">(${prefix})</span></div></div><table class="data-table"><tr><th>Code</th><th>Title</th><th>Perspective</th></tr>${rows}</table></div>`;
+      const items = groups[prefix];
+      const gid = 'ogrp-' + prefix;
+      const rows = items.map(o => `<tr>
+        <td><span class="code-badge">${o.objective_code}</span></td>
+        <td style="font-weight:500">${o.title}</td>
+        <td>${PMAP[o.perspective_number] || o.perspective_number || '—'}</td>
+      </tr>`).join('');
+      return `<div class="section-card" style="margin-bottom:.75rem">
+        <div style="padding:.7rem 1.1rem;border-bottom:1px solid var(--border);background:rgba(201,168,76,.06);cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleSection('${gid}')">
+          <div style="display:flex;align-items:center;gap:.6rem">
+            <i class="ti ti-building" style="color:var(--gold);font-size:14px"></i>
+            <span style="font-family:var(--font-display);font-size:15px;color:var(--gold)">${label}</span>
+            <span style="font-size:11px;background:rgba(201,168,76,.15);color:var(--gold);border-radius:10px;padding:2px 8px">${items.length} objective${items.length!==1?'s':''}</span>
+          </div>
+          <i class="ti ti-chevron-down" id="icon-${gid}" style="color:var(--gold);font-size:13px;transition:transform .2s"></i>
+        </div>
+        <div id="${gid}"><table class="data-table"><tr><th>Code</th><th>Title</th><th>BSC Perspective</th></tr>${rows}</table></div>
+      </div>`;
     }).join('');
   }
 }
@@ -565,7 +625,11 @@ function filterKpis() { renderKpis(); }
 
 function renderKpis() {
   const q = (document.getElementById('kpi-search')?.value||'').toLowerCase();
-  const rows = _kpisData.filter(k => !q || k.title.toLowerCase().includes(q) || (k.kpi_code||'').toLowerCase().includes(q));
+  const fq = document.getElementById('kpi-freq-filter')?.value||'';
+  const rows = _kpisData.filter(k =>
+    (!q || (k.title||'').toLowerCase().includes(q) || (k.kpi_code||'').toLowerCase().includes(q)) &&
+    (!fq || (k.measurement_frequency||'').toLowerCase() === fq)
+  );
   document.getElementById('kpis-table').innerHTML = rows.length
     ? `<table class="data-table"><tr><th>Code</th><th>Title</th><th>Category</th><th>Unit</th><th>Frequency</th><th>Trend</th></tr>${rows.map(k=>`<tr>
         <td><span class="code-badge">${k.kpi_code}</span></td>
@@ -593,17 +657,38 @@ function filterRisks() { renderRisks(); }
 
 function renderRisks() {
   const f = document.getElementById('risk-type-filter')?.value||'';
-  const rows = _risksData.filter(r => !f || r.risk_type===f);
-  document.getElementById('risks-table').innerHTML = rows.length
-    ? `<table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th><th>Likelihood</th><th>Impact</th><th>Score</th></tr>${rows.map(r=>`<tr>
-        <td><span class="code-badge">${r.risk_code}</span></td>
-        <td style="font-weight:500">${r.title}</td>
-        <td>${riskTypeBadge(r.risk_type)}</td>
-        <td>${r.initial_likelihood!=null?`<span class="status-badge ${r.initial_likelihood<=2?'badge-green':r.initial_likelihood<=3?'badge-amber':'badge-red'}">${r.initial_likelihood}</span>`:'—'}</td>
-        <td>${r.initial_impact_overall!=null?`<span class="status-badge ${r.initial_impact_overall<=2?'badge-green':r.initial_impact_overall<=3?'badge-amber':'badge-red'}">${r.initial_impact_overall}</span>`:'—'}</td>
-        <td>${r.initial_likelihood&&r.initial_impact_overall?`<span class="status-badge ${r.initial_likelihood*r.initial_impact_overall>=15?'badge-red':r.initial_likelihood*r.initial_impact_overall>=8?'badge-amber':'badge-green'}">${r.initial_likelihood*r.initial_impact_overall}</span>`:'—'}</td>
-      </tr>`).join('')}</table>`
-    : '<div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>No risks match your filter.</p></div>';
+  const q = (document.getElementById('risk-search')?.value||'').toLowerCase();
+  const filtered = _risksData.filter(r =>
+    (!f || r.risk_type===f) &&
+    (!q || (r.title||'').toLowerCase().includes(q) || (r.risk_code||'').toLowerCase().includes(q))
+  );
+  const el = document.getElementById('risks-table');
+  if (!filtered.length) { el.innerHTML='<div class="section-card"><div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>No risks match your filter.</p></div></div>'; return; }
+  const typeOrder = ['strategic','financial','operational','reputational','people','legal'];
+  const groups = {};
+  filtered.forEach(r => { const t=r.risk_type||'other'; if(!groups[t]) groups[t]=[]; groups[t].push(r); });
+  const orderedTypes = [...typeOrder.filter(t=>groups[t]), ...Object.keys(groups).filter(t=>!typeOrder.includes(t))];
+  el.innerHTML = orderedTypes.map(type => {
+    const items = groups[type];
+    const gid = 'rgrp-' + type;
+    const scoreColor = s => s>=15?'badge-red':s>=8?'badge-amber':'badge-green';
+    const liBadge = v => v!=null?`<span class="status-badge ${v<=2?'badge-green':v<=3?'badge-amber':'badge-red'}">${v}</span>`:'—';
+    const rows = items.map(r => `<tr>
+      <td><span class="code-badge">${r.risk_code}</span></td>
+      <td style="font-weight:500">${r.title}</td>
+      <td style="font-size:12px;color:var(--muted)">${r.owner_name_free||'—'}</td>
+      <td>${liBadge(r.initial_likelihood)}</td>
+      <td>${liBadge(r.initial_impact_overall)}</td>
+      <td>${r.initial_likelihood&&r.initial_impact_overall?`<span class="status-badge ${scoreColor(r.initial_likelihood*r.initial_impact_overall)}">${r.initial_likelihood*r.initial_impact_overall}</span>`:'—'}</td>
+    </tr>`).join('');
+    return `<div class="section-card" style="margin-bottom:.75rem">
+      <div class="section-card-header" style="cursor:pointer" onclick="toggleSection('${gid}')">
+        <div class="section-card-title">${riskTypeBadge(type)}<span style="margin-left:8px;font-size:12px;font-family:var(--font-body);font-weight:400;opacity:.6">${items.length} risk${items.length!==1?'s':''}</span></div>
+        <i class="ti ti-chevron-down" id="icon-${gid}" style="color:var(--muted);font-size:14px;transition:transform .2s"></i>
+      </div>
+      <div id="${gid}"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Department</th><th>Likelihood</th><th>Impact</th><th>Score</th></tr>${rows}</table></div>
+    </div>`;
+  }).join('');
 }
 
 // ── PROJECTS ──
@@ -621,16 +706,34 @@ function filterProjects() { renderProjects(); }
 
 function renderProjects() {
   const f = (document.getElementById('project-status-filter')?.value||'').toLowerCase();
-  const rows = _projectsData.filter(p => !f || (p.status||'').toLowerCase()===f);
-  document.getElementById('projects-table').innerHTML = rows.length
-    ? `<table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th><th>Phase</th><th>Status</th></tr>${rows.map(p=>`<tr>
-        <td><span class="code-badge">${p.project_code}</span></td>
-        <td style="font-weight:500">${p.title}</td>
-        <td>${p.project_type||'—'}</td>
-        <td>${phaseBadge(p.current_phase)}</td>
-        <td>${projectStatusBadge(p.status)}</td>
-      </tr>`).join('')}</table>`
-    : '<div class="empty-state"><i class="ti ti-clipboard-list"></i><p>No projects match your filter.</p></div>';
+  const q = (document.getElementById('project-search')?.value||'').toLowerCase();
+  const filtered = _projectsData.filter(p =>
+    !(p.title||'').includes('?') &&
+    (!f || (p.status||'').toLowerCase()===f) &&
+    (!q || (p.title||'').toLowerCase().includes(q) || (p.project_code||'').toLowerCase().includes(q))
+  );
+  const el = document.getElementById('projects-table');
+  if (!filtered.length) { el.innerHTML='<div class="section-card"><div class="empty-state"><i class="ti ti-clipboard-list"></i><p>No projects match your filter.</p></div></div>'; return; }
+  const groups = {};
+  filtered.forEach(p => { const t=p.project_type||'other'; if(!groups[t]) groups[t]=[]; groups[t].push(p); });
+  el.innerHTML = Object.keys(groups).sort().map(type => {
+    const items = groups[type];
+    const gid = 'pgrp-' + type.replace(/\s+/g,'-');
+    const rows = items.map(p => `<tr>
+      <td><span class="code-badge">${p.project_code}</span></td>
+      <td style="font-weight:500">${p.title}</td>
+      <td>${phaseBadge(p.current_phase)}</td>
+      <td>${projectStatusBadge(p.status)}</td>
+    </tr>`).join('');
+    const label = type.charAt(0).toUpperCase()+type.slice(1);
+    return `<div class="section-card" style="margin-bottom:.75rem">
+      <div class="section-card-header" style="cursor:pointer" onclick="toggleSection('${gid}')">
+        <div class="section-card-title"><i class="ti ti-clipboard-list"></i> ${label}<span style="margin-left:8px;font-size:12px;font-family:var(--font-body);font-weight:400;opacity:.6">${items.length} project${items.length!==1?'s':''}</span></div>
+        <i class="ti ti-chevron-down" id="icon-${gid}" style="color:var(--muted);font-size:14px;transition:transform .2s"></i>
+      </div>
+      <div id="${gid}"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Phase</th><th>Status</th></tr>${rows}</table></div>
+    </div>`;
+  }).join('');
 }
 
 // ── MODALS ──
