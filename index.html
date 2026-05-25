@@ -754,10 +754,11 @@ async function loadDashboard() {
       const unitLabel = currentUnitPrefix ? (UNIT_LABELS[currentUnitPrefix]||currentUnitPrefix)+' ' : '';
       return `<div style="padding:.5rem 1.1rem;border-top:1px solid var(--border)"><a href="#" onclick="showPage('${page}');return false" style="font-size:12px;color:var(--gold);text-decoration:none;font-weight:500">View all ${count} ${unitLabel}${noun} →</a></div>`;
     };
-    // Filter d.recent.* widgets by unit prefix before rendering
-    const dashKpis     = !currentUnitPrefix ? d.recent.kpis     : d.recent.kpis.filter(k=>(k.kpi_code||'').startsWith(currentUnitPrefix+'-'));
-    const dashRisks    = !currentUnitPrefix ? d.recent.risks    : d.recent.risks.filter(r=>(r.risk_code||'').startsWith(currentUnitPrefix+'-'));
-    const dashProjects = !currentUnitPrefix ? d.recent.projects : d.recent.projects.filter(p=>(p.project_code||'').startsWith(currentUnitPrefix+'-'));
+    // For unit views use the full fetched lists (already in _*Data) so we get
+    // actual unit items, not just whatever happened to be in the API's top-5
+    const dashKpis     = !currentUnitPrefix ? d.recent.kpis     : _kpisData.filter(k=>(k.kpi_code||'').startsWith(currentUnitPrefix+'-')).slice(0,5);
+    const dashRisks    = !currentUnitPrefix ? d.recent.risks    : _risksData.filter(r=>(r.risk_code||'').startsWith(currentUnitPrefix+'-')).slice(0,5);
+    const dashProjects = !currentUnitPrefix ? d.recent.projects : _projectsData.filter(p=>(p.project_code||'').startsWith(currentUnitPrefix+'-')).slice(0,5);
     document.getElementById('dash-kpis').innerHTML = dashKpis.length
       ? '<div style="max-height:300px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Unit</th></tr>'
         + dashKpis.map(k=>`<tr><td><span class="code-badge">${k.kpi_code}</span></td><td>${k.title}</td><td>${k.unit}</td></tr>`).join('')
