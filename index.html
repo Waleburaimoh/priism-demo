@@ -313,6 +313,15 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
       </div>
       <div class="unit-banner" id="unit-banner-objectives"></div>
       <div class="page-body">
+        <div class="filter-bar">
+          <select id="obj-perspective-filter" onchange="renderObjectivesTab()">
+            <option value="">All Perspectives</option>
+            <option value="1">Academic Excellence</option>
+            <option value="2">Student &amp; Stakeholder</option>
+            <option value="3">Internal Processes</option>
+            <option value="4">Learning &amp; Growth</option>
+          </select>
+        </div>
         <div class="tab-bar" id="obj-tab-bar">
           <button class="tab-btn active" id="obj-tab-inst" onclick="switchObjTab('institutional')">Institutional</button>
           <button class="tab-btn" id="obj-tab-dept" onclick="switchObjTab('dept')">By College &amp; Department</button>
@@ -463,6 +472,7 @@ let SESSION = null;
 let currentModal = null;
 let _kpisData = [], _risksData = [], _projectsData = [], _objectivesData = [], _objTab = 'institutional', _objectivesTotalCount = 0;
 let currentUnit = 'INST';
+let currentUnitPrefix = null; // null = Institutional (show all); otherwise the prefix code, e.g. 'CA'
 const UNIT_LABELS = {INST:'Institutional',CA:'College of Agriculture',CVM:'College of Veterinary Medicine',BA:'College of Business Administration',CL:'College of Law',CI:'College of Computing & Intelligent Systems',CS:'College of Arts Humanities & Social Sciences',COE:'Centre of Excellence',SA:'Student Affairs',AD:'Admissions & Registration',RI:'Research & Innovation',LB:'Library',FN:'Finance',PC:'Procurement',IT:'Information Technology',HR:'Human Resources',GS:'Facilities',CD:'Corporate Communications',IEA:'Institutional Effectiveness',IA:'Internal Audit',SP:'Strategy & Development',LA:'Legal Affairs',VCA:'Vice Chancellor Academic',IN:'International Relations',VCCA:'Vice Chancellor Community',VCAF:'Vice Chancellor Admin & Finance'};
 function getObjPrefix(code){return (code||'').replace(/[\d\-_].*$/,'').toUpperCase();}
 
@@ -524,6 +534,7 @@ function showPage(page) {
 
 function setUnit(unit) {
   currentUnit = unit;
+  currentUnitPrefix = (unit === 'INST') ? null : unit;
   const label = UNIT_LABELS[unit] || unit;
   const isInst = unit === 'INST';
   document.querySelectorAll('.unit-banner').forEach(el => {
@@ -557,9 +568,9 @@ async function loadDashboard() {
       if (!_projectsData.length) fetches.push(fetch(`${API}/organisations/${SESSION.org_id}/projects`).then(r=>r.json()).then(x=>{_projectsData=x.projects||[];}));
       if (fetches.length) await Promise.all(fetches);
     }
-    const kpiStat = currentUnit==='INST' ? d.summary.kpi_count : _kpisData.filter(k=>getObjPrefix(k.kpi_code)===currentUnit).length;
-    const riskStat = currentUnit==='INST' ? d.summary.risk_count : _risksData.filter(r=>getObjPrefix(r.risk_code)===currentUnit).length;
-    const projStat = currentUnit==='INST' ? d.summary.project_count : _projectsData.filter(p=>getObjPrefix(p.project_code)===currentUnit).length;
+    const kpiStat = !currentUnitPrefix ? d.summary.kpi_count : _kpisData.filter(k=>k.kpi_code.startsWith(currentUnitPrefix+'-')).length;
+    const riskStat = !currentUnitPrefix ? d.summary.risk_count : _risksData.filter(r=>r.risk_code.startsWith(currentUnitPrefix+'-')).length;
+    const projStat = !currentUnitPrefix ? d.summary.project_count : _projectsData.filter(p=>p.project_code.startsWith(currentUnitPrefix+'-')).length;
     document.getElementById('dash-stats').innerHTML = `
       <div class="stat-card"><div class="stat-label"><i class="ti ti-chart-line" style="font-size:12px"></i> KPIs</div><div class="stat-value">${kpiStat}</div></div>
       <div class="stat-card"><div class="stat-label"><i class="ti ti-shield-exclamation" style="font-size:12px"></i> Risks</div><div class="stat-value">${riskStat}</div></div>
@@ -577,7 +588,9 @@ async function loadDashboard() {
         + [...d.recent.risks].sort((a,b)=>((b.initial_likelihood||0)*(b.initial_impact_overall||0))-((a.initial_likelihood||0)*(a.initial_impact_overall||0))).map(r=>`<tr><td><span class="code-badge">${r.risk_code}</span></td><td>${r.title}</td><td>${r.risk_type}</td></tr>`).join('')
         + '</table></div>' + _va(d.summary.risk_count,'risks','risks')
       : '<div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>No risks yet</p></div>';
-    const _dashObjs = (d.objectives||[]).filter(o => currentUnit==='INST' ? getObjPrefix(o.objective_code)==='INST' : getObjPrefix(o.objective_code)===currentUnit);
+    const _dashObjs = (d.objectives||[]).filter(o => currentUnitPrefix
+      ? o.objective_code.startsWith(currentUnitPrefix+'-')
+      : o.objective_code.startsWith('INST-'));
     document.getElementById('dash-objectives').innerHTML = _dashObjs.length
       ? '<div style="max-height:320px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Perspective</th></tr>'
         + _dashObjs.map(function(o){var pl=({1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'})[+o.perspective_number]||o.perspective_number||'&mdash;';return '<tr><td><span class="code-badge">'+o.objective_code+'</span></td><td style="font-weight:500">'+o.title+'</td><td>'+pl+'</td></tr>';}).join('')
@@ -632,17 +645,8 @@ function toggleSection(id) {
 function renderObjectivesTab() {
   const PMAP = {1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'};
   const pLabel = o => PMAP[parseInt(o.perspective_number)] || (o.perspective_number != null ? String(o.perspective_number) : '—');
-  const DMAP = {
-    CA:'College of Agriculture', CVM:'Veterinary Medicine', BA:'Business Administration',
-    CL:'College of Law', CI:'Computing & Intelligent Systems', CS:'Arts Humanities & Social Sciences',
-    COE:'Centre of Excellence in Education', SA:'Student Affairs', AD:'Admissions & Registration',
-    HR:'Human Resources', FN:'Finance', PC:'Procurement', IT:'Information Technology',
-    GS:'Facilities', RI:'Research & Innovation', LB:'Library',
-    SP:'Strategy & Institutional Development', IEA:'Institutional Effectiveness & Accreditation',
-    IA:'Internal Audit', LA:'Legal Affairs', CD:'Corporate Communications',
-    VCA:'Vice Chancellor Academic Affairs', IN:'International Relations',
-    VCCA:'Vice Chancellor Community Affairs', VCAF:'Vice Chancellor Admin & Finance'
-  };
+  const pf = document.getElementById('obj-perspective-filter')?.value || '';
+  const perspMatch = o => !pf || String(o.perspective_number) === pf;
   const el = document.getElementById('objectives-table');
   if (!_objectivesData.length) {
     el.innerHTML = '<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No objectives recorded yet.</p></div></div>';
@@ -655,10 +659,10 @@ function renderObjectivesTab() {
     : '';
 
   if (currentUnit !== 'INST') {
-    const unitObjs = _objectivesData.filter(o => getObjPrefix(o.objective_code) === currentUnit);
+    const unitObjs = _objectivesData.filter(o => o.objective_code.startsWith(currentUnit+'-') && perspMatch(o));
     const label = UNIT_LABELS[currentUnit] || currentUnit;
     if (!unitObjs.length) {
-      el.innerHTML = limitBanner + `<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No objectives found for ${label} in current dataset.</p></div></div>`;
+      el.innerHTML = limitBanner + `<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No objectives found for ${label}${pf?' with this perspective filter':''} in current dataset.</p></div></div>`;
       return;
     }
     const rows = unitObjs.map(o => `<tr>
@@ -678,9 +682,9 @@ function renderObjectivesTab() {
   }
 
   if (_objTab === 'institutional') {
-    const inst = _objectivesData.filter(o => getObjPrefix(o.objective_code) === 'INST');
+    const inst = _objectivesData.filter(o => o.objective_code.startsWith('INST-') && perspMatch(o));
     if (!inst.length) {
-      el.innerHTML = limitBanner + '<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No institutional objectives in current dataset.</p></div></div>';
+      el.innerHTML = limitBanner + '<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No institutional objectives match the current filter.</p></div></div>';
       return;
     }
     const rows = inst.map(o => `<tr>
@@ -690,19 +694,19 @@ function renderObjectivesTab() {
     </tr>`).join('');
     el.innerHTML = limitBanner + `<div class="section-card"><table class="data-table"><tr><th>Code</th><th>Title</th><th>BSC Perspective</th></tr>${rows}</table></div>`;
   } else {
-    const dept = _objectivesData.filter(o => getObjPrefix(o.objective_code) !== 'INST');
+    const dept = _objectivesData.filter(o => !o.objective_code.startsWith('INST-') && perspMatch(o));
     if (!dept.length) {
-      el.innerHTML = limitBanner + '<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No departmental objectives in current dataset.</p></div></div>';
+      el.innerHTML = limitBanner + '<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No departmental objectives match the current filter.</p></div></div>';
       return;
     }
     const groups = {};
     dept.forEach(o => {
-      const prefix = o.objective_code.replace(/[\d\-_].*$/, '').toUpperCase();
+      const prefix = (o.objective_code.split('-')[0] || '').toUpperCase();
       if (!groups[prefix]) groups[prefix] = [];
       groups[prefix].push(o);
     });
     const cards = Object.keys(groups).sort().map(prefix => {
-      const label = DMAP[prefix] || prefix;
+      const label = UNIT_LABELS[prefix] || prefix;
       const items = groups[prefix];
       const gid = 'ogrp-' + prefix;
       const rows = items.map(o => `<tr>
@@ -743,7 +747,7 @@ function renderKpis() {
   const q = (document.getElementById('kpi-search')?.value||'').toLowerCase();
   const fq = document.getElementById('kpi-freq-filter')?.value||'';
   const rows = _kpisData.filter(k =>
-    (currentUnit==='INST' || getObjPrefix(k.kpi_code)===currentUnit) &&
+    (!currentUnitPrefix || k.kpi_code.startsWith(currentUnitPrefix+'-')) &&
     (!q || (k.title||'').toLowerCase().includes(q) || (k.kpi_code||'').toLowerCase().includes(q)) &&
     (!fq || (k.measurement_frequency||'').toLowerCase() === fq)
   );
@@ -776,7 +780,7 @@ function renderRisks() {
   const f = document.getElementById('risk-type-filter')?.value||'';
   const q = (document.getElementById('risk-search')?.value||'').toLowerCase();
   const filtered = _risksData.filter(r =>
-    (currentUnit==='INST' || getObjPrefix(r.risk_code)===currentUnit) &&
+    (!currentUnitPrefix || r.risk_code.startsWith(currentUnitPrefix+'-')) &&
     (!f || r.risk_type===f) &&
     (!q || (r.title||'').toLowerCase().includes(q) || (r.risk_code||'').toLowerCase().includes(q))
   );
@@ -827,7 +831,7 @@ function renderProjects() {
   const q = (document.getElementById('project-search')?.value||'').toLowerCase();
   const filtered = _projectsData.filter(p =>
     !(p.title||'').includes('?') &&
-    (currentUnit==='INST' || getObjPrefix(p.project_code)===currentUnit) &&
+    (!currentUnitPrefix || p.project_code.startsWith(currentUnitPrefix+'-')) &&
     (!f || (p.status||'').toLowerCase()===f) &&
     (!q || (p.title||'').toLowerCase().includes(q) || (p.project_code||'').toLowerCase().includes(q))
   );
