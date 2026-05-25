@@ -122,6 +122,17 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
 .tab-btn:hover{color:var(--cream)}
 .tab-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
 
+/* ── UNIT SELECTOR ── */
+.sidebar-unit-select{padding:.45rem .65rem .55rem;border-bottom:1px solid var(--border)}
+.sidebar-unit-select select{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:6px;padding:6px 9px;font-size:12px;font-family:var(--font-body);color:var(--cream);outline:none;cursor:pointer;transition:border-color .2s}
+.sidebar-unit-select select:focus{border-color:var(--gold)}
+.sidebar-unit-select select option{background:var(--teal-dark)}
+/* ── UNIT BANNER ── */
+.unit-banner{padding:.45rem 1.75rem;background:rgba(201,168,76,.07);border-bottom:1px solid var(--border);font-size:12px;color:var(--muted);display:none;align-items:center;gap:.5rem}
+.unit-banner.show{display:flex}
+.unit-banner i{color:var(--gold);font-size:13px}
+.unit-banner strong{color:var(--gold-light);font-weight:500}
+
 /* ── EMPTY ── */
 .empty-state{text-align:center;padding:3rem 2rem;color:var(--muted)}
 .empty-state i{font-size:30px;opacity:.2;margin-bottom:.75rem;display:block}
@@ -213,6 +224,37 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
       <div class="sidebar-org-name" id="sb-org-name">—</div>
       <div class="sidebar-org-badge">Active</div>
     </div>
+    <div class="sidebar-unit-select">
+      <div class="nav-section-label" style="padding-top:.55rem;padding-bottom:.3rem">View</div>
+      <select id="unit-selector" onchange="setUnit(this.value)">
+        <option value="INST">Institutional</option>
+        <option value="CA">College of Agriculture</option>
+        <option value="CVM">College of Veterinary Medicine</option>
+        <option value="BA">College of Business Administration</option>
+        <option value="CL">College of Law</option>
+        <option value="CI">College of Computing &amp; Intelligent Systems</option>
+        <option value="CS">College of Arts Humanities &amp; Social Sciences</option>
+        <option value="COE">Centre of Excellence</option>
+        <option value="SA">Student Affairs</option>
+        <option value="AD">Admissions &amp; Registration</option>
+        <option value="RI">Research &amp; Innovation</option>
+        <option value="LB">Library</option>
+        <option value="FN">Finance</option>
+        <option value="PC">Procurement</option>
+        <option value="IT">Information Technology</option>
+        <option value="HR">Human Resources</option>
+        <option value="GS">Facilities</option>
+        <option value="CD">Corporate Communications</option>
+        <option value="IEA">Institutional Effectiveness</option>
+        <option value="IA">Internal Audit</option>
+        <option value="SP">Strategy &amp; Development</option>
+        <option value="LA">Legal Affairs</option>
+        <option value="VCA">Vice Chancellor Academic</option>
+        <option value="IN">International Relations</option>
+        <option value="VCCA">Vice Chancellor Community</option>
+        <option value="VCAF">Vice Chancellor Admin &amp; Finance</option>
+      </select>
+    </div>
     <nav class="sidebar-nav">
       <div class="nav-section-label">Overview</div>
       <button class="nav-item active" onclick="showPage('dashboard')"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
@@ -243,6 +285,7 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
           <div class="page-subtitle" id="dash-subtitle">Loading…</div>
         </div>
       </div>
+      <div class="unit-banner" id="unit-banner-dashboard"></div>
       <div class="page-body">
         <div class="stat-grid" id="dash-stats"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
         <div class="dashboard-grid">
@@ -268,8 +311,9 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
         <div><div class="page-title">Strategic Objectives</div><div class="page-subtitle">Organisational objectives linked to BSC perspectives</div></div>
         <button class="btn-sm" onclick="openModal('objective')"><i class="ti ti-plus"></i> Add Objective</button>
       </div>
+      <div class="unit-banner" id="unit-banner-objectives"></div>
       <div class="page-body">
-        <div class="tab-bar">
+        <div class="tab-bar" id="obj-tab-bar">
           <button class="tab-btn active" id="obj-tab-inst" onclick="switchObjTab('institutional')">Institutional</button>
           <button class="tab-btn" id="obj-tab-dept" onclick="switchObjTab('dept')">By College &amp; Department</button>
         </div>
@@ -283,6 +327,7 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
         <div><div class="page-title">KPIs</div><div class="page-subtitle">Key Performance Indicators</div></div>
         <button class="btn-sm" onclick="openModal('kpi')"><i class="ti ti-plus"></i> Add KPI</button>
       </div>
+      <div class="unit-banner" id="unit-banner-kpis"></div>
       <div class="page-body">
         <div class="filter-bar">
           <input id="kpi-search" type="text" placeholder="Filter by title…" oninput="filterKpis()">
@@ -304,6 +349,7 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
         <div><div class="page-title">Risk Register</div><div class="page-subtitle">Organisational risks and controls</div></div>
         <button class="btn-sm" onclick="openModal('risk')"><i class="ti ti-plus"></i> Add Risk</button>
       </div>
+      <div class="unit-banner" id="unit-banner-risks"></div>
       <div class="page-body">
         <div class="filter-bar">
           <input id="risk-search" type="text" placeholder="Filter by title…" oninput="filterRisks()">
@@ -327,6 +373,7 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
         <div><div class="page-title">Projects</div><div class="page-subtitle">Strategic initiatives and delivery</div></div>
         <button class="btn-sm" onclick="openModal('project')"><i class="ti ti-plus"></i> Add Project</button>
       </div>
+      <div class="unit-banner" id="unit-banner-projects"></div>
       <div class="page-body">
         <div class="filter-bar">
           <input id="project-search" type="text" placeholder="Filter by title…" oninput="filterProjects()">
@@ -415,6 +462,9 @@ const REGISTER_ID = '73e664f1-96e4-40c2-8e74-c67ac49f99fc';
 let SESSION = null;
 let currentModal = null;
 let _kpisData = [], _risksData = [], _projectsData = [], _objectivesData = [], _objTab = 'institutional', _objectivesTotalCount = 0;
+let currentUnit = 'INST';
+const UNIT_LABELS = {INST:'Institutional',CA:'College of Agriculture',CVM:'College of Veterinary Medicine',BA:'College of Business Administration',CL:'College of Law',CI:'College of Computing & Intelligent Systems',CS:'College of Arts Humanities & Social Sciences',COE:'Centre of Excellence',SA:'Student Affairs',AD:'Admissions & Registration',RI:'Research & Innovation',LB:'Library',FN:'Finance',PC:'Procurement',IT:'Information Technology',HR:'Human Resources',GS:'Facilities',CD:'Corporate Communications',IEA:'Institutional Effectiveness',IA:'Internal Audit',SP:'Strategy & Development',LA:'Legal Affairs',VCA:'Vice Chancellor Academic',IN:'International Relations',VCCA:'Vice Chancellor Community',VCAF:'Vice Chancellor Admin & Finance'};
+function getObjPrefix(code){return (code||'').replace(/[\d\-_].*$/,'').toUpperCase();}
 
 // ── AUTH ──
 async function doLogin() {
@@ -472,6 +522,26 @@ function showPage(page) {
   if (page==='projects')  loadProjects();
 }
 
+function setUnit(unit) {
+  currentUnit = unit;
+  const label = UNIT_LABELS[unit] || unit;
+  const isInst = unit === 'INST';
+  document.querySelectorAll('.unit-banner').forEach(el => {
+    if (isInst) { el.classList.remove('show'); el.innerHTML = ''; }
+    else { el.innerHTML = `<i class="ti ti-building"></i> Viewing: <strong>${label}</strong>`; el.classList.add('show'); }
+  });
+  // Sync obj-tab-bar visibility
+  const tabBar = document.getElementById('obj-tab-bar');
+  if (tabBar) tabBar.style.display = isInst ? '' : 'none';
+  // Refresh current visible page
+  const cur = [...document.querySelectorAll('.page')].find(p=>p.style.display!=='none');
+  if (!cur) return;
+  const pid = cur.id.replace('page-','');
+  if (pid==='dashboard') loadDashboard();
+  else if (pid==='objectives') renderObjectivesTab();
+  // KPI/Risk/Project banners already updated above — data unchanged
+}
+
 // ── DASHBOARD ──
 async function loadDashboard() {
   try {
@@ -495,11 +565,12 @@ async function loadDashboard() {
         + [...d.recent.risks].sort((a,b)=>((b.initial_likelihood||0)*(b.initial_impact_overall||0))-((a.initial_likelihood||0)*(a.initial_impact_overall||0))).map(r=>`<tr><td><span class="code-badge">${r.risk_code}</span></td><td>${r.title}</td><td>${r.risk_type}</td></tr>`).join('')
         + '</table></div>' + _va(d.summary.risk_count,'risks','risks')
       : '<div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>No risks yet</p></div>';
-    document.getElementById('dash-objectives').innerHTML = d.objectives && d.objectives.length
+    const _dashObjs = (d.objectives||[]).filter(o => currentUnit==='INST' ? getObjPrefix(o.objective_code)==='INST' : getObjPrefix(o.objective_code)===currentUnit);
+    document.getElementById('dash-objectives').innerHTML = _dashObjs.length
       ? '<table class="data-table"><tr><th>Code</th><th>Title</th><th>Perspective</th></tr>'
-        + d.objectives.slice(0,10).map(function(o){var pl=({1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'})[+o.perspective_number]||o.perspective_number||'&mdash;';return '<tr><td><span class="code-badge">'+o.objective_code+'</span></td><td style="font-weight:500">'+o.title+'</td><td>'+pl+'</td></tr>';}).join('')
+        + _dashObjs.slice(0,10).map(function(o){var pl=({1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'})[+o.perspective_number]||o.perspective_number||'&mdash;';return '<tr><td><span class="code-badge">'+o.objective_code+'</span></td><td style="font-weight:500">'+o.title+'</td><td>'+pl+'</td></tr>';}).join('')
         + '</table>' + _va(d.summary?.objective_count||d.summary?.objectives_count||d.objectives.length,'objectives','objectives')
-      : '<div class="empty-state"><i class="ti ti-target"></i><p>No objectives yet</p></div>';
+      : `<div class="empty-state"><i class="ti ti-target"></i><p>No ${UNIT_LABELS[currentUnit]||currentUnit} objectives in current dataset</p></div>`;
     document.getElementById('dash-projects').innerHTML = d.recent.projects.length
       ? '<div style="max-height:300px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th><th>Phase</th></tr>'
         + [...d.recent.projects].sort((a,b)=>{const o={Active:0,active:0,Planning:1,planning:1,'On Hold':2,'on hold':2,Complete:3,complete:3,Closed:3,closed:3};return (o[a.status]??4)-(o[b.status]??4);}).map(p=>`<tr><td><span class="code-badge">${p.project_code}</span></td><td>${p.title}</td><td>${p.project_type}</td><td>${p.current_phase||'—'}</td></tr>`).join('')
@@ -517,6 +588,8 @@ function phaseBadge(p){return p?`<span class="status-badge badge-grey">${p}</spa
 // ── OBJECTIVES ──
 async function loadObjectives() {
   document.getElementById('objectives-table').innerHTML = '<div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  const tabBar = document.getElementById('obj-tab-bar');
+  if (tabBar) tabBar.style.display = currentUnit === 'INST' ? '' : 'none';
   try {
     const res = await fetch(API + '/organisations/' + SESSION.org_id + '/dashboard');
     const d = await res.json();
@@ -569,8 +642,31 @@ function renderObjectivesTab() {
     ? `<div style="margin-bottom:.75rem;padding:.6rem 1rem;background:rgba(201,168,76,.07);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:.5rem"><i class="ti ti-info-circle" style="color:var(--gold)"></i> Showing ${_objectivesData.length} of ${_objectivesTotalCount} objectives — full list requires a dedicated <code style="color:var(--gold)">/objectives</code> endpoint</div>`
     : '';
 
+  if (currentUnit !== 'INST') {
+    const unitObjs = _objectivesData.filter(o => getObjPrefix(o.objective_code) === currentUnit);
+    const label = UNIT_LABELS[currentUnit] || currentUnit;
+    if (!unitObjs.length) {
+      el.innerHTML = limitBanner + `<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No objectives found for ${label} in current dataset.</p></div></div>`;
+      return;
+    }
+    const rows = unitObjs.map(o => `<tr>
+      <td><span class="code-badge">${o.objective_code}</span></td>
+      <td style="font-weight:500">${o.title}</td>
+      <td>${pLabel(o)}</td>
+    </tr>`).join('');
+    el.innerHTML = limitBanner + `<div class="section-card">
+      <div style="padding:.7rem 1.1rem;border-bottom:1px solid var(--border);background:rgba(201,168,76,.06);display:flex;align-items:center;gap:.6rem">
+        <i class="ti ti-building" style="color:var(--gold);font-size:14px"></i>
+        <span style="font-family:var(--font-display);font-size:15px;color:var(--gold)">${label}</span>
+        <span style="font-size:11px;background:rgba(201,168,76,.15);color:var(--gold);border-radius:10px;padding:2px 8px">${unitObjs.length} objective${unitObjs.length!==1?'s':''}</span>
+      </div>
+      <table class="data-table"><tr><th>Code</th><th>Title</th><th>BSC Perspective</th></tr>${rows}</table>
+    </div>`;
+    return;
+  }
+
   if (_objTab === 'institutional') {
-    const inst = _objectivesData.filter(o => /^OBJ/i.test(o.objective_code));
+    const inst = _objectivesData.filter(o => getObjPrefix(o.objective_code) === 'INST');
     if (!inst.length) {
       el.innerHTML = limitBanner + '<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No institutional objectives in current dataset.</p></div></div>';
       return;
@@ -582,7 +678,7 @@ function renderObjectivesTab() {
     </tr>`).join('');
     el.innerHTML = limitBanner + `<div class="section-card"><table class="data-table"><tr><th>Code</th><th>Title</th><th>BSC Perspective</th></tr>${rows}</table></div>`;
   } else {
-    const dept = _objectivesData.filter(o => !/^OBJ/i.test(o.objective_code));
+    const dept = _objectivesData.filter(o => getObjPrefix(o.objective_code) !== 'INST');
     if (!dept.length) {
       el.innerHTML = limitBanner + '<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No departmental objectives in current dataset.</p></div></div>';
       return;
