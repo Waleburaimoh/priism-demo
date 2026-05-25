@@ -539,7 +539,9 @@ function setUnit(unit) {
   const pid = cur.id.replace('page-','');
   if (pid==='dashboard') loadDashboard();
   else if (pid==='objectives') renderObjectivesTab();
-  // KPI/Risk/Project banners already updated above — data unchanged
+  else if (pid==='kpis') renderKpis();
+  else if (pid==='risks') renderRisks();
+  else if (pid==='projects') renderProjects();
 }
 
 // ── DASHBOARD ──
@@ -548,10 +550,20 @@ async function loadDashboard() {
     const res = await fetch(`${API}/organisations/${SESSION.org_id}/dashboard`);
     const d   = await res.json();
     document.getElementById('dash-subtitle').textContent = d.organisation?.org_name + ' · ' + d.organisation?.org_type;
+    if (currentUnit !== 'INST') {
+      const fetches = [];
+      if (!_kpisData.length) fetches.push(fetch(`${API}/organisations/${SESSION.org_id}/kpis`).then(r=>r.json()).then(x=>{_kpisData=x.kpis||[];}));
+      if (!_risksData.length) fetches.push(fetch(`${API}/organisations/${SESSION.org_id}/risks`).then(r=>r.json()).then(x=>{_risksData=x.risks||[];}));
+      if (!_projectsData.length) fetches.push(fetch(`${API}/organisations/${SESSION.org_id}/projects`).then(r=>r.json()).then(x=>{_projectsData=x.projects||[];}));
+      if (fetches.length) await Promise.all(fetches);
+    }
+    const kpiStat = currentUnit==='INST' ? d.summary.kpi_count : _kpisData.filter(k=>getObjPrefix(k.kpi_code)===currentUnit).length;
+    const riskStat = currentUnit==='INST' ? d.summary.risk_count : _risksData.filter(r=>getObjPrefix(r.risk_code)===currentUnit).length;
+    const projStat = currentUnit==='INST' ? d.summary.project_count : _projectsData.filter(p=>getObjPrefix(p.project_code)===currentUnit).length;
     document.getElementById('dash-stats').innerHTML = `
-      <div class="stat-card"><div class="stat-label"><i class="ti ti-chart-line" style="font-size:12px"></i> KPIs</div><div class="stat-value">${d.summary.kpi_count}</div></div>
-      <div class="stat-card"><div class="stat-label"><i class="ti ti-shield-exclamation" style="font-size:12px"></i> Risks</div><div class="stat-value">${d.summary.risk_count}</div></div>
-      <div class="stat-card"><div class="stat-label"><i class="ti ti-clipboard-list" style="font-size:12px"></i> Projects</div><div class="stat-value">${d.summary.project_count}</div></div>
+      <div class="stat-card"><div class="stat-label"><i class="ti ti-chart-line" style="font-size:12px"></i> KPIs</div><div class="stat-value">${kpiStat}</div></div>
+      <div class="stat-card"><div class="stat-label"><i class="ti ti-shield-exclamation" style="font-size:12px"></i> Risks</div><div class="stat-value">${riskStat}</div></div>
+      <div class="stat-card"><div class="stat-label"><i class="ti ti-clipboard-list" style="font-size:12px"></i> Projects</div><div class="stat-value">${projStat}</div></div>
       <div class="stat-card"><div class="stat-label"><i class="ti ti-building" style="font-size:12px"></i> Org Type</div><div class="stat-value" style="font-size:15px;margin-top:5px">${d.organisation.org_type}</div></div>
     `;
     const _va = (count, noun, page) => `<div style="padding:.5rem 1.1rem;border-top:1px solid var(--border)"><a href="#" onclick="showPage('${page}');return false" style="font-size:12px;color:var(--gold);text-decoration:none;font-weight:500">View all ${count} ${noun} →</a></div>`;
@@ -567,10 +579,10 @@ async function loadDashboard() {
       : '<div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>No risks yet</p></div>';
     const _dashObjs = (d.objectives||[]).filter(o => currentUnit==='INST' ? getObjPrefix(o.objective_code)==='INST' : getObjPrefix(o.objective_code)===currentUnit);
     document.getElementById('dash-objectives').innerHTML = _dashObjs.length
-      ? '<table class="data-table"><tr><th>Code</th><th>Title</th><th>Perspective</th></tr>'
-        + _dashObjs.slice(0,10).map(function(o){var pl=({1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'})[+o.perspective_number]||o.perspective_number||'&mdash;';return '<tr><td><span class="code-badge">'+o.objective_code+'</span></td><td style="font-weight:500">'+o.title+'</td><td>'+pl+'</td></tr>';}).join('')
-        + '</table>' + _va(d.summary?.objective_count||d.summary?.objectives_count||d.objectives.length,'objectives','objectives')
-      : `<div class="empty-state"><i class="ti ti-target"></i><p>No ${UNIT_LABELS[currentUnit]||currentUnit} objectives in current dataset</p></div>`;
+      ? '<div style="max-height:320px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Perspective</th></tr>'
+        + _dashObjs.map(function(o){var pl=({1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'})[+o.perspective_number]||o.perspective_number||'&mdash;';return '<tr><td><span class="code-badge">'+o.objective_code+'</span></td><td style="font-weight:500">'+o.title+'</td><td>'+pl+'</td></tr>';}).join('')
+        + '</table></div>' + _va(d.summary?.objective_count||d.summary?.objectives_count||d.objectives.length,'objectives','objectives')
+      : `<div class="empty-state"><i class="ti ti-target"></i><p>No ${UNIT_LABELS[currentUnit]||currentUnit} objectives found</p></div>`;
     document.getElementById('dash-projects').innerHTML = d.recent.projects.length
       ? '<div style="max-height:300px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th><th>Phase</th></tr>'
         + [...d.recent.projects].sort((a,b)=>{const o={Active:0,active:0,Planning:1,planning:1,'On Hold':2,'on hold':2,Complete:3,complete:3,Closed:3,closed:3};return (o[a.status]??4)-(o[b.status]??4);}).map(p=>`<tr><td><span class="code-badge">${p.project_code}</span></td><td>${p.title}</td><td>${p.project_type}</td><td>${p.current_phase||'—'}</td></tr>`).join('')
@@ -731,13 +743,14 @@ function renderKpis() {
   const q = (document.getElementById('kpi-search')?.value||'').toLowerCase();
   const fq = document.getElementById('kpi-freq-filter')?.value||'';
   const rows = _kpisData.filter(k =>
+    (currentUnit==='INST' || getObjPrefix(k.kpi_code)===currentUnit) &&
     (!q || (k.title||'').toLowerCase().includes(q) || (k.kpi_code||'').toLowerCase().includes(q)) &&
     (!fq || (k.measurement_frequency||'').toLowerCase() === fq)
   );
   document.getElementById('kpis-table').innerHTML = rows.length
     ? `<table class="data-table"><tr><th>Code</th><th>Title</th><th>Category</th><th>Unit</th><th>Frequency</th><th>Trend</th></tr>${rows.map(k=>`<tr>
         <td><span class="code-badge">${k.kpi_code}</span></td>
-        <td style="font-weight:500">${k.title}</td>
+        <td><div style="font-weight:500">${k.title}</div>${k.owner_name_free?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${k.owner_name_free}</div>`:''}</td>
         <td>${kpiCatBadge(k.kpi_category)}</td>
         <td>${k.unit}</td>
         <td>${k.measurement_frequency||'—'}</td>
@@ -763,6 +776,7 @@ function renderRisks() {
   const f = document.getElementById('risk-type-filter')?.value||'';
   const q = (document.getElementById('risk-search')?.value||'').toLowerCase();
   const filtered = _risksData.filter(r =>
+    (currentUnit==='INST' || getObjPrefix(r.risk_code)===currentUnit) &&
     (!f || r.risk_type===f) &&
     (!q || (r.title||'').toLowerCase().includes(q) || (r.risk_code||'').toLowerCase().includes(q))
   );
@@ -813,6 +827,7 @@ function renderProjects() {
   const q = (document.getElementById('project-search')?.value||'').toLowerCase();
   const filtered = _projectsData.filter(p =>
     !(p.title||'').includes('?') &&
+    (currentUnit==='INST' || getObjPrefix(p.project_code)===currentUnit) &&
     (!f || (p.status||'').toLowerCase()===f) &&
     (!q || (p.title||'').toLowerCase().includes(q) || (p.project_code||'').toLowerCase().includes(q))
   );
@@ -841,11 +856,18 @@ function renderProjects() {
 }
 
 // ── MODALS ──
+function unitDropdown() {
+  const opts = Object.entries(UNIT_LABELS).map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+  return `<div class="form-group"><label>Unit / Department</label><select id="f-modal-unit">${opts}</select></div>`;
+}
+
 function openModal(type) {
   currentModal = type;
   const titles = {kpi:'Add KPI', risk:'Add Risk', project:'Add Project', objective:'Add Objective'};
   document.getElementById('modal-title').textContent = titles[type];
   document.getElementById('modal-body').innerHTML = getModalForm(type);
+  const unitSel = document.getElementById('f-modal-unit');
+  if (unitSel) unitSel.value = currentUnit;
   document.getElementById('modal-submit-btn').disabled = false;
   document.getElementById('modal-submit-btn').textContent = 'Save';
   document.getElementById('modal-overlay').classList.add('open');
@@ -860,6 +882,7 @@ function getModalForm(type) {
   if (type==='kpi') return `
     <div id="modal-msg-success" class="msg-success"></div>
     <div id="modal-msg-error" class="msg-error"></div>
+    ${unitDropdown()}
     <div class="form-row">
       <div class="form-group"><label>KPI Code *</label><input id="f-kpi_code" placeholder="KPI001"></div>
       <div class="form-group"><label>Unit *</label><input id="f-unit" placeholder="%, AED, count"></div>
@@ -892,6 +915,7 @@ function getModalForm(type) {
   if (type==='risk') return `
     <div id="modal-msg-success" class="msg-success"></div>
     <div id="modal-msg-error" class="msg-error"></div>
+    ${unitDropdown()}
     <div class="form-row">
       <div class="form-group"><label>Risk Code *</label><input id="f-risk_code" placeholder="RSK002"></div>
       <div class="form-group"><label>Risk Type *</label>
@@ -938,6 +962,7 @@ function getModalForm(type) {
   if (type==='project') return `
     <div id="modal-msg-success" class="msg-success"></div>
     <div id="modal-msg-error" class="msg-error"></div>
+    ${unitDropdown()}
     <div class="form-row">
       <div class="form-group"><label>Project Code *</label><input id="f-project_code" placeholder="PRJ001"></div>
       <div class="form-group"><label>Project Type *</label>
@@ -1028,21 +1053,19 @@ async function submitModal() {
       kpi_category:val('f-kpi_category')||null,
       data_source:val('f-data_source')||null,
       baseline_value:val('f-baseline_value')?parseFloat(val('f-baseline_value')):null,
-      owner_name_free:val('f-owner_name_free')||null};
+      owner_name_free:val('f-owner_name_free')||(UNIT_LABELS[val('f-modal-unit')]||null)};
   } else if (currentModal==='risk') {
     if (!val('f-risk_code')||!val('f-title')) { showModalError('Please fill required fields'); btn.disabled=false; btn.textContent='Save'; return; }
     url = `${API}/risks`;
     body = {org_id:SESSION.org_id,register_id:REGISTER_ID,
       risk_code:val('f-risk_code'),title:val('f-title'),risk_type:val('f-risk_type'),
-      department:val('f-department')||null,
+      owner_name_free: val('f-department')||(UNIT_LABELS[val('f-modal-unit')]||null),
       description:val('f-description')||null,
-      cause:val('f-cause')||null,
+      causes:val('f-cause')||null,
       consequences:val('f-consequences')||null,
+      existing_controls:val('f-mitigation')||null,
       initial_likelihood:val('f-initial_likelihood')?parseInt(val('f-initial_likelihood')):null,
-      initial_impact_overall:val('f-initial_impact_overall')?parseInt(val('f-initial_impact_overall')):null,
-      mitigation:val('f-mitigation')||null,
-      control_rating:val('f-control_rating')||null,
-      kri_title:val('f-kri_title')||null};
+      initial_impact_overall:val('f-initial_impact_overall')?parseInt(val('f-initial_impact_overall')):null};
   } else if (currentModal==='objective') {
     if (!val('f-objective_code')||!val('f-title')) { showModalError('Please fill required fields'); btn.disabled=false; btn.textContent='Save'; return; }
     url = `${API}/objectives`;
