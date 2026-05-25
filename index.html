@@ -414,7 +414,7 @@ const REGISTER_ID = '73e664f1-96e4-40c2-8e74-c67ac49f99fc';
 
 let SESSION = null;
 let currentModal = null;
-let _kpisData = [], _risksData = [], _projectsData = [], _objectivesData = [], _objTab = 'institutional';
+let _kpisData = [], _risksData = [], _projectsData = [], _objectivesData = [], _objTab = 'institutional', _objectivesTotalCount = 0;
 
 // ── AUTH ──
 async function doLogin() {
@@ -497,8 +497,8 @@ async function loadDashboard() {
       : '<div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>No risks yet</p></div>';
     document.getElementById('dash-objectives').innerHTML = d.objectives && d.objectives.length
       ? '<table class="data-table"><tr><th>Code</th><th>Title</th><th>Perspective</th></tr>'
-        + d.objectives.slice(0,10).map(function(o){var pl=({1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'})[o.perspective_number]||o.perspective_number||'&mdash;';return '<tr><td><span class="code-badge">'+o.objective_code+'</span></td><td style="font-weight:500">'+o.title+'</td><td>'+pl+'</td></tr>';}).join('')
-        + '</table>' + _va(d.objectives.length,'objectives','objectives')
+        + d.objectives.slice(0,10).map(function(o){var pl=({1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'})[+o.perspective_number]||o.perspective_number||'&mdash;';return '<tr><td><span class="code-badge">'+o.objective_code+'</span></td><td style="font-weight:500">'+o.title+'</td><td>'+pl+'</td></tr>';}).join('')
+        + '</table>' + _va(d.summary?.objective_count||d.summary?.objectives_count||d.objectives.length,'objectives','objectives')
       : '<div class="empty-state"><i class="ti ti-target"></i><p>No objectives yet</p></div>';
     document.getElementById('dash-projects').innerHTML = d.recent.projects.length
       ? '<div style="max-height:300px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th><th>Phase</th></tr>'
@@ -521,6 +521,7 @@ async function loadObjectives() {
     const res = await fetch(API + '/organisations/' + SESSION.org_id + '/dashboard');
     const d = await res.json();
     _objectivesData = d.objectives || [];
+    _objectivesTotalCount = d.summary?.objective_count || d.summary?.objectives_count || _objectivesData.length;
     renderObjectivesTab();
   } catch(e) {
     document.getElementById('objectives-table').innerHTML = '<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load objectives</p>';
@@ -545,6 +546,7 @@ function toggleSection(id) {
 
 function renderObjectivesTab() {
   const PMAP = {1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'};
+  const pLabel = o => PMAP[parseInt(o.perspective_number)] || (o.perspective_number != null ? String(o.perspective_number) : '—');
   const DMAP = {
     CA:'College of Agriculture', CVM:'Veterinary Medicine', BA:'Business Administration',
     CL:'College of Law', CI:'Computing & Intelligent Systems', CS:'Arts Humanities & Social Sciences',
@@ -562,38 +564,43 @@ function renderObjectivesTab() {
     return;
   }
 
+  const isPartial = _objectivesTotalCount > _objectivesData.length;
+  const limitBanner = isPartial
+    ? `<div style="margin-bottom:.75rem;padding:.6rem 1rem;background:rgba(201,168,76,.07);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:.5rem"><i class="ti ti-info-circle" style="color:var(--gold)"></i> Showing ${_objectivesData.length} of ${_objectivesTotalCount} objectives — full list requires a dedicated <code style="color:var(--gold)">/objectives</code> endpoint</div>`
+    : '';
+
   if (_objTab === 'institutional') {
     const inst = _objectivesData.filter(o => /^OBJ/i.test(o.objective_code));
     if (!inst.length) {
-      el.innerHTML = '<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No institutional objectives found.</p></div></div>';
+      el.innerHTML = limitBanner + '<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No institutional objectives in current dataset.</p></div></div>';
       return;
     }
     const rows = inst.map(o => `<tr>
       <td><span class="code-badge">${o.objective_code}</span></td>
       <td style="font-weight:500">${o.title}</td>
-      <td>${PMAP[o.perspective_number] || o.perspective_number || '—'}</td>
+      <td>${pLabel(o)}</td>
     </tr>`).join('');
-    el.innerHTML = `<div class="section-card"><table class="data-table"><tr><th>Code</th><th>Title</th><th>BSC Perspective</th></tr>${rows}</table></div>`;
+    el.innerHTML = limitBanner + `<div class="section-card"><table class="data-table"><tr><th>Code</th><th>Title</th><th>BSC Perspective</th></tr>${rows}</table></div>`;
   } else {
     const dept = _objectivesData.filter(o => !/^OBJ/i.test(o.objective_code));
     if (!dept.length) {
-      el.innerHTML = '<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No departmental objectives found.</p></div></div>';
+      el.innerHTML = limitBanner + '<div class="section-card"><div class="empty-state"><i class="ti ti-target"></i><p>No departmental objectives in current dataset.</p></div></div>';
       return;
     }
     const groups = {};
     dept.forEach(o => {
-      const prefix = o.objective_code.replace(/[\d\-].*$/, '').toUpperCase();
+      const prefix = o.objective_code.replace(/[\d\-_].*$/, '').toUpperCase();
       if (!groups[prefix]) groups[prefix] = [];
       groups[prefix].push(o);
     });
-    el.innerHTML = Object.keys(groups).sort().map(prefix => {
+    const cards = Object.keys(groups).sort().map(prefix => {
       const label = DMAP[prefix] || prefix;
       const items = groups[prefix];
       const gid = 'ogrp-' + prefix;
       const rows = items.map(o => `<tr>
         <td><span class="code-badge">${o.objective_code}</span></td>
         <td style="font-weight:500">${o.title}</td>
-        <td>${PMAP[o.perspective_number] || o.perspective_number || '—'}</td>
+        <td>${pLabel(o)}</td>
       </tr>`).join('');
       return `<div class="section-card" style="margin-bottom:.75rem">
         <div style="padding:.7rem 1.1rem;border-bottom:1px solid var(--border);background:rgba(201,168,76,.06);cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleSection('${gid}')">
@@ -607,6 +614,7 @@ function renderObjectivesTab() {
         <div id="${gid}"><table class="data-table"><tr><th>Code</th><th>Title</th><th>BSC Perspective</th></tr>${rows}</table></div>
       </div>`;
     }).join('');
+    el.innerHTML = limitBanner + cards;
   }
 }
 
