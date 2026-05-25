@@ -248,6 +248,7 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
     <div id="page-objectives" class="page" style="display:none">
       <div class="page-header">
         <div><div class="page-title">Strategic Objectives</div><div class="page-subtitle">Organisational objectives linked to BSC perspectives</div></div>
+        <button class="btn-sm" onclick="openModal('objective')"><i class="ti ti-plus"></i> Add Objective</button>
       </div>
       <div class="page-body">
         <div class="section-card"><div id="objectives-table"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>
@@ -414,7 +415,7 @@ async function loadDashboard() {
       <table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th></tr>
       ${d.recent.risks.map(r=>`<tr><td><span class="code-badge">${r.risk_code}</span></td><td>${r.title}</td><td>${r.risk_type}</td></tr>`).join('')}
       </table>` : '<div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>No risks yet</p></div>';
-    document.getElementById('dash-objectives').innerHTML = d.objectives && d.objectives.length ? '<table class="data-table"><tr><th>Code</th><th>Title</th><th>Perspective</th></tr>' + d.objectives.map(function(o){return '<tr><td><span class="code-badge">'+o.objective_code+'</span></td><td style="font-weight:500">'+o.title+'</td><td>'+(o.perspective_number||'&mdash;')+'</td></tr>';}).join('') + '</table>' : '<div class="empty-state"><i class="ti ti-target"></i><p>No objectives yet</p></div>';
+    document.getElementById('dash-objectives').innerHTML = d.objectives && d.objectives.length ? '<table class="data-table"><tr><th>Code</th><th>Title</th><th>Perspective</th></tr>' + d.objectives.map(function(o){var pl=({1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'})[o.perspective_number]||o.perspective_number||'&mdash;';return '<tr><td><span class="code-badge">'+o.objective_code+'</span></td><td style="font-weight:500">'+o.title+'</td><td>'+pl+'</td></tr>';}).join('') + '</table>' : '<div class="empty-state"><i class="ti ti-target"></i><p>No objectives yet</p></div>';
       document.getElementById('dash-projects').innerHTML = d.recent.projects.length ? `
       <table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th><th>Phase</th></tr>
       ${d.recent.projects.map(p=>`<tr><td><span class="code-badge">${p.project_code}</span></td><td>${p.title}</td><td>${p.project_type}</td><td>${p.current_phase||'—'}</td></tr>`).join('')}
@@ -430,7 +431,8 @@ async function loadObjectives() {
     const d = await res.json();
     if (d.objectives && d.objectives.length) {
       let rows = d.objectives.map(function(o) {
-        return '<tr><td><span class="code-badge">' + o.objective_code + '</span></td><td style="font-weight:500">' + o.title + '</td><td>' + (o.perspective_number || '-') + '</td></tr>';
+        var pl=({1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'})[o.perspective_number]||o.perspective_number||'&mdash;';
+        return '<tr><td><span class="code-badge">' + o.objective_code + '</span></td><td style="font-weight:500">' + o.title + '</td><td>' + pl + '</td></tr>';
       }).join('');
       document.getElementById('objectives-table').innerHTML = '<table class="data-table"><tr><th>Code</th><th>Title</th><th>Perspective</th></tr>' + rows + '</table>';
     } else {
