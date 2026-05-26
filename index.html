@@ -193,8 +193,9 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
 .dp-linked:last-child{border-bottom:none}
 .rag-chip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:500;padding:4px 10px;border-radius:4px}
 .dp-grid2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.dp-sh{font-size:10px;font-weight:600;letter-spacing:1.1px;text-transform:uppercase;background:#1e3a4a;color:#c9a84c;padding:5px 10px;border-radius:4px;margin:1.1rem -1.4rem .75rem;padding-left:1.4rem}
 @media(max-width:900px){.detail-panel{width:60%;min-width:0}}
-@media(max-width:480px){.detail-panel{width:90%;min-width:0}}
+@media(max-width:768px){.detail-panel{width:90%;min-width:0}}
 
 /* ── PROGRESS BAR ── */
 .prog-wrap{display:flex;align-items:center;gap:.4rem}
@@ -1528,34 +1529,49 @@ function openDetailPanel(type, key, rowEl) {
   if (!item) return;
   document.querySelectorAll('tr.row-active').forEach(r => r.classList.remove('row-active'));
   if (rowEl) rowEl.classList.add('row-active');
-  const PMAP  = {1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'};
-  const PBADGE = {1:'badge-teal',2:'badge-purple',3:'badge-amber',4:'badge-green'};
-  const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const PMAP   = {1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'};
+  const PBADGE = {1:'badge-blue',2:'badge-green',3:'badge-amber',4:'badge-purple'};
+  const esc  = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const v    = s => (s!=null && s!=='')?esc(String(s)):'—';
+  const sh   = label => `<div class="dp-sh">${label}</div>`;
+  const fmtD = d => d ? new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : null;
   let codeText = '', bodyHtml = '';
 
   if (type === 'objective') {
     const o = item;
-    const pNum = parseInt(o.perspective_number);
-    const pLbl = PMAP[pNum] || o.perspective_number || '—';
+    const pNum   = parseInt(o.perspective_number);
+    const pLbl   = PMAP[pNum] || v(o.perspective_number);
     const pClass = PBADGE[pNum] || 'badge-grey';
-    const objPrefix = (o.objective_code||'').split('-')[0].toUpperCase();
+    const tierLabels = {1:'Institutional',2:'College',3:'Dept'};
+    const tierLbl = o.tier ? (tierLabels[parseInt(o.tier)] || `Tier ${o.tier}`) : null;
+    const objPrefix   = (o.objective_code||'').split('-')[0].toUpperCase();
     const linkedKpis  = _kpisData.filter(k  => (k.kpi_code||'').startsWith(objPrefix+'-'));
     const linkedRisks = _risksData.filter(r  => (r.risk_code||'').startsWith(objPrefix+'-'));
     const linkedProjs = _projectsData.filter(p => (p.project_code||'').startsWith(objPrefix+'-'));
+    // Parent institutional objective for Tier 2/3 — API does not return parent_objective_id;
+    // matching by prefix heuristic only
+    const parentObj = (o.tier && parseInt(o.tier) > 1)
+      ? _objectivesData.find(p => p.objective_code && p.objective_code.startsWith('INST-') && p.objective_id !== o.objective_id)
+      : null;
     codeText = o.objective_code;
     bodyHtml = `
       <div class="dp-title">${esc(o.title)}</div>
       <div class="dp-badges">
         <span class="status-badge ${pClass}">${pLbl}</span>
-        ${o.tier?`<span class="status-badge badge-grey">Tier ${esc(String(o.tier))}</span>`:''}
-        ${o.status?`<span class="status-badge badge-grey">${esc(o.status)}</span>`:''}
+        ${tierLbl?`<span class="status-badge badge-grey">${tierLbl}</span>`:''}
       </div>
-      ${o.description?`<div class="dp-section"><div class="dp-label">Description</div><div class="dp-value">${esc(o.description)}</div></div>`:''}
-      ${o.strategic_theme?`<div class="dp-section"><div class="dp-label">Strategic Theme</div><div class="dp-value">${esc(o.strategic_theme)}</div></div>`:''}
-      ${o.owner_name_free?`<div class="dp-section"><div class="dp-label">Owner</div><div class="dp-value">${esc(o.owner_name_free)}</div></div>`:''}
-      <hr class="dp-divider">
-      <div class="dp-label" style="margin-bottom:.6rem">Performance Linkage</div>
-      <div class="dp-grid2" style="margin-bottom:1rem">
+      ${sh('Objective details')}
+      <div class="dp-section"><div class="dp-label">Description</div><div class="dp-value">${v(o.description)}</div></div>
+      <div class="dp-section"><div class="dp-label">Owner</div><div class="dp-value">${v(o.owner_name_free)}</div></div>
+      <div class="dp-grid2">
+        <div class="dp-section"><div class="dp-label">Target Year</div><div class="dp-value">${v(o.target_year)}</div></div>
+        <div class="dp-section"><div class="dp-label">Weighting %</div><div class="dp-value">${o.weighting_pct!=null?esc(String(o.weighting_pct))+'%':'—'}</div></div>
+      </div>
+      ${sh('Alignment')}
+      <div class="dp-section"><div class="dp-label">Department / Unit</div><div class="dp-value">${v(o.department_name||(UNIT_LABELS&&UNIT_LABELS[objPrefix])||objPrefix)}</div></div>
+      ${parentObj?`<div class="dp-section"><div class="dp-label">Parent Institutional Objective</div><div class="dp-linked"><span class="code-badge">${esc(parentObj.objective_code)}</span>${esc(parentObj.title)}</div></div>`:''}
+      ${sh('Performance')}
+      <div class="dp-grid2" style="margin-bottom:.5rem">
         <div style="background:rgba(125,211,232,.08);border:1px solid rgba(125,211,232,.2);border-radius:6px;padding:.6rem .9rem;text-align:center">
           <div style="font-size:22px;font-weight:600;color:#7dd3e8">${linkedKpis.length}</div>
           <div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)">KPIs</div>
@@ -1568,141 +1584,201 @@ function openDetailPanel(type, key, rowEl) {
           <div style="font-size:22px;font-weight:600;color:#6EE7B7">${linkedProjs.length}</div>
           <div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)">Projects</div>
         </div>
-      </div>
-      ${linkedKpis.length?`<div class="dp-section"><div class="dp-label">KPIs</div>${linkedKpis.map(k=>`<div class="dp-linked"><span class="code-badge">${k.kpi_code}</span> ${esc(k.title)}</div>`).join('')}</div>`:''}`;
+      </div>`;
 
   } else if (type === 'kpi') {
     const k = item;
-    const trendIcon = k.trend_preference==='higher'?'↑':k.trend_preference==='lower'?'↓':'~';
+    const ragStatus = (k.rag_status||'').toLowerCase();
+    const ragColor  = {green:'#6EE7B7',amber:'var(--gold-light)',red:'#FCA5A5'}[ragStatus]||'var(--muted)';
+    const ragBg     = {green:'rgba(16,185,129,.12)',amber:'rgba(201,168,76,.14)',red:'rgba(239,68,68,.14)'}[ragStatus]||'rgba(255,255,255,.06)';
+    const trendIcon = k.trend_preference==='higher'?'↑':k.trend_preference==='lower'?'↓':'●';
     const trendCol  = k.trend_preference==='higher'?'#6EE7B7':k.trend_preference==='lower'?'#FCA5A5':'var(--muted)';
+    const freqCls   = {annual:'badge-teal',quarterly:'badge-amber',monthly:'badge-blue',weekly:'badge-purple'};
+    const freq      = (k.measurement_frequency||'').toLowerCase();
     const objPrefix = (k.kpi_code||'').split('-')[0].toUpperCase();
     const parentObj = _objectivesData.find(o => (o.objective_code||'').startsWith(objPrefix+'-'));
     const pNum2     = parentObj ? parseInt(parentObj.perspective_number) : null;
-    const pctAchieved = (k.current_value!=null && k.target_value!=null && Number(k.target_value)!==0)
-      ? Math.round((Number(k.current_value)/Number(k.target_value))*100) : null;
-    const progCol   = pctAchieved==null?'var(--gold)':pctAchieved>=80?'#6EE7B7':pctAchieved>=50?'var(--gold)':'#FCA5A5';
-    const ragStatus = k.rag_status||null;
-    const ragColor  = {green:'#6EE7B7',amber:'var(--gold-light)',red:'#FCA5A5'}[ragStatus]||'var(--muted)';
-    const ragBg     = {green:'rgba(16,185,129,.12)',amber:'rgba(201,168,76,.14)',red:'rgba(239,68,68,.14)'}[ragStatus]||'rgba(255,255,255,.06)';
+    // current_value used as proxy for most-recent actual; kpi_actual table not exposed in /kpis endpoint
+    const currentVal   = k.current_value;
+    const pctAchieved  = (currentVal!=null && k.target_value!=null && Number(k.target_value)!==0)
+      ? Math.round((Number(currentVal)/Number(k.target_value))*100) : null;
+    const progCol = pctAchieved==null?'var(--gold)':pctAchieved>=80?'#6EE7B7':pctAchieved>=50?'var(--gold)':'#FCA5A5';
     codeText = k.kpi_code;
     bodyHtml = `
       <div class="dp-title">${esc(k.title)}</div>
       <div class="dp-badges">
-        ${k.unit?`<span class="status-badge badge-grey">Unit: ${esc(k.unit)}</span>`:''}
-        ${k.measurement_frequency?`<span class="status-badge badge-teal">${esc(k.measurement_frequency)}</span>`:''}
-        ${k.trend_preference?`<span class="status-badge" style="background:rgba(255,255,255,.07);color:${trendCol}">${trendIcon} ${esc(k.trend_preference)}</span>`:''}
         ${ragStatus?`<span class="status-badge" style="background:${ragBg};color:${ragColor}">${ragStatus.toUpperCase()}</span>`:''}
+        ${k.trend_preference?`<span class="status-badge" style="background:rgba(255,255,255,.07);color:${trendCol}">${trendIcon}</span>`:''}
       </div>
-      ${k.description?`<div class="dp-section"><div class="dp-label">Description</div><div class="dp-value">${esc(k.description)}</div></div>`:''}
-      <hr class="dp-divider">
-      <div class="dp-grid2" style="margin-bottom:${pctAchieved!=null?'.5rem':'1rem'}">
-        ${k.baseline_value!=null?`<div class="dp-section"><div class="dp-label">Baseline${k.baseline_year?' ('+k.baseline_year+')':''}</div><div class="dp-value" style="font-size:18px;font-weight:600;color:var(--cream)">${k.baseline_value}</div></div>`:''}
-        ${k.target_value!=null?`<div class="dp-section"><div class="dp-label">Target</div><div class="dp-value" style="font-size:18px;font-weight:600;color:#6EE7B7">${k.target_value}</div></div>`:''}
-        ${k.current_value!=null?`<div class="dp-section"><div class="dp-label">Current</div><div class="dp-value" style="font-size:18px;font-weight:600;color:${progCol}">${k.current_value}</div></div>`:''}
+      ${sh('KPI details')}
+      <div class="dp-section"><div class="dp-label">Description / Formula</div><div class="dp-value">${v(k.description)}</div></div>
+      <div class="dp-grid2">
+        <div class="dp-section"><div class="dp-label">Measurement Unit</div><div class="dp-value">${v(k.unit)}</div></div>
+        <div class="dp-section"><div class="dp-label">Frequency</div><div class="dp-value">${k.measurement_frequency?`<span class="status-badge ${freqCls[freq]||'badge-grey'}">${esc(k.measurement_frequency)}</span>`:'—'}</div></div>
+      </div>
+      <div class="dp-section"><div class="dp-label">Data Source</div><div class="dp-value">${v(k.data_source)}</div></div>
+      <div class="dp-section"><div class="dp-label">Owner</div><div class="dp-value">${v(k.owner_name_free)}</div></div>
+      ${sh('Performance')}
+      <div class="dp-grid2" style="margin-bottom:.5rem">
+        <div class="dp-section"><div class="dp-label">Baseline${k.baseline_year?' ('+k.baseline_year+')':''}</div><div class="dp-value" style="font-size:18px;font-weight:600;color:var(--cream)">${k.baseline_value!=null?esc(String(k.baseline_value)):'—'}</div></div>
+        <div class="dp-section"><div class="dp-label">Target</div><div class="dp-value" style="font-size:18px;font-weight:600;color:#6EE7B7">${k.target_value!=null?esc(String(k.target_value)):'—'}</div></div>
+        <div class="dp-section"><div class="dp-label">Current Actual</div><div class="dp-value" style="font-size:18px;font-weight:600;color:${progCol}">${currentVal!=null?esc(String(currentVal)):'<span style="font-size:13px;font-weight:400;color:var(--muted)">Not recorded</span>'}</div></div>
         ${pctAchieved!=null?`<div class="dp-section"><div class="dp-label">Achievement</div><div class="dp-value" style="font-size:18px;font-weight:600;color:${progCol}">${pctAchieved}%</div></div>`:''}
       </div>
       ${pctAchieved!=null?`<div style="margin-bottom:1rem"><div class="prog-track" style="height:7px"><div class="prog-fill" style="width:${Math.min(pctAchieved,100)}%;background:${progCol}"></div></div></div>`:''}
       ${(k.rag_red_threshold!=null||k.rag_amber_threshold!=null||k.rag_green_threshold!=null)?`
       <div class="dp-section"><div class="dp-label">RAG Thresholds</div>
         <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.35rem">
-          ${k.rag_red_threshold!=null?`<span class="rag-chip" style="background:rgba(239,68,68,.14);color:#FCA5A5">🔴 Red ≤ ${k.rag_red_threshold}</span>`:''}
-          ${k.rag_amber_threshold!=null?`<span class="rag-chip" style="background:rgba(201,168,76,.14);color:var(--gold-light)">🟡 Amber ≤ ${k.rag_amber_threshold}</span>`:''}
-          ${k.rag_green_threshold!=null?`<span class="rag-chip" style="background:rgba(16,185,129,.12);color:#6EE7B7">🟢 Green ≥ ${k.rag_green_threshold}</span>`:''}
+          ${k.rag_red_threshold!=null?`<span class="rag-chip" style="background:rgba(239,68,68,.14);color:#FCA5A5">● Red ≤ ${k.rag_red_threshold}</span>`:''}
+          ${k.rag_amber_threshold!=null?`<span class="rag-chip" style="background:rgba(201,168,76,.14);color:var(--gold-light)">● Amber ≤ ${k.rag_amber_threshold}</span>`:''}
+          ${k.rag_green_threshold!=null?`<span class="rag-chip" style="background:rgba(16,185,129,.12);color:#6EE7B7">● Green ≥ ${k.rag_green_threshold}</span>`:''}
         </div>
       </div>`:''}
-      ${k.data_source?`<div class="dp-section"><div class="dp-label">Data Source</div><div class="dp-value">${esc(k.data_source)}</div></div>`:''}
-      ${k.owner_name_free?`<div class="dp-section"><div class="dp-label">Owner</div><div class="dp-value">${esc(k.owner_name_free)}</div></div>`:''}
-      ${parentObj?`<hr class="dp-divider"><div class="dp-section"><div class="dp-label">Parent Objective</div><div class="dp-linked"><span class="code-badge">${parentObj.objective_code}</span><div><div style="font-size:12.5px">${esc(parentObj.title)}</div>${pNum2?`<span class="status-badge ${PBADGE[pNum2]||'badge-grey'}" style="margin-top:3px;font-size:10px">${PMAP[pNum2]}</span>`:''}</div></div></div>`:''}`;
+      ${parentObj?`${sh('Linked objective')}<div class="dp-linked"><span class="code-badge">${esc(parentObj.objective_code)}</span><div><div style="font-size:12.5px">${esc(parentObj.title)}</div>${pNum2?`<span class="status-badge ${PBADGE[pNum2]||'badge-grey'}" style="margin-top:3px;font-size:10px">${PMAP[pNum2]}</span>`:''}</div></div>`:''}`;
 
   } else if (type === 'risk') {
     const r = item;
-    const L = r.initial_likelihood||0;
-    const I = r.initial_impact_overall||0;
+    const L     = r.initial_likelihood||0;
+    const I     = r.initial_impact_overall||0;
     const score = L*I;
-    const sev   = score>=20?'Critical':score>=12?'High':score>=6?'Moderate':'Low';
-    const sevCol = {Critical:'#FCA5A5',High:'#FB923C',Moderate:'var(--gold-light)',Low:'#6EE7B7'}[sev];
-    const sevBg  = {Critical:'rgba(239,68,68,.14)',High:'rgba(251,146,60,.14)',Moderate:'rgba(201,168,76,.14)',Low:'rgba(16,185,129,.12)'}[sev];
-    const rtColors = {strategic:'badge-red',operational:'badge-amber',financial:'badge-gold',reputational:'badge-purple',people:'badge-blue',legal:'badge-grey'};
+    // Spec severity bands: 1–4 Low, 5–9 Moderate, 10–14 High, 15–25 Critical
+    const sev    = score>=15?'Critical':score>=10?'High':score>=5?'Moderate':'Low';
+    const sevCol = {Critical:'#FCA5A5',High:'#FB923C',Moderate:'var(--gold-light)',Low:'var(--muted)'}[sev];
+    const sevBg  = {Critical:'rgba(239,68,68,.14)',High:'rgba(251,146,60,.14)',Moderate:'rgba(201,168,76,.14)',Low:'rgba(255,255,255,.07)'}[sev];
+    const rtColors = {strategic:'badge-teal',operational:'badge-amber',financial:'badge-gold',reputational:'badge-purple',people:'badge-blue',legal:'badge-grey'};
     const llabels  = {1:'Rare',2:'Unlikely',3:'Possible',4:'Likely',5:'Almost Certain'};
-    const ilabels  = {1:'Negligible',2:'Minor',3:'Moderate',4:'Major',5:'Catastrophic'};
-    const cellBg   = s => s>=20?'rgba(239,68,68,.7)':s>=15?'rgba(239,68,68,.45)':s>=10?'rgba(251,146,60,.5)':s>=6?'rgba(201,168,76,.5)':'rgba(16,185,129,.35)';
+    const ilabels  = {1:'Insignificant',2:'Minor',3:'Moderate',4:'Major',5:'Catastrophic'};
+    // Heat-map cell colour: 1–4 green, 5–9 amber, 10–14 orange, 15–25 red
+    const cellBg = s => s>=15?'rgba(239,68,68,.7)':s>=10?'rgba(251,146,60,.55)':s>=5?'rgba(201,168,76,.5)':'rgba(16,185,129,.35)';
     const heatRows = [5,4,3,2,1].map(l =>
       `<tr><td style="font-size:9px;color:var(--muted);text-align:right;padding:1px 3px 1px 0">${l}</td>${[1,2,3,4,5].map(i=>{
         const s=l*i,isHere=l===L&&i===I;
         return `<td style="background:${cellBg(s)};border:1px solid rgba(0,0,0,.2);height:22px;text-align:center;font-size:${isHere?11:9}px;font-weight:${isHere?700:400};color:#fff;${isHere?'outline:2px solid rgba(255,255,255,.8);outline-offset:-1px;':''}">${isHere?'✕':s}</td>`;
       }).join('')}</tr>`
     ).join('');
-    const heatMap = `<table style="border-collapse:collapse;width:100%;table-layout:fixed;margin-top:.4rem"><thead><tr><td style="width:20px"></td>${[1,2,3,4,5].map(i=>`<td style="font-size:9px;color:var(--muted);text-align:center;padding-bottom:2px">${i}</td>`).join('')}</tr></thead><tbody>${heatRows}</tbody><tfoot><tr><td></td><td colspan="5" style="font-size:9px;color:var(--muted);text-align:center;padding-top:3px">← Impact →</td></tr></tfoot></table>`;
+    const heatMap = `<table style="border-collapse:collapse;width:100%;table-layout:fixed;margin:.5rem 0 1rem"><thead><tr><td style="width:20px"></td>${[1,2,3,4,5].map(i=>`<td style="font-size:9px;color:var(--muted);text-align:center;padding-bottom:2px">${i}</td>`).join('')}</tr></thead><tbody>${heatRows}</tbody><tfoot><tr><td></td><td colspan="5" style="font-size:9px;color:var(--muted);text-align:center;padding-top:3px">← Impact →</td></tr></tfoot></table>`;
+    // Linked objective — API does not return linked_objective_id on risks; using code prefix as heuristic
+    const riskPrefix = (r.risk_code||'').split('-')[0].toUpperCase();
+    const linkedObj  = _objectivesData.find(o => (o.objective_code||'').startsWith(riskPrefix+'-'));
+    // Residual scores — fields not currently returned by /risks API
+    const resL = r.residual_likelihood, resI = r.residual_impact;
+    const resScore = (resL&&resI) ? resL*resI : null;
     codeText = r.risk_code;
     bodyHtml = `
       <div class="dp-title">${esc(r.title)}</div>
       <div class="dp-badges">
+        <span class="status-badge" style="background:${sevBg};color:${sevCol}">${sev}</span>
         ${r.risk_type?`<span class="status-badge ${rtColors[(r.risk_type||'').toLowerCase()]||'badge-grey'}">${esc(r.risk_type)}</span>`:''}
-        ${score?`<span class="status-badge" style="background:${sevBg};color:${sevCol}">${sev} · Score ${score}</span>`:''}
       </div>
-      ${r.description?`<div class="dp-section"><div class="dp-label">Description</div><div class="dp-value">${esc(r.description)}</div></div>`:''}
-      ${r.causes?`<div class="dp-section"><div class="dp-label">Causes</div><div class="dp-value">${esc(r.causes)}</div></div>`:''}
-      ${r.consequences?`<div class="dp-section"><div class="dp-label">Consequences</div><div class="dp-value">${esc(r.consequences)}</div></div>`:''}
-      ${(L||I)?`<hr class="dp-divider">
-        <div class="dp-label" style="margin-bottom:.4rem">Risk Matrix <span style="font-size:9px;opacity:.6">(Likelihood × Impact)</span></div>
-        <div class="dp-grid2" style="margin-bottom:.6rem">
-          <div class="dp-section"><div class="dp-label">Likelihood</div><div class="dp-value"><span style="font-size:18px;font-weight:600;color:${sevCol}">${L||'—'}/5</span><div style="font-size:11px;color:var(--muted)">${llabels[L]||''}</div></div></div>
-          <div class="dp-section"><div class="dp-label">Impact</div><div class="dp-value"><span style="font-size:18px;font-weight:600;color:${sevCol}">${I||'—'}/5</span><div style="font-size:11px;color:var(--muted)">${ilabels[I]||''}</div></div></div>
-        </div>
-        ${L&&I?heatMap:''}`:''}
-      ${r.existing_controls?`<hr class="dp-divider"><div class="dp-section"><div class="dp-label">Existing Controls</div><div class="dp-value">${esc(r.existing_controls)}</div></div>`:''}
-      ${r.owner_name_free?`<div class="dp-section"><div class="dp-label">Owner / Department</div><div class="dp-value">${esc(r.owner_name_free)}</div></div>`:''}`;
+      ${sh('Risk details')}
+      <div class="dp-section"><div class="dp-label">Description</div><div class="dp-value">${v(r.description)}</div></div>
+      <div class="dp-grid2">
+        <div class="dp-section"><div class="dp-label">Risk Owner</div><div class="dp-value">${v(r.owner_name_free)}</div></div>
+        <div class="dp-section"><div class="dp-label">Department</div><div class="dp-value">${v(r.department_name)}</div></div>
+      </div>
+      <div class="dp-section"><div class="dp-label">Risk Category</div><div class="dp-value">${v(r.risk_category)}</div></div>
+      <div class="dp-section"><div class="dp-label">Causes</div><div class="dp-value">${v(r.causes)}</div></div>
+      <div class="dp-section"><div class="dp-label">Consequences</div><div class="dp-value">${v(r.consequences)}</div></div>
+      ${sh('Risk scoring')}
+      <div class="dp-grid2" style="margin-bottom:.6rem">
+        <div class="dp-section"><div class="dp-label">Likelihood</div><div class="dp-value"><span style="font-size:18px;font-weight:600;color:${sevCol}">${L||'—'}/5</span><div style="font-size:11px;color:var(--muted)">${llabels[L]||''}</div></div></div>
+        <div class="dp-section"><div class="dp-label">Impact</div><div class="dp-value"><span style="font-size:18px;font-weight:600;color:${sevCol}">${I||'—'}/5</span><div style="font-size:11px;color:var(--muted)">${ilabels[I]||''}</div></div></div>
+      </div>
+      ${score?`<div class="dp-section"><div class="dp-label">Combined Score (L × I)</div><div class="dp-value" style="font-size:20px;font-weight:700;color:${sevCol}">${score}<span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:6px">${sev}</span></div></div>`:''}
+      ${(L&&I)?heatMap:''}
+      ${sh('Treatment')}
+      <div class="dp-section"><div class="dp-label">Treatment Strategy</div><div class="dp-value">${v(r.treatment_strategy)}</div></div>
+      <div class="dp-section"><div class="dp-label">Treatment Actions</div><div class="dp-value">${v(r.treatment_actions)}</div></div>
+      ${(resL||resI)?`<div class="dp-grid2">
+        <div class="dp-section"><div class="dp-label">Residual Likelihood</div><div class="dp-value">${resL!=null?`${resL}/5`:'—'}</div></div>
+        <div class="dp-section"><div class="dp-label">Residual Impact</div><div class="dp-value">${resI!=null?`${resI}/5`:'—'}</div></div>
+        ${resScore!=null?`<div class="dp-section"><div class="dp-label">Residual Score</div><div class="dp-value">${resScore}</div></div>`:''}
+      </div>`:''}
+      ${sh('Linked objective')}
+      ${linkedObj?`<div class="dp-linked"><span class="code-badge">${esc(linkedObj.objective_code)}</span>${esc(linkedObj.title)}</div>`:'<div class="dp-value">—</div>'}`;
 
   } else if (type === 'project') {
     const p = item;
-    const fmt = d => d ? new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
-    const budget   = p.approved_budget!=null ? Number(p.approved_budget) : null;
-    const spent    = p.actual_spend!=null    ? Number(p.actual_spend)    : null;
-    const variance = (budget!=null && spent!=null) ? budget - spent : null;
-    const varCol   = variance==null?'var(--muted)':variance>=0?'#6EE7B7':'#FCA5A5';
-    const objPfx   = (p.project_code||'').split('-')[0].toUpperCase();
-    const linkedObj = _objectivesData.find(o => (o.objective_code||'').startsWith(objPfx+'-'));
-    const phaseCols = {Planning:'badge-teal',Execution:'badge-amber',Monitoring:'badge-purple',Closure:'badge-green',Initiation:'badge-grey'};
-    const hFields   = ['schedule','cost','scope','quality','risk'].filter(f => p['health_'+f]!=null);
-    const hBg  = v => v==='green'?'rgba(16,185,129,.15)':v==='red'?'rgba(239,68,68,.15)':'rgba(201,168,76,.15)';
-    const hCol = v => v==='green'?'#6EE7B7':v==='red'?'#FCA5A5':'var(--gold-light)';
+    const fmt    = d => fmtD(d) || 'TBD';
+    const budget = p.approved_budget!=null ? Number(p.approved_budget) : null;
+    const spent  = p.actual_spend!=null    ? Number(p.actual_spend)    : null;
+    // Budget variance as % per spec: ((actual-budget)/budget)*100
+    const varPct = (budget!=null && spent!=null && budget!==0)
+      ? ((spent-budget)/budget)*100 : null;
+    const varCol = varPct==null?'var(--muted)':varPct<=0?'#6EE7B7':'#FCA5A5';
+    const varStr = varPct==null?'—':(varPct<=0?'':'+') + varPct.toFixed(1)+'%';
+    // Status / phase badge colours per spec
+    const statusCls = {active:'badge-blue',complete:'badge-green',on_hold:'badge-amber',cancelled:'badge-red',pipeline:'badge-grey'};
+    const phaseCls  = {Planning:'badge-teal',Execution:'badge-amber','Monitoring & Control':'badge-purple',Closure:'badge-green',Sprint:'badge-blue'};
+    const methCls   = {PMBOK:'badge-teal',Agile:'badge-blue',Hybrid:'badge-purple'};
+    const statusKey = (p.status||'').toLowerCase();
+    const statusLabel = p.status ? p.status.charAt(0).toUpperCase()+p.status.slice(1).replace(/_/g,' ') : '';
+    // Health indicators — use API health fields if present, else derive
+    // Schedule: derive from status if health_schedule absent
+    const schRaw  = p.health_schedule;
+    const schDerived = p.status==='on_hold'?'At Risk':p.status==='cancelled'?'Delayed':'On Track';
+    const schLabel = schRaw ? (schRaw.charAt(0).toUpperCase()+schRaw.slice(1)) : schDerived;
+    const schCol   = schRaw?({green:'#6EE7B7',amber:'var(--gold-light)',red:'#FCA5A5'}[schRaw]||'var(--cream)')
+      : (schDerived==='On Track'?'#6EE7B7':schDerived==='At Risk'?'var(--gold-light)':'#FCA5A5');
+    // Budget health: derive from variance %
+    const budLabel = varPct==null?'—':varPct<10?'On Track':varPct<20?'At Risk':'Over Budget';
+    const budCol   = varPct==null?'var(--cream)':varPct<10?'#6EE7B7':varPct<20?'var(--gold-light)':'#FCA5A5';
+    // Linked objective — prefix heuristic; API does not return linked_objective_id on projects
+    const projPrefix = (p.project_code||'').split('-')[0].toUpperCase();
+    const linkedObj  = _objectivesData.find(o => (o.objective_code||'').startsWith(projPrefix+'-'));
     codeText = p.project_code;
     bodyHtml = `
       <div class="dp-title">${esc(p.title)}</div>
       <div class="dp-badges">
-        ${p.project_type?`<span class="status-badge badge-teal">${esc(p.project_type)}</span>`:''}
-        ${p.current_phase?`<span class="status-badge ${phaseCols[p.current_phase]||'badge-grey'}">${esc(p.current_phase)}</span>`:''}
-        ${p.status?projectStatusBadge(p.status):''}
-        ${p.methodology?`<span class="status-badge badge-grey">${esc(p.methodology)}</span>`:''}
+        ${p.status?`<span class="status-badge ${statusCls[statusKey]||'badge-grey'}">${statusLabel}</span>`:''}
+        ${p.current_phase?`<span class="status-badge ${phaseCls[p.current_phase]||'badge-grey'}">${esc(p.current_phase)}</span>`:''}
       </div>
-      ${p.description?`<div class="dp-section"><div class="dp-label">Description</div><div class="dp-value">${esc(p.description)}</div></div>`:''}
-      ${p.project_manager_name||p.owner_name_free?`<div class="dp-section"><div class="dp-label">Project Manager</div><div class="dp-value">${esc(p.project_manager_name||p.owner_name_free)}</div></div>`:''}
-      <hr class="dp-divider">
+      ${sh('Project details')}
+      <div class="dp-section"><div class="dp-label">Description</div><div class="dp-value">${v(p.description)}</div></div>
       <div class="dp-grid2">
-        <div class="dp-section"><div class="dp-label">Planned Start</div><div class="dp-value">${fmt(p.planned_start_date)}</div></div>
-        <div class="dp-section"><div class="dp-label">Planned End</div><div class="dp-value">${fmt(p.planned_end_date)}</div></div>
-        ${p.actual_start_date?`<div class="dp-section"><div class="dp-label">Actual Start</div><div class="dp-value">${fmt(p.actual_start_date)}</div></div>`:''}
-        ${p.actual_end_date?`<div class="dp-section"><div class="dp-label">Actual End</div><div class="dp-value">${fmt(p.actual_end_date)}</div></div>`:''}
-        ${budget!=null?`<div class="dp-section"><div class="dp-label">Budget</div><div class="dp-value">${budget.toLocaleString()} ${esc(p.budget_currency||'')}</div></div>`:''}
-        ${spent!=null?`<div class="dp-section"><div class="dp-label">Actual Spend</div><div class="dp-value">${spent.toLocaleString()} ${esc(p.budget_currency||'')}</div></div>`:''}
-        ${variance!=null?`<div class="dp-section"><div class="dp-label">Budget Variance</div><div class="dp-value" style="color:${varCol};font-weight:600">${variance>=0?'+':''}${variance.toLocaleString()} ${esc(p.budget_currency||'')}</div></div>`:''}
+        <div class="dp-section"><div class="dp-label">Project Manager</div><div class="dp-value">${v(p.project_manager_name||p.owner_name_free)}</div></div>
+        <div class="dp-section"><div class="dp-label">Department</div><div class="dp-value">${v(p.department_name)}</div></div>
       </div>
-      ${hFields.length?`<hr class="dp-divider"><div class="dp-label" style="margin-bottom:.5rem">Health Indicators</div><div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.5rem">${hFields.map(f=>`<span style="background:${hBg(p['health_'+f])};color:${hCol(p['health_'+f])};border-radius:4px;padding:3px 10px;font-size:11px;font-weight:500;text-transform:capitalize">${f}: ${p['health_'+f]}</span>`).join('')}</div>`:''}
-      ${linkedObj?`<hr class="dp-divider"><div class="dp-section"><div class="dp-label">Linked Objective</div><div class="dp-linked"><span class="code-badge">${linkedObj.objective_code}</span> ${esc(linkedObj.title)}</div></div>`:''}`;
+      <div class="dp-grid2">
+        <div class="dp-section"><div class="dp-label">Methodology</div><div class="dp-value">${p.methodology?`<span class="status-badge ${methCls[p.methodology]||'badge-grey'}">${esc(p.methodology)}</span>`:'—'}</div></div>
+        <div class="dp-section"><div class="dp-label">Register Type</div><div class="dp-value">${v(p.project_type)}</div></div>
+        <div class="dp-section"><div class="dp-label">Budget Source</div><div class="dp-value">${v(p.budget_source)}</div></div>
+      </div>
+      ${sh('Timeline & Budget')}
+      <div class="dp-grid2">
+        <div class="dp-section"><div class="dp-label">Start Date</div><div class="dp-value">${fmt(p.planned_start_date)}</div></div>
+        <div class="dp-section"><div class="dp-label">End Date</div><div class="dp-value">${fmt(p.planned_end_date)}</div></div>
+        <div class="dp-section"><div class="dp-label">Budget Allocated</div><div class="dp-value">${budget!=null?budget.toLocaleString()+' '+(p.budget_currency||''):'TBD'}</div></div>
+        <div class="dp-section"><div class="dp-label">Actual Spend</div><div class="dp-value">${spent!=null?spent.toLocaleString()+' '+(p.budget_currency||''):'—'}</div></div>
+        <div class="dp-section"><div class="dp-label">Budget Variance %</div><div class="dp-value" style="color:${varCol};font-weight:600">${varStr}</div></div>
+      </div>
+      ${sh('Health indicators')}
+      <div class="dp-grid2">
+        <div style="background:rgba(255,255,255,.05);border-radius:6px;padding:.6rem .9rem">
+          <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem">Schedule</div>
+          <div style="font-size:13px;font-weight:500;color:${schCol}">${schLabel}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.05);border-radius:6px;padding:.6rem .9rem">
+          <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem">Budget</div>
+          <div style="font-size:13px;font-weight:500;color:${budCol}">${budLabel}</div>
+        </div>
+      </div>
+      ${p.status?`<div style="margin-top:.6rem"><div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem">Overall Status</div><span class="status-badge ${statusCls[statusKey]||'badge-grey'}">${statusLabel}</span></div>`:''}
+      ${sh('Linked objective')}
+      ${linkedObj?`<div class="dp-linked"><span class="code-badge">${esc(linkedObj.objective_code)}</span>${esc(linkedObj.title)}</div>`:'<div class="dp-value">—</div>'}`;
 
   } else if (type === 'activity') {
     const a = item;
-    const statusLabels = {not_started:'Not Started',in_progress:'In Progress',complete:'Complete',on_hold:'On Hold',cancelled:'Cancelled'};
+    const statusLabels  = {not_started:'Not Started',in_progress:'In Progress',complete:'Complete',on_hold:'On Hold',cancelled:'Cancelled'};
     const statusClasses = {not_started:'badge-grey',in_progress:'badge-blue',complete:'badge-green',on_hold:'badge-amber',cancelled:'badge-red'};
-    const pct = a.completion_pct||0;
+    const pct     = a.completion_pct||0;
     const progCol = pct>=100?'#6EE7B7':pct>=50?'var(--gold)':'#7dd3e8';
-    const fmtD = d => d ? new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '<span style="color:var(--muted);font-size:12px">Not recorded</span>';
+    const td = d => fmtD(d);
     codeText = a.department_code ? `${a.department_code} · #${a.sort_order||'?'}` : `#${a.sort_order||'?'}`;
     bodyHtml = `
       <div class="dp-title">${esc(a.activity_name)}</div>
       <div class="dp-badges">
         <span class="status-badge ${statusClasses[a.status]||'badge-grey'}">${statusLabels[a.status]||a.status||'—'}</span>
-        <span class="status-badge badge-grey">${esc(a.department_name||'—')}</span>
       </div>
       <div style="margin-bottom:1.1rem">
         <div class="dp-label" style="margin-bottom:.4rem">Completion</div>
@@ -1711,31 +1787,27 @@ function openDetailPanel(type, key, rowEl) {
           <span style="font-size:13px;font-weight:500;color:var(--cream)">${pct}%</span>
         </div>
       </div>
-      <hr class="dp-divider">
-      <div style="font-size:10px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold);opacity:.65;margin-bottom:.6rem">Activity Details</div>
-      ${a.objective_text?`<div class="dp-section"><div class="dp-label">Objective</div><div class="dp-value">${esc(a.objective_text)}</div></div>`:''}
-      ${a.core_process?`<div class="dp-section"><div class="dp-label">Core Process</div><div class="dp-value">${esc(a.core_process)}</div></div>`:''}
-      ${a.description?`<div class="dp-section"><div class="dp-label">Description</div><div class="dp-value">${esc(a.description)}</div></div>`:''}
-      ${a.activity_kpi?`<div class="dp-section"><div class="dp-label">Activity KPI</div><div class="dp-value">${esc(a.activity_kpi)}</div></div>`:''}
-      <hr class="dp-divider">
-      <div style="font-size:10px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold);opacity:.65;margin-bottom:.6rem">Timeline</div>
+      ${sh('Activity details')}
+      <div class="dp-section"><div class="dp-label">Objective</div><div class="dp-value">${v(a.objective_text)}</div></div>
+      <div class="dp-section"><div class="dp-label">Core Process</div><div class="dp-value">${v(a.core_process)}</div></div>
+      <div class="dp-section"><div class="dp-label">Description</div><div class="dp-value">${v(a.description)}</div></div>
+      <div class="dp-section"><div class="dp-label">Activity KPI</div><div class="dp-value">${v(a.activity_kpi)}</div></div>
+      ${sh('Timeline')}
       <div class="dp-grid2">
-        <div class="dp-section"><div class="dp-label">Planned Start</div><div class="dp-value">${fmtD(a.start_date)}</div></div>
-        <div class="dp-section"><div class="dp-label">Planned End</div><div class="dp-value">${fmtD(a.end_date)}</div></div>
-        <div class="dp-section"><div class="dp-label">Actual Start</div><div class="dp-value">${fmtD(a.actual_start_date)}</div></div>
-        <div class="dp-section"><div class="dp-label">Actual End</div><div class="dp-value">${fmtD(a.actual_end_date)}</div></div>
+        <div class="dp-section"><div class="dp-label">Planned Start</div><div class="dp-value">${td(a.start_date)||'TBD'}</div></div>
+        <div class="dp-section"><div class="dp-label">Planned End</div><div class="dp-value">${td(a.end_date)||'TBD'}</div></div>
+        <div class="dp-section"><div class="dp-label">Actual Start</div><div class="dp-value">${td(a.actual_start_date)||'Not recorded'}</div></div>
+        <div class="dp-section"><div class="dp-label">Actual End</div><div class="dp-value">${td(a.actual_end_date)||'Not recorded'}</div></div>
       </div>
-      <hr class="dp-divider">
-      <div style="font-size:10px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold);opacity:.65;margin-bottom:.6rem">Resources</div>
-      ${a.owner_name?`<div class="dp-section"><div class="dp-label">Owner</div><div class="dp-value">${esc(a.owner_name)}</div></div>`:''}
-      ${a.manpower_requirement?`<div class="dp-section"><div class="dp-label">Manpower Requirement</div><div class="dp-value">${esc(a.manpower_requirement)}</div></div>`:''}
-      ${a.procurement_description?`<div class="dp-section"><div class="dp-label">Procurement</div><div class="dp-value">${esc(a.procurement_description)}${a.estimated_procurement_value?` <span style="font-size:11px;color:var(--muted)">(Est. ${Number(a.estimated_procurement_value).toLocaleString()} ${a.budget_currency||'AED'})</span>`:''}</div></div>`:''}
-      <div class="dp-section"><div class="dp-label">Budget Required</div><div class="dp-value">${a.budget_amount!=null?Number(a.budget_amount).toLocaleString()+' '+(a.budget_currency||'AED'):'<span style="color:var(--muted)">TBD</span>'}</div></div>
+      ${sh('Resources')}
+      <div class="dp-section"><div class="dp-label">Owner</div><div class="dp-value">${v(a.owner_name)}</div></div>
+      <div class="dp-section"><div class="dp-label">Manpower Requirement</div><div class="dp-value">${v(a.manpower_requirement)}</div></div>
+      <div class="dp-section"><div class="dp-label">Procurement</div><div class="dp-value">${a.procurement_description?esc(a.procurement_description)+(a.estimated_procurement_value?` <span style="font-size:11px;color:var(--muted)">(Est. ${Number(a.estimated_procurement_value).toLocaleString()} ${a.budget_currency||'AED'})</span>`:''):'—'}</div></div>
+      <div class="dp-section"><div class="dp-label">Budget Required</div><div class="dp-value">${a.budget_amount!=null?Number(a.budget_amount).toLocaleString()+' '+(a.budget_currency||'AED'):'TBD'}</div></div>
       <div class="dp-section"><div class="dp-label">Actual Spend</div><div class="dp-value">${a.actual_spend!=null?Number(a.actual_spend).toLocaleString()+' '+(a.budget_currency||'AED'):'—'}</div></div>
-      <hr class="dp-divider">
-      <div style="font-size:10px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold);opacity:.65;margin-bottom:.6rem">Delivery</div>
-      ${a.inputs_required?`<div class="dp-section"><div class="dp-label">Inputs Required</div><div class="dp-value">${esc(a.inputs_required)}</div></div>`:''}
-      ${a.outputs_to_deliver?`<div class="dp-section"><div class="dp-label">Outputs to Deliver</div><div class="dp-value">${esc(a.outputs_to_deliver)}</div></div>`:''}`;
+      ${sh('Delivery')}
+      <div class="dp-section"><div class="dp-label">Inputs Required</div><div class="dp-value">${v(a.inputs_required)}</div></div>
+      <div class="dp-section"><div class="dp-label">Outputs to Deliver</div><div class="dp-value">${v(a.outputs_to_deliver)}</div></div>`;
   }
 
   document.getElementById('dp-header-code').textContent = codeText;
