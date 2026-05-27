@@ -1309,11 +1309,14 @@ function renderKpis() {
 
   const s1 = visible.filter(k=>instObjIds.has(k.objective_id));
   const s2 = visible.filter(k=>deptObjIds.has(k.objective_id));
-  const s3 = visible.filter(k=>(k.kpi_code||'').startsWith('CMN-'));
+  const s3 = visible.filter(k=>(k.kpi_code||'').includes('-CMN-'));
 
   const deptLabel = UNIT_LABELS[currentUnitPrefix]||currentUnitPrefix;
   const s1Cards = instObjs.map(o=>objCard(o, s1.filter(k=>k.objective_id===o.objective_id), false)).filter(Boolean).join('');
-  const s2Cards = deptObjs.map(o=>objCard(o, s2.filter(k=>k.objective_id===o.objective_id), true)).filter(Boolean).join('');
+  const s2Cards = deptObjs.map(o=>objCard(o, s2.filter(k=>k.objective_id===o.objective_id), false)).filter(Boolean).join('');
+  const s3ObjIds = new Set(s3.map(k=>k.objective_id).filter(Boolean));
+  const s3Objs = _objectivesData.filter(o=>s3ObjIds.has(o.objective_id)).sort((a,b)=>(a.objective_code||'').localeCompare(b.objective_code||''));
+  const s3Cards = s3Objs.map(o=>objCard(o, s3.filter(k=>k.objective_id===o.objective_id), false)).filter(Boolean).join('');
 
   el.innerHTML = `
     <div class="pc-section">
@@ -1325,8 +1328,8 @@ function renderKpis() {
       ${s2Cards || `<div class="pc-empty" style="padding:.85rem 1.1rem">${hasFilter?'No KPIs match current filter.':'No department objectives found.'}</div>`}
     </div>
     <div class="pc-section">
-      ${sectionHdr('ti-share','Common KPIs',`${s3.length} shared KPI${s3.length!==1?'s':''}`,'background:rgba(139,92,246,.07);border-color:rgba(139,92,246,.28)')}
-      <div class="pc-obj-card">${kpiTableBody(s3)}</div>
+      ${sectionHdr('ti-share','Common KPIs',`${s3.length} shared KPI${s3.length!==1?'s':''} across ${s3Objs.length} objectives`,'background:rgba(139,92,246,.07);border-color:rgba(139,92,246,.28)')}
+      ${s3Cards || `<div class="pc-empty" style="padding:.85rem 1.1rem">${hasFilter?'No KPIs match current filter.':'No common KPIs found.'}</div>`}
     </div>`;
 }
 
