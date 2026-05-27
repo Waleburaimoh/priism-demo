@@ -1193,7 +1193,12 @@ async function loadKpis() {
     const res = await fetch(`${API}/organisations/${SESSION.org_id}/kpis`);
     const d   = await res.json();
     _kpisData = d.kpis || [];
-    if (currentUnitPrefix) _kpisData = _kpisData.filter(k => k.kpi_code && k.kpi_code.startsWith(currentUnitPrefix+'-'));
+    if (currentUnitPrefix) {
+      _kpisData = _kpisData.filter(k => k.kpi_code && k.kpi_code.startsWith(currentUnitPrefix+'-'));
+    } else {
+      const instObjIds = new Set(_objectivesData.filter(o=>(o.objective_code||'').startsWith('INST-')).map(o=>o.objective_id));
+      _kpisData = _kpisData.filter(k => instObjIds.has(k.objective_id));
+    }
     renderKpis();
   } catch(e) { document.getElementById('kpis-table').innerHTML='<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load KPIs</p>'; }
 }
@@ -1228,7 +1233,11 @@ async function loadRisks() {
     const res = await fetch(`${API}/organisations/${SESSION.org_id}/risks`);
     const d   = await res.json();
     let risks = d.risks || [];
-    if (currentUnitPrefix) risks = risks.filter(r => r.risk_code && r.risk_code.startsWith(currentUnitPrefix+'-'));
+    if (currentUnitPrefix) {
+      risks = risks.filter(r => r.risk_code && r.risk_code.startsWith(currentUnitPrefix+'-'));
+    } else {
+      risks = risks.filter(r => (r.risk_code||'').startsWith('ORG-'));
+    }
     _risksData = [...risks].sort((a,b)=>((b.initial_likelihood||0)*(b.initial_impact_overall||0))-((a.initial_likelihood||0)*(a.initial_impact_overall||0)));
     renderRisks();
   } catch(e) { document.getElementById('risks-table').innerHTML='<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load risks</p>'; }
@@ -1281,7 +1290,11 @@ async function loadProjects() {
     const res = await fetch(`${API}/organisations/${SESSION.org_id}/projects`);
     const d   = await res.json();
     _projectsData = d.projects || [];
-    if (currentUnitPrefix) _projectsData = _projectsData.filter(p => p.project_code && p.project_code.startsWith(currentUnitPrefix+'-'));
+    if (currentUnitPrefix) {
+      _projectsData = _projectsData.filter(p => p.project_code && p.project_code.startsWith(currentUnitPrefix+'-'));
+    } else {
+      _projectsData = _projectsData.filter(p => (p.project_code||'').startsWith('ORG-'));
+    }
     renderProjects();
   } catch(e) { document.getElementById('projects-table').innerHTML='<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load projects</p>'; }
 }
