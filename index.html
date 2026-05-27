@@ -1023,7 +1023,11 @@ async function loadDashboard() {
     const kpiStat  = filteredKpis.length;
     const riskStat = filteredRisks.length;
     const projStat = filteredProjs.length;
+    const objStat = _objectivesData.filter(o => currentUnitPrefix
+      ? (o.objective_code||'').startsWith(currentUnitPrefix+'-')
+      : (o.objective_code||'').startsWith('INST-')).length;
     document.getElementById('dash-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-label"><i class="ti ti-target" style="font-size:12px"></i> Objectives</div><div class="stat-value">${objStat}</div></div>
       <div class="stat-card"><div class="stat-label"><i class="ti ti-chart-line" style="font-size:12px"></i> KPIs</div><div class="stat-value">${kpiStat}</div></div>
       <div class="stat-card"><div class="stat-label"><i class="ti ti-shield-exclamation" style="font-size:12px"></i> Risks</div><div class="stat-value">${riskStat}</div></div>
       <div class="stat-card"><div class="stat-label"><i class="ti ti-clipboard-list" style="font-size:12px"></i> Projects</div><div class="stat-value">${projStat}</div></div>
