@@ -1573,7 +1573,7 @@ function openDetailPanel(type, key, rowEl) {
       ${sh('Performance')}
       <div class="dp-grid2" style="margin-bottom:.5rem">
         <div style="background:rgba(125,211,232,.08);border:1px solid rgba(125,211,232,.2);border-radius:6px;padding:.6rem .9rem;text-align:center">
-          <div style="font-size:22px;font-weight:600;color:#7dd3e8">${linkedKpis.length}</div>
+          <div style="font-size:22px;font-weight:600;color:#7dd3e8">${o.linked_kpis != null ? o.linked_kpis : linkedKpis.length}</div>
           <div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)">KPIs</div>
         </div>
         <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:.6rem .9rem;text-align:center">
