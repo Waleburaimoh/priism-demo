@@ -1002,21 +1002,27 @@ async function loadDashboard() {
     const obj = await objRes.json();
     _objectivesData = obj.objectives || [];
     document.getElementById('dash-subtitle').textContent = d.organisation?.org_name + ' · ' + d.organisation?.org_type;
-    // For unit views: always fetch full lists so counts and filters are accurate
+    // Always fetch full lists so counts and widget rows are accurate for all views
+    await Promise.all([
+      fetch(`${API}/organisations/${SESSION.org_id}/kpis`).then(r=>r.json()).then(x=>{_kpisData=x.kpis||[];}),
+      fetch(`${API}/organisations/${SESSION.org_id}/risks`).then(r=>r.json()).then(x=>{_risksData=[...(x.risks||[])].sort((a,b)=>((b.initial_likelihood||0)*(b.initial_impact_overall||0))-((a.initial_likelihood||0)*(a.initial_impact_overall||0)));}),
+      fetch(`${API}/organisations/${SESSION.org_id}/projects`).then(r=>r.json()).then(x=>{_projectsData=x.projects||[];})
+    ]);
+    // Compute filtered arrays — same logic as the individual screens
+    let filteredKpis, filteredRisks, filteredProjs;
     if (currentUnitPrefix) {
-      await Promise.all([
-        fetch(`${API}/organisations/${SESSION.org_id}/kpis`).then(r=>r.json()).then(x=>{_kpisData=x.kpis||[];}),
-        fetch(`${API}/organisations/${SESSION.org_id}/risks`).then(r=>r.json()).then(x=>{_risksData=[...(x.risks||[])].sort((a,b)=>((b.initial_likelihood||0)*(b.initial_impact_overall||0))-((a.initial_likelihood||0)*(a.initial_impact_overall||0)));}),
-        fetch(`${API}/organisations/${SESSION.org_id}/projects`).then(r=>r.json()).then(x=>{_projectsData=x.projects||[];})
-      ]);
+      filteredKpis  = _kpisData.filter(k=>(k.kpi_code||'').startsWith(currentUnitPrefix+'-'));
+      filteredRisks = _risksData.filter(r=>(r.risk_code||'').startsWith(currentUnitPrefix+'-'));
+      filteredProjs = _projectsData.filter(p=>(p.project_code||'').startsWith(currentUnitPrefix+'-'));
+    } else {
+      const instObjIds = new Set(_objectivesData.filter(o=>(o.objective_code||'').startsWith('INST-')).map(o=>o.objective_id));
+      filteredKpis  = _kpisData.filter(k=>instObjIds.has(k.objective_id));
+      filteredRisks = _risksData.filter(r=>(r.risk_code||'').startsWith('ORG-'));
+      filteredProjs = _projectsData.filter(p=>(p.project_code||'').startsWith('ORG-'));
     }
-    // Compute filtered arrays once — shared by stat counts and dashboard widgets
-    const filteredKpis  = currentUnitPrefix ? _kpisData.filter(k=>(k.kpi_code||'').startsWith(currentUnitPrefix+'-')) : null;
-    const filteredRisks = currentUnitPrefix ? _risksData.filter(r=>(r.risk_code||'').startsWith(currentUnitPrefix+'-')) : null;
-    const filteredProjs = currentUnitPrefix ? _projectsData.filter(p=>(p.project_code||'').startsWith(currentUnitPrefix+'-')) : null;
-    const kpiStat  = !currentUnitPrefix ? d.summary.kpi_count     : filteredKpis.length;
-    const riskStat = !currentUnitPrefix ? d.summary.risk_count     : filteredRisks.length;
-    const projStat = !currentUnitPrefix ? d.summary.project_count  : filteredProjs.length;
+    const kpiStat  = filteredKpis.length;
+    const riskStat = filteredRisks.length;
+    const projStat = filteredProjs.length;
     document.getElementById('dash-stats').innerHTML = `
       <div class="stat-card"><div class="stat-label"><i class="ti ti-chart-line" style="font-size:12px"></i> KPIs</div><div class="stat-value">${kpiStat}</div></div>
       <div class="stat-card"><div class="stat-label"><i class="ti ti-shield-exclamation" style="font-size:12px"></i> Risks</div><div class="stat-value">${riskStat}</div></div>
@@ -1029,9 +1035,9 @@ async function loadDashboard() {
       return `<div style="padding:.5rem 1.1rem;border-top:1px solid var(--border)"><a href="#" onclick="showPage('${page}');return false" style="font-size:12px;color:var(--gold);text-decoration:none;font-weight:500">View all ${count} ${unitLabel}${noun} →</a></div>`;
     };
     // Widget rows — unit views use filtered arrays (already computed above)
-    const dashKpis     = !currentUnitPrefix ? d.recent.kpis     : filteredKpis.slice(0,5);
-    const dashRisks    = !currentUnitPrefix ? d.recent.risks    : filteredRisks.slice(0,5);
-    const dashProjects = !currentUnitPrefix ? d.recent.projects : filteredProjs.slice(0,5);
+    const dashKpis     = filteredKpis.slice(0,5);
+    const dashRisks    = filteredRisks.slice(0,5);
+    const dashProjects = filteredProjs.slice(0,5);
     document.getElementById('dash-kpis').innerHTML = dashKpis.length
       ? '<div style="max-height:300px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Unit</th></tr>'
         + dashKpis.map(k=>`<tr><td><span class="code-badge">${k.kpi_code}</span></td><td>${k.title}</td><td>${k.unit}</td></tr>`).join('')
