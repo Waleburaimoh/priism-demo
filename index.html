@@ -1307,9 +1307,9 @@ function renderKpis() {
     .sort((a,b)=>(a.objective_code||'').localeCompare(b.objective_code||''));
   const deptObjIds = new Set(deptObjs.map(o=>o.objective_id));
 
-  const s1 = visible.filter(k=>instObjIds.has(k.objective_id));
-  const s2 = visible.filter(k=>deptObjIds.has(k.objective_id));
   const s3 = visible.filter(k=>(k.kpi_code||'').includes('-CMN-'));
+  const s1 = visible.filter(k=>instObjIds.has(k.objective_id) && !(k.kpi_code||'').includes('-CMN-'));
+  const s2 = visible.filter(k=>deptObjIds.has(k.objective_id) && !(k.kpi_code||'').includes('-CMN-') && !(k.kpi_code||'').includes('-INST-'));
 
   const deptLabel = UNIT_LABELS[currentUnitPrefix]||currentUnitPrefix;
   const s1Cards = instObjs.map(o=>objCard(o, s1.filter(k=>k.objective_id===o.objective_id), false)).filter(Boolean).join('');
