@@ -1312,7 +1312,13 @@ function renderKpis() {
   const s2 = visible.filter(k=>deptObjIds.has(k.objective_id) && !(k.kpi_code||'').includes('-CMN-') && !(k.kpi_code||'').includes('-INST-'));
 
   const deptLabel = UNIT_LABELS[currentUnitPrefix]||currentUnitPrefix;
-  const s1Cards = instObjs.map(o=>objCard(o, s1.filter(k=>k.objective_id===o.objective_id), false)).filter(Boolean).join('');
+  const instObjNum = o => { const m = (o.objective_code||'').match(/(\d+)$/); return m ? parseInt(m[1]) : null; };
+  const kpiInstNum = k => { const m = (k.kpi_code||'').match(/-INST-(\d+)[.\-]/); return m ? parseInt(m[1]) : null; };
+  const s1Cards = instObjs.map(o => {
+    const oNum = instObjNum(o);
+    const objKpis = s1.filter(k => { const kNum = kpiInstNum(k); return kNum !== null ? kNum === oNum : k.objective_id === o.objective_id; });
+    return objCard(o, objKpis, false);
+  }).filter(Boolean).join('');
   const s2Cards = deptObjs.map(o=>objCard(o, s2.filter(k=>k.objective_id===o.objective_id), false)).filter(Boolean).join('');
   const s3ObjIds = new Set(s3.map(k=>k.objective_id).filter(Boolean));
   const s3Objs = _objectivesData.filter(o=>s3ObjIds.has(o.objective_id)).sort((a,b)=>(a.objective_code||'').localeCompare(b.objective_code||''));
