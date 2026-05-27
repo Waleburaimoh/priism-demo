@@ -1577,11 +1577,11 @@ function openDetailPanel(type, key, rowEl) {
           <div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)">KPIs</div>
         </div>
         <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:.6rem .9rem;text-align:center">
-          <div style="font-size:22px;font-weight:600;color:#FCA5A5">${linkedRisks.length}</div>
+          <div style="font-size:22px;font-weight:600;color:#FCA5A5">${o.linked_risks != null ? o.linked_risks : linkedRisks.length}</div>
           <div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)">Risks</div>
         </div>
         <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:6px;padding:.6rem .9rem;text-align:center">
-          <div style="font-size:22px;font-weight:600;color:#6EE7B7">${linkedProjs.length}</div>
+          <div style="font-size:22px;font-weight:600;color:#6EE7B7">${o.linked_projects != null ? o.linked_projects : linkedProjs.length}</div>
           <div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)">Projects</div>
         </div>
       </div>`;
