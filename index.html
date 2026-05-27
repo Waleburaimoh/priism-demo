@@ -211,6 +211,25 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
   .form-row{grid-template-columns:1fr}
 }
 
+/* ── PERFORMANCE CONTRACT ── */
+.pc-section{margin-bottom:1.25rem}
+.pc-section-hdr{display:flex;align-items:center;justify-content:space-between;padding:.65rem 1.1rem;background:rgba(201,168,76,.07);border:1px solid var(--border2);border-radius:8px;margin-bottom:.55rem;gap:.75rem;flex-wrap:wrap}
+.pc-section-title{font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--gold);letter-spacing:.4px;display:flex;align-items:center}
+.pc-section-meta{font-size:11px;color:var(--muted);white-space:nowrap}
+.pc-obj-card{background:rgba(30,51,58,.45);border:1px solid var(--border);border-radius:7px;margin-bottom:.4rem;overflow:hidden}
+.pc-obj-hdr{display:flex;align-items:center;gap:.6rem;padding:.6rem 1rem;cursor:pointer;transition:background .15s}
+.pc-obj-hdr:hover{background:rgba(201,168,76,.06)}
+.pc-obj-title{font-size:12.5px;font-weight:500;color:var(--cream);flex:1;line-height:1.35;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc-obj-chevron{color:var(--muted);font-size:13px;transition:transform .2s;flex-shrink:0}
+.pc-obj-body{border-top:1px solid var(--border)}
+.pc-kpi-table{width:100%;border-collapse:collapse;font-size:12px}
+.pc-kpi-table th{text-align:left;padding:6px 1rem;font-size:9px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--gold);background:rgba(30,51,58,.28);border-bottom:1px solid var(--border);opacity:.8}
+.pc-kpi-table td{padding:7px 1rem;border-bottom:1px solid var(--border);color:var(--cream);vertical-align:middle}
+.pc-kpi-table tr:last-child td{border-bottom:none}
+.pc-kpi-table tr:hover td{background:rgba(201,168,76,.04)}
+.pc-empty{padding:.7rem 1rem;font-size:12px;color:var(--muted);font-style:italic}
+@media(max-width:700px){.pc-obj-title{white-space:normal}}
+
 /* ── ROADMAP ── */
 @keyframes roadmap-pulse{
   0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,0);border-color:var(--gold)}
@@ -415,13 +434,13 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
     <!-- KPIs -->
     <div id="page-kpis" class="page" style="display:none">
       <div class="page-header">
-        <div><div class="page-title">KPIs</div><div class="page-subtitle">Key Performance Indicators</div></div>
+        <div><div class="page-title">Performance Contract</div><div class="page-subtitle">KPIs grouped by objective — institutional, departmental &amp; common</div></div>
         <button class="btn-sm" onclick="openModal('kpi')"><i class="ti ti-plus"></i> Add KPI</button>
       </div>
       <div class="unit-banner" id="unit-banner-kpis"></div>
       <div class="page-body">
         <div class="filter-bar">
-          <input id="kpi-search" type="text" placeholder="Filter by title…" oninput="filterKpis()">
+          <input id="kpi-search" type="text" placeholder="Filter by title or code…" oninput="filterKpis()">
           <select id="kpi-freq-filter" onchange="filterKpis()">
             <option value="">All Frequencies</option>
             <option value="annual">Annual</option>
@@ -430,7 +449,7 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
             <option value="weekly">Weekly</option>
           </select>
         </div>
-        <div class="section-card"><div id="kpis-table"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>
+        <div id="kpis-table"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
       </div>
     </div>
 
@@ -1204,7 +1223,8 @@ async function loadKpis() {
     const d   = await res.json();
     _kpisData = d.kpis || [];
     if (currentUnitPrefix) {
-      _kpisData = _kpisData.filter(k => k.kpi_code && k.kpi_code.startsWith(currentUnitPrefix+'-'));
+      _kpisData = _kpisData.filter(k => k.kpi_code &&
+        (k.kpi_code.startsWith(currentUnitPrefix+'-') || k.kpi_code.startsWith('CMN-')));
     } else {
       const instObjIds = new Set(_objectivesData.filter(o=>(o.objective_code||'').startsWith('INST-')).map(o=>o.objective_id));
       _kpisData = _kpisData.filter(k => instObjIds.has(k.objective_id));
@@ -1216,24 +1236,98 @@ async function loadKpis() {
 function filterKpis() { renderKpis(); }
 
 function renderKpis() {
-  const q = (document.getElementById('kpi-search')?.value||'').toLowerCase();
+  const q  = (document.getElementById('kpi-search')?.value||'').toLowerCase();
   const fq = document.getElementById('kpi-freq-filter')?.value||'';
-  const rows = _kpisData.filter(k =>
-    (!currentUnitPrefix || k.kpi_code.startsWith(currentUnitPrefix+'-')) &&
-    (!q || (k.title||'').toLowerCase().includes(q) || (k.kpi_code||'').toLowerCase().includes(q)) &&
+  const esc = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const hasFilter = !!(q || fq);
+
+  const visible = _kpisData.filter(k =>
+    (!q  || (k.title||'').toLowerCase().includes(q) || (k.kpi_code||'').toLowerCase().includes(q)) &&
     (!fq || (k.measurement_frequency||'').toLowerCase() === fq)
   );
-  rows.forEach(k => { _dpMap['kpi_'+k.kpi_id] = k; });
-  document.getElementById('kpis-table').innerHTML = rows.length
-    ? `<table class="data-table"><tr><th>Code</th><th>Title</th><th>Category</th><th>Unit</th><th>Frequency</th><th>Trend</th></tr>${rows.map(k=>`<tr onclick="openDetailPanel('kpi','kpi_${k.kpi_id}',this)" style="cursor:pointer" title="Click to view details">
-        <td><span class="code-badge">${k.kpi_code}</span></td>
-        <td><div style="font-weight:500">${k.title}</div>${k.owner_name_free?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${k.owner_name_free}</div>`:''}</td>
-        <td>${kpiCatBadge(k.kpi_category)}</td>
-        <td>${k.unit}</td>
-        <td>${k.measurement_frequency||'—'}</td>
-        <td><span class="status-badge badge-grey">${k.trend_preference||'—'}</span></td>
-      </tr>`).join('')}</table>`
-    : '<div class="empty-state"><i class="ti ti-chart-line"></i><p>No KPIs match your filter.</p></div>';
+  visible.forEach(k => { _dpMap['kpi_'+k.kpi_id] = k; });
+
+  const el = document.getElementById('kpis-table');
+  if (!el) return;
+
+  const PMAP  = {1:'Academic Excellence',2:'Student & Stakeholder',3:'Internal Processes',4:'Learning & Growth'};
+  const PBADGE = {1:'badge-gold',2:'badge-teal',3:'badge-blue',4:'badge-purple'};
+  const perspTag = n => { const l=PMAP[+n]; return l?`<span class="status-badge ${PBADGE[+n]||'badge-grey'}" style="font-size:9.5px;padding:2px 7px;flex-shrink:0">${l}</span>`:''; };
+
+  const kpiRow = k => `<tr onclick="openDetailPanel('kpi','kpi_${k.kpi_id}',this)" style="cursor:pointer" title="Click to view details">
+    <td><span class="code-badge" style="font-size:10px">${esc(k.kpi_code)}</span></td>
+    <td style="font-weight:500">${esc(k.title)}${k.owner_name_free?`<div style="font-size:10px;color:var(--muted);margin-top:1px">${esc(k.owner_name_free)}</div>`:''}</td>
+    <td style="font-size:12px;color:var(--muted)">${esc(k.unit||'—')}</td>
+    <td style="font-size:12px">${esc(k.measurement_frequency||'—')}</td>
+    <td><span class="status-badge badge-grey" style="font-size:10px;padding:2px 7px">${esc(k.trend_preference||'—')}</span></td>
+    <td style="font-size:12px;color:#6EE7B7;font-weight:500">${k.target_value!=null?esc(String(k.target_value)):'—'}</td>
+  </tr>`;
+
+  const kpiTableBody = kpis => kpis.length
+    ? `<table class="pc-kpi-table"><tr><th>Code</th><th>Title</th><th>Unit</th><th>Frequency</th><th>Trend</th><th>Target</th></tr>${kpis.map(kpiRow).join('')}</table>`
+    : `<div class="pc-empty">No KPIs match current filter.</div>`;
+
+  const objCard = (obj, kpis, expanded) => {
+    if (hasFilter && kpis.length === 0) return '';
+    const id = 'pco-' + obj.objective_id.replace(/-/g,'');
+    const cnt = kpis.length;
+    return `<div class="pc-obj-card">
+      <div class="pc-obj-hdr" onclick="toggleSection('${id}')">
+        <span class="code-badge" style="font-size:10px;flex-shrink:0">${esc(obj.objective_code)}</span>
+        <span class="pc-obj-title">${esc(obj.title)}</span>
+        ${perspTag(obj.perspective_number)}
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap;flex-shrink:0">${cnt} KPI${cnt!==1?'s':''}</span>
+        <i class="ti ti-chevron-down pc-obj-chevron" id="icon-${id}"${expanded?'':' style="transform:rotate(-90deg)"'}></i>
+      </div>
+      <div id="${id}"${expanded?'':' style="display:none"'} class="pc-obj-body">${kpiTableBody(kpis)}</div>
+    </div>`;
+  };
+
+  const sectionHdr = (icon, title, meta, extraStyle) =>
+    `<div class="pc-section-hdr"${extraStyle?` style="${extraStyle}"`:''}><span class="pc-section-title"><i class="ti ${icon}" style="margin-right:.45rem;opacity:.85"></i>${title}</span><span class="pc-section-meta">${meta}</span></div>`;
+
+  // ── INST VIEW: Section 1 only ──
+  if (currentUnit === 'INST') {
+    const instObjs = _objectivesData.filter(o=>(o.objective_code||'').startsWith('INST-'))
+      .sort((a,b)=>(a.objective_code||'').localeCompare(b.objective_code||''));
+    const cards = instObjs.map(o => objCard(o, visible.filter(k=>k.objective_id===o.objective_id), false)).filter(Boolean).join('');
+    el.innerHTML = `<div class="pc-section">
+      ${sectionHdr('ti-building-bank','Institutional Objectives &amp; KPIs',`${visible.length} KPI${visible.length!==1?'s':''} across ${instObjs.length} objectives`)}
+      ${cards || '<div class="empty-state" style="padding:2.5rem"><i class="ti ti-chart-line"></i><p>No KPIs found for current filter.</p></div>'}
+    </div>`;
+    return;
+  }
+
+  // ── DEPT VIEW: 3 sections ──
+  const instObjs = _objectivesData.filter(o=>(o.objective_code||'').startsWith('INST-'))
+    .sort((a,b)=>(a.objective_code||'').localeCompare(b.objective_code||''));
+  const instObjIds = new Set(instObjs.map(o=>o.objective_id));
+
+  const deptObjs = _objectivesData.filter(o=>(o.objective_code||'').startsWith(currentUnitPrefix+'-'))
+    .sort((a,b)=>(a.objective_code||'').localeCompare(b.objective_code||''));
+  const deptObjIds = new Set(deptObjs.map(o=>o.objective_id));
+
+  const s1 = visible.filter(k=>instObjIds.has(k.objective_id));
+  const s2 = visible.filter(k=>deptObjIds.has(k.objective_id));
+  const s3 = visible.filter(k=>(k.kpi_code||'').startsWith('CMN-'));
+
+  const deptLabel = UNIT_LABELS[currentUnitPrefix]||currentUnitPrefix;
+  const s1Cards = instObjs.map(o=>objCard(o, s1.filter(k=>k.objective_id===o.objective_id), false)).filter(Boolean).join('');
+  const s2Cards = deptObjs.map(o=>objCard(o, s2.filter(k=>k.objective_id===o.objective_id), true)).filter(Boolean).join('');
+
+  el.innerHTML = `
+    <div class="pc-section">
+      ${sectionHdr('ti-building-bank','Institutional Objectives &amp; KPIs',`${s1.length} KPI${s1.length!==1?'s':''} across ${instObjs.length} objectives`)}
+      ${s1Cards || `<div class="pc-empty" style="padding:.85rem 1.1rem">${hasFilter?'No KPIs match current filter.':'No KPIs linked to institutional objectives.'}</div>`}
+    </div>
+    <div class="pc-section">
+      ${sectionHdr('ti-target',`${esc(deptLabel)} Objectives &amp; KPIs`,`${s2.length} KPI${s2.length!==1?'s':''} across ${deptObjs.length} objectives`,'background:rgba(44,114,128,.13);border-color:rgba(77,114,128,.38)')}
+      ${s2Cards || `<div class="pc-empty" style="padding:.85rem 1.1rem">${hasFilter?'No KPIs match current filter.':'No department objectives found.'}</div>`}
+    </div>
+    <div class="pc-section">
+      ${sectionHdr('ti-share','Common KPIs',`${s3.length} shared KPI${s3.length!==1?'s':''}`,'background:rgba(139,92,246,.07);border-color:rgba(139,92,246,.28)')}
+      <div class="pc-obj-card">${kpiTableBody(s3)}</div>
+    </div>`;
 }
 
 // ── RISKS ──
