@@ -282,6 +282,10 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
 @media(max-width:900px){.analysis-grid{grid-template-columns:1fr}}
 .rag-bar{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin:.35rem 0}
 .rag-block{display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .75rem;border-radius:6px;font-size:12px;font-weight:500}
+.ai-report-panel{background:rgba(20,38,48,.7);border:1.5px solid var(--gold);border-radius:10px;padding:1.4rem 1.6rem;margin-bottom:1.1rem;backdrop-filter:blur(4px)}
+.ai-report-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1.1rem;padding-bottom:.8rem;border-bottom:1px solid var(--border)}
+.ai-report-body{font-size:13.5px;line-height:1.82;color:var(--cream-dark)}
+.ai-report-body br+br{display:block;margin-top:.55rem}
 
 /* ── ACCESS GATE ── */
 #access-gate{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:2rem;
@@ -959,9 +963,13 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
           <div class="page-title">Analysis</div>
           <div class="page-subtitle">Cross-domain intelligence — at-risk objectives, untreated risks, KPI health, project status</div>
         </div>
-        <button class="btn-sm" onclick="loadAnalysis()"><i class="ti ti-refresh"></i> Refresh</button>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <button class="btn-sm" onclick="loadAnalysis()"><i class="ti ti-refresh"></i> Refresh</button>
+          <button class="btn-sm" id="btn-gen-report" onclick="generateStrategyNarrative()" style="background:rgba(201,168,76,.18);border-color:var(--gold)"><i class="ti ti-brain"></i> Generate AI Report</button>
+        </div>
       </div>
       <div class="page-body">
+        <div id="analysis-report" style="display:none"></div>
         <div id="analysis-content"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
       </div>
     </div>
@@ -2603,6 +2611,71 @@ async function loadAnalysis() {
     const d = await res.json();
     renderAnalysis(d);
   } catch(e) { el.innerHTML = '<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load analysis data</p>'; }
+}
+
+async function generateStrategyNarrative() {
+  const btn = document.getElementById('btn-gen-report');
+  const reportEl = document.getElementById('analysis-report');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Generating…';
+  reportEl.style.display = 'block';
+  reportEl.innerHTML = `<div class="ai-report-panel" style="text-align:center;padding:2rem 1.6rem">
+    <div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    <p style="margin-top:.8rem;font-size:13px;color:var(--muted)">Generating strategy narrative — this may take 10–20 seconds…</p>
+  </div>`;
+  try {
+    const res = await fetch(`${API}/organisations/${SESSION.org_id}/reports/strategy-narrative`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    const ts = new Date(data.generated_at).toLocaleString();
+    const bodyHtml = _reportEsc(data.report_text || '');
+    reportEl.innerHTML = `<div class="ai-report-panel">
+      <div class="ai-report-header">
+        <div>
+          <div style="font-family:var(--font-display);font-size:18px;font-weight:500;color:var(--gold);margin-bottom:.2rem"><i class="ti ti-brain" style="font-size:15px;opacity:.8"></i> Strategy Narrative Report</div>
+          <div style="font-size:11px;color:var(--muted)">Generated ${ts} · AI-assisted · Review before sharing</div>
+        </div>
+        <button class="btn-sm" id="btn-copy-report" onclick="copyReport()" style="flex-shrink:0"><i class="ti ti-copy"></i> Copy</button>
+      </div>
+      <div class="ai-report-body" id="report-text-body">${bodyHtml}</div>
+    </div>`;
+  } catch(e) {
+    reportEl.innerHTML = `<div class="ai-report-panel" style="border-color:rgba(239,68,68,.45)">
+      <p style="color:#FCA5A5;font-size:13px"><i class="ti ti-alert-circle"></i> Failed to generate report: ${_reportEsc(e.message)}</p>
+    </div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-brain"></i> Generate AI Report';
+  }
+}
+
+function copyReport() {
+  const el = document.getElementById('report-text-body');
+  if (!el) return;
+  const text = el.innerText || '';
+  const btn = document.getElementById('btn-copy-report');
+  navigator.clipboard.writeText(text).then(() => {
+    if (btn) { btn.innerHTML = '<i class="ti ti-check"></i> Copied!'; setTimeout(() => { btn.innerHTML = '<i class="ti ti-copy"></i> Copy'; }, 2000); }
+  }).catch(() => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    if (btn) { btn.innerHTML = '<i class="ti ti-check"></i> Copied!'; setTimeout(() => { btn.innerHTML = '<i class="ti ti-copy"></i> Copy'; }, 2000); }
+  });
+}
+
+function _reportEsc(s) {
+  return (s == null ? '' : String(s))
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>');
 }
 
 function renderAnalysis(d) {
