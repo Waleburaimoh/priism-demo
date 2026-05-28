@@ -282,9 +282,64 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
 @media(max-width:900px){.analysis-grid{grid-template-columns:1fr}}
 .rag-bar{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin:.35rem 0}
 .rag-block{display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .75rem;border-radius:6px;font-size:12px;font-weight:500}
+
+/* ── ACCESS GATE ── */
+#access-gate{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:2rem;
+  background:radial-gradient(ellipse at 20% 70%,rgba(201,168,76,0.06) 0%,transparent 55%),
+             radial-gradient(ellipse at 80% 10%,rgba(44,74,82,0.55) 0%,transparent 50%),#1e333a}
+#access-gate.hidden{display:none}
+.gate-card{width:100%;max-width:400px;text-align:center}
+.gate-logo-text{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600;color:#C9A84C;letter-spacing:2px;margin-bottom:4px}
+.gate-tagline{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(245,240,232,0.4);margin-bottom:2rem}
+.gate-box{background:rgba(44,74,82,0.4);border:1px solid rgba(201,168,76,0.32);border-radius:12px;padding:1.75rem;backdrop-filter:blur(8px)}
+.gate-box h2{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:#F5F0E8;margin-bottom:.25rem}
+.gate-box p{font-size:12.5px;color:rgba(245,240,232,0.48);margin-bottom:1.4rem}
+.gate-input{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(201,168,76,0.32);border-radius:7px;padding:11px 13px;font-size:14px;font-family:'DM Sans',sans-serif;color:#F5F0E8;outline:none;transition:border-color .2s;margin-bottom:.85rem;letter-spacing:.5px}
+.gate-input:focus{border-color:#C9A84C}
+.gate-input::placeholder{color:rgba(245,240,232,0.22);letter-spacing:0}
+.gate-btn{width:100%;background:#C9A84C;border:none;border-radius:7px;padding:11px;font-size:14px;font-weight:500;font-family:'DM Sans',sans-serif;color:#1e333a;cursor:pointer;transition:opacity .2s}
+.gate-btn:hover{opacity:.88}
+.gate-btn:active{opacity:.75}
+.gate-error{font-size:12.5px;color:#FCA5A5;margin-top:.75rem;min-height:1.2em}
 </style>
 </head>
 <body>
+
+<!-- ACCESS GATE -->
+<div id="access-gate">
+  <div class="gate-card">
+    <div class="gate-logo-text">PRiiSM</div>
+    <div class="gate-tagline">Strategy · Risk · Performance</div>
+    <div class="gate-box">
+      <h2>Demo Access</h2>
+      <p>Enter the access password to continue</p>
+      <input id="gate-pw" class="gate-input" type="password" placeholder="Password" autocomplete="current-password">
+      <button class="gate-btn" onclick="checkGate()">Continue</button>
+      <div id="gate-error" class="gate-error"></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  if(localStorage.getItem('priism_access')==='granted'){
+    document.getElementById('access-gate').classList.add('hidden');
+  }
+  document.getElementById('gate-pw').addEventListener('keydown',function(e){
+    if(e.key==='Enter') checkGate();
+  });
+  window.checkGate=function(){
+    var pw=document.getElementById('gate-pw').value;
+    if(pw==='Demo2026!'){
+      localStorage.setItem('priism_access','granted');
+      document.getElementById('access-gate').classList.add('hidden');
+    } else {
+      document.getElementById('gate-error').textContent='Access denied';
+      document.getElementById('gate-pw').value='';
+      document.getElementById('gate-pw').focus();
+    }
+  };
+})();
+</script>
 
 <!-- LOGIN -->
 <div id="login-screen">
