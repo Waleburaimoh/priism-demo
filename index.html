@@ -310,6 +310,14 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
 .ir-output-body br+br{display:block;margin-top:.5rem}
 .ir-ts{font-size:11px;color:var(--muted)}
 @media(max-width:700px){.ir-grid{grid-template-columns:1fr}.ir-card-ops{grid-column:span 1}}
+@media print{
+  body>*:not(#print-frame){display:none!important}
+  #print-frame{display:block!important;font-family:Georgia,serif;color:#111;padding:1.5cm 2cm}
+  #print-frame .pf-title{font-size:20pt;font-weight:bold;margin-bottom:4pt}
+  #print-frame .pf-ts{font-size:9pt;color:#555;margin-bottom:14pt;border-bottom:1pt solid #ccc;padding-bottom:6pt}
+  #print-frame .pf-body{font-size:11pt;line-height:1.75}
+  #print-frame .pf-body br{display:block;margin-bottom:3pt}
+}
 
 /* ── ACCESS GATE ── */
 #access-gate{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:2rem;
@@ -2769,6 +2777,22 @@ function _copyText(text, btn) {
   });
 }
 
+function _printReport(bodyId, cardId, ts) {
+  const bodyEl = document.getElementById(bodyId);
+  if (!bodyEl) return;
+  const card = document.getElementById(cardId);
+  const title = card ? (card.querySelector('.ir-title') || {}).textContent || 'Report' : 'Report';
+  const frame = document.getElementById('print-frame');
+  frame.innerHTML = `<div class="pf-title">${title}</div><div class="pf-ts">${ts} · AI-assisted · Review before sharing</div><div class="pf-body">${bodyEl.innerHTML}</div>`;
+  window.print();
+  setTimeout(() => { frame.innerHTML = ''; }, 500);
+}
+
+function _closeReport(outId) {
+  const el = document.getElementById(outId);
+  if (el) el.style.display = 'none';
+}
+
 async function generateReport(cardId, endpoint, btn) {
   const outEl = document.getElementById(`ir-out-${cardId}`);
   const origLabel = btn.textContent;
@@ -2790,7 +2814,11 @@ async function generateReport(cardId, endpoint, btn) {
     outEl.innerHTML = `
       <div class="ir-output-header">
         <span class="ir-ts">Generated ${ts} · AI-assisted · Review before sharing</span>
-        <button class="btn-sm" onclick="_copyText(document.getElementById('${bid}').innerText, this)" style="flex-shrink:0"><i class="ti ti-copy"></i> Copy</button>
+        <div style="display:flex;gap:.4rem;flex-shrink:0">
+          <button class="btn-sm" onclick="_copyText(document.getElementById('${bid}').innerText, this)"><i class="ti ti-copy"></i> Copy</button>
+          <button class="btn-sm" onclick="_printReport('${bid}','ir-card-${cardId}','${ts}')"><i class="ti ti-printer"></i> Print</button>
+          <button class="btn-sm" onclick="_closeReport('ir-out-${cardId}')"><i class="ti ti-x"></i> Close</button>
+        </div>
       </div>
       <div class="ir-output-body" id="${bid}">${_reportEsc(data.report_text || '')}</div>`;
   } catch(e) {
@@ -2823,7 +2851,11 @@ async function generateCustomReport(btn) {
     outEl.innerHTML = `
       <div class="ir-output-header">
         <span class="ir-ts">Generated ${ts} · AI-enhanced · Review before sharing</span>
-        <button class="btn-sm" onclick="_copyText(document.getElementById('ir-body-custom').innerText, this)" style="flex-shrink:0"><i class="ti ti-copy"></i> Copy</button>
+        <div style="display:flex;gap:.4rem;flex-shrink:0">
+          <button class="btn-sm" onclick="_copyText(document.getElementById('ir-body-custom').innerText, this)"><i class="ti ti-copy"></i> Copy</button>
+          <button class="btn-sm" onclick="_printReport('ir-body-custom','ir-card-custom','${ts}')"><i class="ti ti-printer"></i> Print</button>
+          <button class="btn-sm" onclick="_closeReport('ir-out-custom')"><i class="ti ti-x"></i> Close</button>
+        </div>
       </div>
       <div class="ir-output-body" id="ir-body-custom">${_reportEsc(data.report_text || '')}</div>`;
   } catch(e) {
@@ -2911,6 +2943,7 @@ document.getElementById('login-org').addEventListener('keydown',   e=>{ if(e.key
 document.getElementById('modal-overlay').addEventListener('click', e=>{ if(e.target===document.getElementById('modal-overlay')) closeModal(); });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeDetailPanel(); });
 </script>
+<div id="print-frame" style="display:none"></div>
 </body>
 </html>
 
