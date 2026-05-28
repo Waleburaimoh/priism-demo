@@ -451,7 +451,7 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
       </div>
       <div class="unit-banner" id="unit-banner-dashboard"></div>
       <div class="page-body">
-        <div class="stat-grid" id="dash-stats"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+        <div id="dash-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:.9rem;margin-bottom:1.4rem"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
         <div class="dashboard-grid">
           <div class="section-card" style="margin-bottom:.9rem;border-bottom:2px solid var(--border2)"><div class="section-card-header"><div class="section-card-title"><i class="ti ti-target"></i> Strategic Objectives</div></div><div id="dash-objectives"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div><div class="section-card" style="border-bottom:2px solid var(--border2)">
             <div class="section-card-header"><div class="section-card-title"><i class="ti ti-chart-line"></i> KPI Summary</div></div>
@@ -1139,16 +1139,7 @@ async function loadDashboard() {
     const objStat = _objectivesData.filter(o => currentUnitPrefix
       ? (o.objective_code||'').startsWith(currentUnitPrefix+'-')
       : (o.objective_code||'').startsWith('INST-')).length;
-    const _ragMap = {};
-    ((_dashAnalysis?.kpi_rag_distribution)||[]).forEach(r=>{_ragMap[r.rag_status||'No Data']=r.count;});
-    const kpiGreen = _ragMap['Green']||0, kpiAmber = _ragMap['Amber']||0, kpiRed = _ragMap['Red']||0;
-    document.getElementById('dash-stats').innerHTML = `
-      <div class="stat-card"><div class="stat-label"><i class="ti ti-target" style="font-size:12px"></i> Objectives</div><div class="stat-value">${objStat}</div></div>
-      <div class="stat-card" style="display:flex;align-items:center;gap:.7rem;padding:.75rem 1rem">${makeRagDonut(kpiGreen,kpiAmber,kpiRed,kpiStat)}<div style="min-width:0"><div class="stat-label" style="margin-bottom:4px"><i class="ti ti-chart-line" style="font-size:12px"></i> KPIs</div><div class="stat-value">${kpiStat}</div><div style="margin-top:.3rem;display:flex;flex-direction:column;gap:2px">${kpiGreen?`<span style="font-size:10px;color:#2ecc71;letter-spacing:.2px">● ${kpiGreen} Green</span>`:''}${kpiAmber?`<span style="font-size:10px;color:#f39c12;letter-spacing:.2px">● ${kpiAmber} Amber</span>`:''}${kpiRed?`<span style="font-size:10px;color:#e74c3c;letter-spacing:.2px">● ${kpiRed} Red</span>`:''}</div></div></div>
-      <div class="stat-card"><div class="stat-label"><i class="ti ti-shield-exclamation" style="font-size:12px"></i> Risks</div><div class="stat-value">${riskStat}</div></div>
-      <div class="stat-card"><div class="stat-label"><i class="ti ti-clipboard-list" style="font-size:12px"></i> Projects</div><div class="stat-value">${projStat}</div></div>
-      <div class="stat-card"><div class="stat-label"><i class="ti ti-building" style="font-size:12px"></i> Org Type</div><div class="stat-value" style="font-size:15px;margin-top:5px">${d.organisation.org_type}</div></div>
-    `;
+    renderDashVisuals(filteredKpis, filteredRisks, filteredProjs, _dashAnalysis);
     // "View all X" helper — count is always pre-computed, passed as first arg
     const _va = (count, noun, page) => {
       const unitLabel = currentUnitPrefix ? (UNIT_LABELS[currentUnitPrefix]||currentUnitPrefix)+' ' : '';
@@ -1215,6 +1206,28 @@ function makeRagDonut(g, a, r, kpiTotal) {
   return `<svg width="120" height="120" viewBox="0 0 120 120"><circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="${sw}"/>${arcs.join('')}${cText}</svg>`;
 }
 
+function makeDonut(segs, displayNum, subLabel, size) {
+  size = size || 110;
+  const R = Math.round(size * 0.385), cx = size / 2, cy = size / 2, sw = Math.round(size * 0.09);
+  const circ = 2 * Math.PI * R;
+  const segTotal = segs.reduce((s, x) => s + (x.v || 0), 0);
+  const fs1 = Math.round(size * 0.165), fs2 = Math.round(size * 0.068), gy = Math.round(cy + size * 0.105);
+  const cText = displayNum > 0
+    ? `<text x="${cx}" y="${cy - 3}" text-anchor="middle" fill="#F5F0E8" font-size="${fs1}" font-family="Cormorant Garamond,serif" font-weight="500">${displayNum}</text><text x="${cx}" y="${gy}" text-anchor="middle" fill="rgba(245,240,232,0.4)" font-size="${fs2}" font-family="DM Sans,sans-serif" letter-spacing="0.8">${subLabel || ''}</text>`
+    : `<text x="${cx}" y="${cy + 5}" text-anchor="middle" fill="rgba(245,240,232,0.25)" font-size="14" font-family="DM Sans,sans-serif">—</text>`;
+  if (!segTotal) return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0"><circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="${sw}"/>${cText}</svg>`;
+  const gap = segTotal > 1 ? 1.5 : 0;
+  let cum = 0;
+  const arcs = segs.filter(s => s.v > 0).map(s => {
+    const frac = s.v / segTotal;
+    const dash = Math.max(0, frac * circ - gap);
+    const off = circ * (1 - cum);
+    cum += frac;
+    return `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${s.c}" stroke-width="${sw}" stroke-dasharray="${dash.toFixed(2)} ${circ.toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"/>`;
+  });
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0"><circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="${sw}"/>${arcs.join('')}${cText}</svg>`;
+}
+
 function makeSparkline(actuals) {
   const vals = actuals.map(a => parseFloat(a.actual_value)).filter(v => !isNaN(v));
   if (vals.length < 2) return '';
@@ -1252,6 +1265,110 @@ function renderDashConcentration(data) {
     </div>`;
   }).join('');
   el.innerHTML = `<div class="section-card" style="border-bottom:2px solid var(--border2)"><div class="section-card-header"><div class="section-card-title"><i class="ti ti-building-community"></i> Risk Concentration by Department</div><span style="font-size:11px;color:var(--muted)">Top ${top8.length} · <span style="color:#FCA5A5;font-size:10px">▪ high-risk ≥12</span></span></div><div style="padding:.65rem 1.1rem .75rem"><div style="display:flex;gap:.55rem;margin-bottom:.35rem;font-size:9px;letter-spacing:.6px;color:var(--muted);text-transform:uppercase"><span style="flex:0 0 34px;text-align:right">Dept</span><span style="flex:1">Distribution</span><span style="flex:0 0 26px;text-align:right">Total</span><span style="flex:0 0 20px;text-align:right">High</span></div>${rows}</div></div>`;
+}
+
+function renderDashVisuals(filteredKpis, filteredRisks, filteredProjs, analysis) {
+  const el = document.getElementById('dash-stats');
+  if (!el) return;
+
+  // ── 1. KPI RAG donut ──
+  const rm = {};
+  ((analysis?.kpi_rag_distribution) || []).forEach(r => { rm[r.rag_status || 'No Data'] = r.count; });
+  const kpiG = rm['Green'] || 0, kpiA = rm['Amber'] || 0, kpiR = rm['Red'] || 0;
+  const kpiTotal = filteredKpis.length;
+  const kpiSegs = [{v: kpiR, c: '#e74c3c'}, {v: kpiA, c: '#f39c12'}, {v: kpiG, c: '#2ecc71'}];
+  const kpiLegend = [
+    kpiG ? `<span style="font-size:11px;color:#2ecc71;letter-spacing:.2px">● ${kpiG} Green</span>` : '',
+    kpiA ? `<span style="font-size:11px;color:#f39c12;letter-spacing:.2px">● ${kpiA} Amber</span>` : '',
+    kpiR ? `<span style="font-size:11px;color:#e74c3c;letter-spacing:.2px">● ${kpiR} Red</span>` : '',
+    `<span style="font-size:10px;color:var(--muted);margin-top:2px">${kpiTotal} total KPIs</span>`,
+  ].filter(Boolean).join('');
+
+  // ── 2. Risk zone donut ──
+  const zc = {Critical: 0, High: 0, Medium: 0, Low: 0};
+  filteredRisks.forEach(r => {
+    let z = r.current_zone;
+    if (!z) {
+      const s = (r.initial_likelihood || 0) * (r.initial_impact_overall || 0);
+      if (!s) return;
+      z = s >= 20 ? 'Critical' : s >= 12 ? 'High' : s >= 6 ? 'Medium' : 'Low';
+    }
+    if (Object.prototype.hasOwnProperty.call(zc, z)) zc[z]++;
+  });
+  const riskTotal = filteredRisks.length;
+  const riskSegs = [{v: zc.Critical, c: '#e74c3c'}, {v: zc.High, c: '#e67e22'}, {v: zc.Medium, c: '#f39c12'}, {v: zc.Low, c: '#2ecc71'}];
+  const riskLegend = [
+    zc.Critical ? `<span style="font-size:11px;color:#e74c3c;letter-spacing:.2px">● ${zc.Critical} Critical</span>` : '',
+    zc.High     ? `<span style="font-size:11px;color:#e67e22;letter-spacing:.2px">● ${zc.High} High</span>` : '',
+    zc.Medium   ? `<span style="font-size:11px;color:#f39c12;letter-spacing:.2px">● ${zc.Medium} Medium</span>` : '',
+    zc.Low      ? `<span style="font-size:11px;color:#2ecc71;letter-spacing:.2px">● ${zc.Low} Low</span>` : '',
+    `<span style="font-size:10px;color:var(--muted);margin-top:2px">${riskTotal} total risks</span>`,
+  ].filter(Boolean).join('');
+
+  // ── 3. Project status donut ──
+  const sc = {active: 0, pipeline: 0, on_hold: 0, completed: 0};
+  filteredProjs.forEach(p => {
+    const s = (p.status || '').toLowerCase();
+    if (s === 'complete' || s === 'completed') sc.completed++;
+    else if (s === 'active') sc.active++;
+    else if (s === 'pipeline' || s === 'planning') sc.pipeline++;
+    else if (s === 'on_hold' || s === 'on hold') sc.on_hold++;
+  });
+  const projTotal = filteredProjs.length;
+  const projSegs = [{v: sc.active, c: '#00d4aa'}, {v: sc.pipeline, c: '#3a9a8a'}, {v: sc.on_hold, c: '#557a73'}, {v: sc.completed, c: '#7de8d8'}];
+  const projLegend = [
+    sc.active    ? `<span style="font-size:11px;color:#00d4aa;letter-spacing:.2px">● ${sc.active} Active</span>` : '',
+    sc.pipeline  ? `<span style="font-size:11px;color:#3a9a8a;letter-spacing:.2px">● ${sc.pipeline} Pipeline</span>` : '',
+    sc.on_hold   ? `<span style="font-size:11px;color:#557a73;letter-spacing:.2px">● ${sc.on_hold} On Hold</span>` : '',
+    sc.completed ? `<span style="font-size:11px;color:#7de8d8;letter-spacing:.2px">● ${sc.completed} Completed</span>` : '',
+    `<span style="font-size:10px;color:var(--muted);margin-top:2px">${projTotal} total projects</span>`,
+  ].filter(Boolean).join('');
+
+  // ── 4. Project health bars ──
+  let healthSrc = filteredProjs.filter(p => p.health_schedule_pct != null);
+  if (!healthSrc.length) {
+    healthSrc = (analysis?.unhealthy_projects || []).filter(p =>
+      !currentUnitPrefix || (p.project_code || '').startsWith(currentUnitPrefix + '-')
+    );
+  }
+  let avgSched = null, avgBudget = null, scopePct = null;
+  if (healthSrc.length) {
+    avgSched  = Math.round(healthSrc.reduce((s, p) => s + (p.health_schedule_pct || 0), 0) / healthSrc.length);
+    avgBudget = Math.round(healthSrc.reduce((s, p) => s + (p.health_budget_pct    || 0), 0) / healthSrc.length);
+    const withScope = healthSrc.filter(p => p.health_scope_status != null);
+    if (withScope.length) scopePct = Math.round(withScope.filter(p => p.health_scope_status !== 'critical').length / withScope.length * 100);
+  }
+  const hBar = (pct, label) => {
+    const col = pct == null ? null : pct >= 70 ? '#2ecc71' : pct >= 40 ? '#f39c12' : '#e74c3c';
+    return `<div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.45rem">
+      <div style="flex:0 0 54px;font-size:11px;color:var(--muted)">${label}</div>
+      <div style="flex:1;height:9px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden">
+        ${pct != null ? `<div style="width:${pct}%;height:100%;background:${col};border-radius:2px"></div>` : ''}
+      </div>
+      <div style="flex:0 0 30px;font-size:11px;font-weight:600;color:${col || 'var(--muted)'};text-align:right">${pct != null ? pct + '%' : '—'}</div>
+    </div>`;
+  };
+  const healthBody = healthSrc.length
+    ? `<div style="padding:.85rem 1.1rem .5rem">${hBar(avgSched,'Schedule')}${hBar(avgBudget,'Budget')}${hBar(scopePct,'Scope')}<div style="font-size:10px;color:var(--muted);margin-top:.3rem">Avg of ${healthSrc.length} project${healthSrc.length !== 1 ? 's' : ''} · <span style="color:#2ecc71">≥70%</span> · <span style="color:#f39c12">40–69%</span> · <span style="color:#e74c3c">&lt;40%</span></div></div>`
+    : `<div class="empty-state" style="padding:.85rem"><p>No health data recorded</p></div>`;
+
+  // ── Donut panel template ──
+  const dPanel = (icon, title, donut, legend) => `<div class="section-card" style="border-bottom:2px solid var(--border2)">
+    <div class="section-card-header"><div class="section-card-title"><i class="ti ${icon}"></i> ${title}</div></div>
+    <div style="display:flex;align-items:center;gap:1rem;padding:.85rem 1.1rem">
+      ${donut}
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">${legend || '<span style="font-size:11px;color:var(--muted)">No data</span>'}</div>
+    </div>
+  </div>`;
+
+  el.innerHTML =
+    dPanel('ti-chart-pie-2',   'KPI RAG Status',    makeDonut(kpiSegs,  kpiTotal,  'KPIs'),     kpiLegend)  +
+    dPanel('ti-shield-half',   'Risk Rating',        makeDonut(riskSegs, riskTotal, 'Risks'),    riskLegend) +
+    dPanel('ti-clipboard-data','Project Status',     makeDonut(projSegs, projTotal, 'Projects'), projLegend) +
+    `<div class="section-card" style="border-bottom:2px solid var(--border2)">
+      <div class="section-card-header"><div class="section-card-title"><i class="ti ti-activity-heartbeat"></i> Project Health</div></div>
+      ${healthBody}
+    </div>`;
 }
 
 // ── OBJECTIVES ──
