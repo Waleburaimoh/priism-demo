@@ -276,6 +276,12 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
 .rm-stat-lbl{font-size:9.5px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--gold);opacity:.75;margin-top:.35rem}
 .roadmap-phase-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:.7rem;margin-bottom:.75rem}
 @media(max-width:700px){.roadmap-phase-grid{grid-template-columns:1fr}.rm-stats{flex-direction:column}}
+
+/* ── ANALYSIS ── */
+.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;margin-bottom:.9rem}
+@media(max-width:900px){.analysis-grid{grid-template-columns:1fr}}
+.rag-bar{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin:.35rem 0}
+.rag-block{display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .75rem;border-radius:6px;font-size:12px;font-weight:500}
 </style>
 </head>
 <body>
@@ -365,6 +371,8 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
       <div class="nav-section-label">Strategy Design</div>
       <button class="nav-item" onclick="showPage('strategy')"><i class="ti ti-route"></i> Strategy Development</button>
       <button class="nav-item" onclick="showPage('roadmap')"><i class="ti ti-map-2"></i> Product Roadmap</button>
+      <div class="nav-section-label">Insights</div>
+      <button class="nav-item" onclick="showPage('analysis')"><i class="ti ti-brain"></i> Analysis</button>
     </nav>
     <div class="sidebar-user">
       <div class="user-avatar" id="sb-avatar">?</div>
@@ -439,7 +447,11 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
       </div>
       <div class="unit-banner" id="unit-banner-kpis"></div>
       <div class="page-body">
-        <div class="filter-bar">
+        <div class="tab-bar">
+          <button class="tab-btn active" id="kpi-tab-pc" onclick="switchKpiTab('pc')">Performance Contract</button>
+          <button class="tab-btn" id="kpi-tab-trends" onclick="switchKpiTab('trends')">KPI Trends</button>
+        </div>
+        <div id="kpi-filter-bar" class="filter-bar">
           <input id="kpi-search" type="text" placeholder="Filter by title or code…" oninput="filterKpis()">
           <select id="kpi-freq-filter" onchange="filterKpis()">
             <option value="">All Frequencies</option>
@@ -450,6 +462,7 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
           </select>
         </div>
         <div id="kpis-table"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+        <div id="kpi-trends-content" style="display:none"><div id="kpis-trends-table"></div></div>
       </div>
     </div>
 
@@ -461,7 +474,11 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
       </div>
       <div class="unit-banner" id="unit-banner-risks"></div>
       <div class="page-body">
-        <div class="filter-bar">
+        <div class="tab-bar">
+          <button class="tab-btn active" id="risk-tab-reg" onclick="switchRiskTab('register')">Risk Register</button>
+          <button class="tab-btn" id="risk-tab-trends" onclick="switchRiskTab('trends')">Score Trends</button>
+        </div>
+        <div id="risk-filter-bar" class="filter-bar">
           <input id="risk-search" type="text" placeholder="Filter by title…" oninput="filterRisks()">
           <select id="risk-type-filter" onchange="filterRisks()">
             <option value="">All Types</option>
@@ -474,6 +491,7 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
           </select>
         </div>
         <div id="risks-table"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+        <div id="risk-trends-content" style="display:none"><div id="risks-trends-table"></div></div>
       </div>
     </div>
 
@@ -878,6 +896,20 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
       </div>
     </div>
 
+    <!-- ANALYSIS -->
+    <div id="page-analysis" class="page" style="display:none">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Analysis</div>
+          <div class="page-subtitle">Cross-domain intelligence — at-risk objectives, untreated risks, KPI health, project status</div>
+        </div>
+        <button class="btn-sm" onclick="loadAnalysis()"><i class="ti ti-refresh"></i> Refresh</button>
+      </div>
+      <div class="page-body">
+        <div id="analysis-content"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -923,6 +955,7 @@ let currentModal = null;
 let _dpMap = {};
 let _kpisData = [], _risksData = [], _projectsData = [], _objectivesData = [], _objTab = 'institutional', _objectivesTotalCount = 0;
 let _activitiesData = [], _currentPlanId = null, _planYear = null;
+let _kpiTrendsData = [], _riskTrendsData = [], _kpiTab = 'pc', _riskTab = 'register';
 let currentUnit = 'INST';
 let currentUnitPrefix = null; // null = Institutional (show all); otherwise the prefix code, e.g. 'CA'
 const UNIT_LABELS = {INST:'Institutional',CA:'College of Agriculture',CVM:'College of Veterinary Medicine',BA:'College of Business Administration',CL:'College of Law',CI:'College of Computing & Intelligent Systems',CS:'College of Arts Humanities & Social Sciences',COE:'Centre of Excellence',SA:'Student Affairs',AD:'Admissions & Registration',RI:'Research & Innovation',LB:'Library',FN:'Finance',PC:'Procurement',IT:'Information Technology',HR:'Human Resources',GS:'Facilities',CD:'Corporate Communications',IEA:'Institutional Effectiveness',IA:'Internal Audit',SP:'Strategy & Development',LA:'Legal Affairs',VCA:'Vice Chancellor Academic',IN:'International Relations',VCCA:'Vice Chancellor Community',VCAF:'Vice Chancellor Admin & Finance'};
@@ -975,7 +1008,7 @@ function showPage(page) {
   document.querySelectorAll('.page').forEach(p => p.style.display='none');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-'+page).style.display = 'block';
-  const idx = {dashboard:0,objectives:1,kpis:2,risks:3,projects:4,opplans:5,strategy:6,roadmap:7};
+  const idx = {dashboard:0,objectives:1,kpis:2,risks:3,projects:4,opplans:5,strategy:6,roadmap:7,analysis:8};
   document.querySelectorAll('.nav-item')[idx[page]]?.classList.add('active');
   if (page==='dashboard') loadDashboard();
   if (page==='objectives') loadObjectives();
@@ -983,6 +1016,7 @@ function showPage(page) {
   if (page==='risks')     loadRisks();
   if (page==='projects')  loadProjects();
   if (page==='opplans')   loadOpplans();
+  if (page==='analysis')  loadAnalysis();
 }
 
 function setUnit(unit) {
@@ -1006,7 +1040,8 @@ function setUnit(unit) {
   else if (pid==='kpis') loadKpis();
   else if (pid==='risks') loadRisks();
   else if (pid==='projects') loadProjects();
-  else if (pid==='opplans') renderActivities();
+  else if (pid==='opplans')   renderActivities();
+  else if (pid==='analysis')  loadAnalysis();
 }
 
 // ── DASHBOARD ──
@@ -1949,7 +1984,8 @@ function openDetailPanel(type, key, rowEl) {
           <div style="font-size:22px;font-weight:600;color:#6EE7B7">${o.linked_projects != null ? o.linked_projects : linkedProjs.length}</div>
           <div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)">Projects</div>
         </div>
-      </div>`;
+      </div>
+      <div id="dp-obj-live"><div style="display:flex;align-items:center;gap:.5rem;padding:.6rem 0;font-size:12px;color:var(--muted)"><div class="loading-dots" style="padding:0"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div> Loading live data…</div></div>`;
 
   } else if (type === 'kpi') {
     const k = item;
@@ -2060,7 +2096,8 @@ function openDetailPanel(type, key, rowEl) {
         ${resScore!=null?`<div class="dp-section"><div class="dp-label">Residual Score</div><div class="dp-value">${resScore}</div></div>`:''}
       </div>`:''}
       ${sh('Linked objective')}
-      ${linkedObj?`<div class="dp-linked"><span class="code-badge">${esc(linkedObj.objective_code)}</span>${esc(linkedObj.title)}</div>`:'<div class="dp-value">—</div>'}`;
+      ${linkedObj?`<div class="dp-linked"><span class="code-badge">${esc(linkedObj.objective_code)}</span>${esc(linkedObj.title)}</div>`:'<div class="dp-value">—</div>'}
+      <div id="dp-risk-live"><div style="display:flex;align-items:center;gap:.5rem;padding:.6rem 0;font-size:12px;color:var(--muted)"><div class="loading-dots" style="padding:0"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div> Loading treatments…</div></div>`;
 
   } else if (type === 'project') {
     const p = item;
@@ -2179,6 +2216,8 @@ function openDetailPanel(type, key, rowEl) {
   document.getElementById('dp-body').innerHTML = bodyHtml;
   document.getElementById('dp-overlay').classList.add('open');
   document.getElementById('detail-panel').classList.add('open');
+  if (type === 'objective') enrichObjectiveSummary(item.objective_id);
+  if (type === 'risk')      enrichRiskTreatments(item.risk_id);
 }
 
 function closeDetailPanel(e) {
@@ -2186,6 +2225,220 @@ function closeDetailPanel(e) {
   document.querySelectorAll('tr.row-active').forEach(r => r.classList.remove('row-active'));
   document.getElementById('dp-overlay').classList.remove('open');
   document.getElementById('detail-panel').classList.remove('open');
+}
+
+// ── KPI TABS ──
+function switchKpiTab(tab) {
+  _kpiTab = tab;
+  document.getElementById('kpi-tab-pc').className     = tab==='pc'     ? 'tab-btn active' : 'tab-btn';
+  document.getElementById('kpi-tab-trends').className  = tab==='trends' ? 'tab-btn active' : 'tab-btn';
+  document.getElementById('kpi-filter-bar').style.display      = tab==='pc'     ? '' : 'none';
+  document.getElementById('kpis-table').style.display          = tab==='pc'     ? '' : 'none';
+  document.getElementById('kpi-trends-content').style.display  = tab==='trends' ? '' : 'none';
+  if (tab==='trends') loadKpiTrends();
+}
+
+async function loadKpiTrends() {
+  const el = document.getElementById('kpis-trends-table');
+  el.innerHTML = '<div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  try {
+    const res = await fetch(`${API}/organisations/${SESSION.org_id}/kpis/trends`);
+    const d = await res.json();
+    _kpiTrendsData = d.kpis || [];
+    renderKpiTrends();
+  } catch(e) { el.innerHTML = '<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load KPI trends</p>'; }
+}
+
+function renderKpiTrends() {
+  const el = document.getElementById('kpis-trends-table');
+  const q = (document.getElementById('kpi-search')?.value||'').toLowerCase();
+  const f = document.getElementById('kpi-freq-filter')?.value||'';
+  let data = _kpiTrendsData;
+  if (currentUnitPrefix) data = data.filter(k => (k.kpi_code||'').startsWith(currentUnitPrefix+'-'));
+  if (q) data = data.filter(k => (k.title||'').toLowerCase().includes(q) || (k.kpi_code||'').toLowerCase().includes(q));
+  if (f) data = data.filter(k => (k.measurement_frequency||'').toLowerCase() === f);
+  if (!data.length) { el.innerHTML = '<div class="section-card"><div class="empty-state"><i class="ti ti-chart-line"></i><p>No KPI trend data available.</p></div></div>'; return; }
+  const ragColor = s => ({Green:'#6EE7B7',Amber:'var(--gold-light)',Red:'#FCA5A5'})[s]||'var(--muted)';
+  const ragBg    = s => ({Green:'rgba(16,185,129,.12)',Amber:'rgba(201,168,76,.14)',Red:'rgba(239,68,68,.14)'})[s]||'rgba(255,255,255,.06)';
+  el.innerHTML = data.map(k => {
+    if (!k.actuals||!k.actuals.length) return `<div class="section-card" style="margin-bottom:.65rem"><div class="section-card-header"><div class="section-card-title"><i class="ti ti-chart-line"></i> <span class="code-badge">${k.kpi_code}</span> <span style="font-size:13px;font-weight:400">${k.title}</span></div></div><div class="empty-state" style="padding:1rem 1.1rem"><i class="ti ti-database" style="font-size:18px"></i><p>No actuals recorded</p></div></div>`;
+    const rows = k.actuals.map(a => {
+      const period = a.period_month?`${a.period_year} M${a.period_month}`:a.period_quarter?`${a.period_year} Q${a.period_quarter}`:String(a.period_year);
+      return `<tr><td style="font-size:12px">${period}</td><td style="font-weight:500">${a.actual_value!=null?a.actual_value:'—'}</td><td>${a.rag_status?`<span class="status-badge" style="background:${ragBg(a.rag_status)};color:${ragColor(a.rag_status)}">${a.rag_status}</span>`:'—'}</td><td style="font-size:12px;color:var(--muted)">${a.pct_achievement!=null?a.pct_achievement+'%':'—'}</td></tr>`;
+    }).join('');
+    return `<div class="section-card" style="margin-bottom:.65rem"><div class="section-card-header" style="cursor:pointer" onclick="toggleSection('kt-${k.kpi_id}')"><div class="section-card-title"><i class="ti ti-chart-line"></i> <span class="code-badge">${k.kpi_code}</span> <span style="font-size:13px;font-weight:400">${k.title}</span></div><div style="display:flex;align-items:center;gap:.5rem"><span style="font-size:11px;color:var(--muted)">${k.unit} · ${k.actuals.length} reading${k.actuals.length!==1?'s':''}</span><i class="ti ti-chevron-down" id="icon-kt-${k.kpi_id}" style="color:var(--muted);font-size:14px;transition:transform .2s"></i></div></div><div id="kt-${k.kpi_id}"><table class="data-table"><tr><th>Period</th><th>Actual (${k.unit})</th><th>RAG</th><th>Achievement</th></tr>${rows}</table></div></div>`;
+  }).join('');
+}
+
+// ── RISK TABS ──
+function switchRiskTab(tab) {
+  _riskTab = tab;
+  document.getElementById('risk-tab-reg').className    = tab==='register' ? 'tab-btn active' : 'tab-btn';
+  document.getElementById('risk-tab-trends').className  = tab==='trends'   ? 'tab-btn active' : 'tab-btn';
+  document.getElementById('risk-filter-bar').style.display      = tab==='register' ? '' : 'none';
+  document.getElementById('risks-table').style.display          = tab==='register' ? '' : 'none';
+  document.getElementById('risk-trends-content').style.display  = tab==='trends'   ? '' : 'none';
+  if (tab==='trends') loadRiskTrends();
+}
+
+async function loadRiskTrends() {
+  const el = document.getElementById('risks-trends-table');
+  el.innerHTML = '<div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  try {
+    const url = `${API}/organisations/${SESSION.org_id}/risks/trends${currentUnitPrefix?'?dept_code='+currentUnitPrefix:''}`;
+    const res = await fetch(url);
+    const d = await res.json();
+    _riskTrendsData = d.risks || [];
+    renderRiskTrends();
+  } catch(e) { el.innerHTML = '<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load risk trends</p>'; }
+}
+
+function renderRiskTrends() {
+  const el = document.getElementById('risks-trends-table');
+  let data = _riskTrendsData;
+  if (currentUnitPrefix) data = data.filter(r => (r.risk_code||'').startsWith(currentUnitPrefix+'-'));
+  if (!data.length) { el.innerHTML = '<div class="section-card"><div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>No risk trend data available.</p></div></div>'; return; }
+  const zoneColor = z => ({Critical:'#FCA5A5',High:'#FB923C',Medium:'var(--gold-light)',Low:'var(--muted)'})[z]||'var(--muted)';
+  const zoneBg    = z => ({Critical:'rgba(239,68,68,.14)',High:'rgba(251,146,60,.14)',Medium:'rgba(201,168,76,.14)',Low:'rgba(255,255,255,.07)'})[z]||'rgba(255,255,255,.07)';
+  el.innerHTML = data.map(r => {
+    if (!r.snapshots||!r.snapshots.length) return `<div class="section-card" style="margin-bottom:.65rem"><div class="section-card-header"><div class="section-card-title"><i class="ti ti-shield-exclamation"></i> <span class="code-badge">${r.risk_code}</span> <span style="font-size:13px;font-weight:400">${r.title}</span></div></div><div class="empty-state" style="padding:1rem 1.1rem"><i class="ti ti-clock" style="font-size:18px"></i><p>No score history recorded</p></div></div>`;
+    const rows = r.snapshots.map(s => {
+      const date = s.snapshot_date ? new Date(s.snapshot_date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
+      return `<tr><td style="font-size:12px">${date}</td><td>${s.likelihood!=null?s.likelihood+'/5':'—'}</td><td>${s.impact_overall!=null?s.impact_overall+'/5':'—'}</td><td style="font-weight:600">${s.score!=null?s.score:'—'}</td><td>${s.zone?`<span class="status-badge" style="background:${zoneBg(s.zone)};color:${zoneColor(s.zone)}">${s.zone}</span>`:'—'}</td><td style="font-size:11px;color:var(--muted)">${s.snapshot_trigger||'—'}</td></tr>`;
+    }).join('');
+    return `<div class="section-card" style="margin-bottom:.65rem"><div class="section-card-header" style="cursor:pointer" onclick="toggleSection('rt-${r.risk_id}')"><div class="section-card-title"><i class="ti ti-shield-exclamation"></i> <span class="code-badge">${r.risk_code}</span> <span style="font-size:13px;font-weight:400">${r.title}</span></div><div style="display:flex;align-items:center;gap:.5rem">${r.current_score!=null?`<span class="status-badge" style="background:${zoneBg(r.current_zone)};color:${zoneColor(r.current_zone)}">${r.current_score}</span>`:''}<i class="ti ti-chevron-down" id="icon-rt-${r.risk_id}" style="color:var(--muted);font-size:14px;transition:transform .2s"></i></div></div><div id="rt-${r.risk_id}"><table class="data-table"><tr><th>Date</th><th>Likelihood</th><th>Impact</th><th>Score</th><th>Zone</th><th>Trigger</th></tr>${rows}</table></div></div>`;
+  }).join('');
+}
+
+// ── ANALYSIS ──
+async function loadAnalysis() {
+  const el = document.getElementById('analysis-content');
+  el.innerHTML = '<div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  try {
+    const res = await fetch(`${API}/organisations/${SESSION.org_id}/analysis/summary`);
+    const d = await res.json();
+    renderAnalysis(d);
+  } catch(e) { el.innerHTML = '<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load analysis data</p>'; }
+}
+
+function renderAnalysis(d) {
+  const el = document.getElementById('analysis-content');
+  const esc = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const v   = s => s!=null&&s!=='' ? esc(String(s)) : '—';
+  const scoreColor = s => s>=15?'#FCA5A5':s>=10?'#FB923C':s>=5?'var(--gold-light)':'#6EE7B7';
+  const scoreBg    = s => s>=15?'rgba(239,68,68,.14)':s>=10?'rgba(251,146,60,.14)':s>=5?'rgba(201,168,76,.14)':'rgba(16,185,129,.12)';
+
+  const atRiskHtml = d.at_risk_objectives&&d.at_risk_objectives.length
+    ? `<table class="data-table"><tr><th>Code</th><th>Objective</th><th>Status</th></tr>${d.at_risk_objectives.map(o=>`<tr><td><span class="code-badge">${v(o.objective_code)}</span></td><td style="font-weight:500">${v(o.title)}</td><td><span class="status-badge badge-grey">${v(o.status)}</span></td></tr>`).join('')}</table>`
+    : '<div class="empty-state" style="padding:1.25rem"><i class="ti ti-circle-check" style="font-size:22px;color:#6EE7B7;opacity:.6"></i><p style="color:#6EE7B7">No objectives with red KPIs or high risks</p></div>';
+
+  const untreatedHtml = d.untreated_risks&&d.untreated_risks.length
+    ? `<table class="data-table"><tr><th>Code</th><th>Title</th><th>Score</th><th>Status</th></tr>${d.untreated_risks.map(r=>`<tr><td><span class="code-badge">${v(r.risk_code)}</span></td><td>${v(r.title)}</td><td>${r.current_score!=null?`<span class="status-badge" style="background:${scoreBg(r.current_score)};color:${scoreColor(r.current_score)}">${r.current_score}</span>`:'—'}</td><td><span class="status-badge badge-grey">${v(r.status)}</span></td></tr>`).join('')}</table>`
+    : '<div class="empty-state" style="padding:1.25rem"><i class="ti ti-circle-check" style="font-size:22px;color:#6EE7B7;opacity:.6"></i><p style="color:#6EE7B7">All risks have treatment records</p></div>';
+
+  const concHtml = d.risk_concentration&&d.risk_concentration.length
+    ? `<table class="data-table"><tr><th>Dept Prefix</th><th>Total Risks</th><th>High Risk (≥12)</th><th>Avg Score</th></tr>${d.risk_concentration.map(c=>`<tr><td><span class="code-badge">${v(c.dept_prefix)}</span></td><td style="font-weight:600">${c.risk_count}</td><td>${c.high_risk_count>0?`<span class="status-badge badge-red">${c.high_risk_count}</span>`:'<span class="status-badge badge-green">0</span>'}</td><td style="font-size:12px;color:var(--muted)">${c.avg_score!=null?Number(c.avg_score).toFixed(1):'—'}</td></tr>`).join('')}</table>`
+    : '<div class="empty-state" style="padding:1.25rem"><p>No risk data available</p></div>';
+
+  let ragHtml = '<div class="empty-state" style="padding:1.25rem"><p>No KPI actuals recorded</p></div>';
+  if (d.kpi_rag_distribution&&d.kpi_rag_distribution.length) {
+    const rm={};
+    d.kpi_rag_distribution.forEach(r=>{rm[r.rag_status||'No Data']=r.count;});
+    const total=Object.values(rm).reduce((a,b)=>a+(b||0),0);
+    ragHtml=`<div class="rag-bar">
+      ${rm['Green']?`<span class="rag-block" style="background:rgba(16,185,129,.12);color:#6EE7B7"><i class="ti ti-circle-filled" style="font-size:9px"></i> Green <strong>${rm['Green']}</strong></span>`:''}
+      ${rm['Amber']?`<span class="rag-block" style="background:rgba(201,168,76,.14);color:var(--gold-light)"><i class="ti ti-circle-filled" style="font-size:9px"></i> Amber <strong>${rm['Amber']}</strong></span>`:''}
+      ${rm['Red']?`<span class="rag-block" style="background:rgba(239,68,68,.14);color:#FCA5A5"><i class="ti ti-circle-filled" style="font-size:9px"></i> Red <strong>${rm['Red']}</strong></span>`:''}
+      ${rm['No Data']?`<span class="rag-block" style="background:rgba(255,255,255,.06);color:var(--muted)"><i class="ti ti-circle-filled" style="font-size:9px"></i> No Data <strong>${rm['No Data']}</strong></span>`:''}
+      <span style="font-size:11px;color:var(--muted);margin-left:.35rem">${total} KPI${total!==1?'s':''} total</span>
+    </div>`;
+  }
+
+  const tc=d.treatment_coverage||{};
+  const covHtml=`<div class="stat-grid" style="margin:0">
+    <div class="stat-card"><div class="stat-label">Total Risks</div><div class="stat-value">${tc.total_risks||0}</div></div>
+    <div class="stat-card" style="border-color:rgba(16,185,129,.3)"><div class="stat-label" style="color:#6EE7B7">With Treatments</div><div class="stat-value" style="color:#6EE7B7">${tc.risks_with_treatments||0}</div></div>
+    <div class="stat-card" style="border-color:rgba(239,68,68,.3)"><div class="stat-label" style="color:#FCA5A5">Untreated</div><div class="stat-value" style="color:#FCA5A5">${tc.risks_without_treatments||0}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Treatments</div><div class="stat-value">${tc.total_treatments||0}</div></div>
+  </div>`;
+
+  const projHtml = d.unhealthy_projects&&d.unhealthy_projects.length
+    ? `<table class="data-table"><tr><th>Code</th><th>Title</th><th>Schedule %</th><th>Budget %</th><th>Scope</th></tr>${d.unhealthy_projects.map(p=>{
+        const sc=p.health_schedule_pct,bc=p.health_budget_pct;
+        const scCol=sc==null?'var(--muted)':sc<60?'#FCA5A5':sc<80?'var(--gold-light)':'#6EE7B7';
+        const bcCol=bc==null?'var(--muted)':bc<60?'#FCA5A5':bc<80?'var(--gold-light)':'#6EE7B7';
+        const scopeCls=p.health_scope_status==='Red'?'badge-red':p.health_scope_status==='Amber'?'badge-amber':'badge-grey';
+        return `<tr><td><span class="code-badge">${v(p.project_code)}</span></td><td style="font-weight:500">${v(p.title)}</td><td style="font-weight:600;color:${scCol}">${sc!=null?sc+'%':'—'}</td><td style="font-weight:600;color:${bcCol}">${bc!=null?bc+'%':'—'}</td><td>${p.health_scope_status?`<span class="status-badge ${scopeCls}">${p.health_scope_status}</span>`:'—'}</td></tr>`;
+      }).join('')}</table>`
+    : '<div class="empty-state" style="padding:1.25rem"><i class="ti ti-circle-check" style="font-size:22px;color:#6EE7B7;opacity:.6"></i><p style="color:#6EE7B7">All projects are on track</p></div>';
+
+  el.innerHTML=`
+    <div class="analysis-grid">
+      <div class="section-card"><div class="section-card-header"><div class="section-card-title"><i class="ti ti-alert-triangle"></i> At-Risk Objectives</div><span style="font-size:11px;color:var(--muted)">Red KPIs or score ≥ 12</span></div>${atRiskHtml}</div>
+      <div class="section-card"><div class="section-card-header"><div class="section-card-title"><i class="ti ti-shield-off"></i> Untreated Risks</div><span style="font-size:11px;color:var(--muted)">No treatment record</span></div>${untreatedHtml}</div>
+    </div>
+    <div class="analysis-grid">
+      <div class="section-card"><div class="section-card-header"><div class="section-card-title"><i class="ti ti-chart-pie"></i> KPI RAG Distribution</div><span style="font-size:11px;color:var(--muted)">Latest actuals</span></div><div style="padding:.9rem 1.1rem">${ragHtml}</div></div>
+      <div class="section-card"><div class="section-card-header"><div class="section-card-title"><i class="ti ti-shield-check"></i> Treatment Coverage</div></div><div style="padding:.9rem 1.1rem">${covHtml}</div></div>
+    </div>
+    <div class="section-card" style="margin-bottom:.9rem"><div class="section-card-header"><div class="section-card-title"><i class="ti ti-building-community"></i> Risk Concentration by Department</div></div>${concHtml}</div>
+    <div class="section-card"><div class="section-card-header"><div class="section-card-title"><i class="ti ti-alert-circle"></i> Projects with Health Issues</div><span style="font-size:11px;color:var(--muted)">Schedule or budget &lt; 80%, or scope Red/Amber</span></div>${projHtml}</div>`;
+}
+
+// ── OBJECTIVE SUMMARY ENRICHMENT ──
+async function enrichObjectiveSummary(objId) {
+  const el = document.getElementById('dp-obj-live');
+  if (!el) return;
+  try {
+    const res = await fetch(`${API}/organisations/${SESSION.org_id}/objectives/${objId}/summary`);
+    if (!res.ok) { el.innerHTML=''; return; }
+    const d = await res.json();
+    const esc = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const sh  = label => `<div class="dp-sh">${label}</div>`;
+    const ragColor = s => ({Green:'#6EE7B7',Amber:'var(--gold-light)',Red:'#FCA5A5'})[s]||'var(--muted)';
+    const ragBg    = s => ({Green:'rgba(16,185,129,.12)',Amber:'rgba(201,168,76,.14)',Red:'rgba(239,68,68,.14)'})[s]||'rgba(255,255,255,.06)';
+    const scoreColor = s => s>=15?'#FCA5A5':s>=10?'#FB923C':s>=5?'var(--gold-light)':'#6EE7B7';
+
+    const rag=d.rag_summary||{};
+    const ragSummaryHtml=`<div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.75rem">
+      ${rag.green?`<span class="rag-chip" style="background:rgba(16,185,129,.12);color:#6EE7B7"><i class="ti ti-circle-filled" style="font-size:9px"></i> Green ${rag.green}</span>`:''}
+      ${rag.amber?`<span class="rag-chip" style="background:rgba(201,168,76,.14);color:var(--gold-light)"><i class="ti ti-circle-filled" style="font-size:9px"></i> Amber ${rag.amber}</span>`:''}
+      ${rag.red?`<span class="rag-chip" style="background:rgba(239,68,68,.14);color:#FCA5A5"><i class="ti ti-circle-filled" style="font-size:9px"></i> Red ${rag.red}</span>`:''}
+      ${rag.no_data?`<span class="rag-chip" style="background:rgba(255,255,255,.06);color:var(--muted)"><i class="ti ti-circle-filled" style="font-size:9px"></i> No data ${rag.no_data}</span>`:''}
+    </div>`;
+    const kpiRows=(d.kpis||[]).map(k=>`<div class="dp-linked" style="flex-direction:column;align-items:flex-start;gap:.25rem"><div style="display:flex;gap:.5rem;align-items:center;width:100%"><span class="code-badge">${esc(k.kpi_code)}</span><span style="font-size:12.5px;flex:1">${esc(k.title)}</span>${k.rag_status?`<span class="status-badge" style="background:${ragBg(k.rag_status)};color:${ragColor(k.rag_status)}">${k.rag_status}</span>`:'<span style="font-size:11px;color:var(--muted)">No data</span>'}</div>${k.actual_value!=null?`<div style="font-size:11px;color:var(--muted);padding-left:.25rem">Latest: ${esc(String(k.actual_value))} ${esc(k.unit||'')}</div>`:''}</div>`).join('')||'<div style="font-size:12px;color:var(--muted);padding:.35rem 0">No linked KPIs</div>';
+    const riskRows=(d.risks||[]).map(r=>`<div class="dp-linked" style="gap:.5rem"><span class="code-badge">${esc(r.risk_code)}</span><span style="font-size:12.5px;flex:1">${esc(r.title)}</span>${r.current_score!=null?`<span class="status-badge" style="background:${r.current_score>=12?'rgba(239,68,68,.14)':r.current_score>=8?'rgba(201,168,76,.14)':'rgba(16,185,129,.12)'};color:${scoreColor(r.current_score)}">${r.current_score}</span>`:''}<span style="font-size:11px;color:var(--muted)">${r.treatment_count} tx</span></div>`).join('')||'<div style="font-size:12px;color:var(--muted);padding:.35rem 0">No linked risks</div>';
+    const projRows=(d.projects||[]).map(p=>`<div class="dp-linked" style="gap:.5rem"><span class="code-badge">${esc(p.project_code)}</span><span style="font-size:12.5px;flex:1">${esc(p.title)}</span>${p.health_schedule_pct!=null?`<span style="font-size:11px;color:${p.health_schedule_pct<80?'#FCA5A5':'#6EE7B7'}">${p.health_schedule_pct}%</span>`:''}</div>`).join('')||'<div style="font-size:12px;color:var(--muted);padding:.35rem 0">No linked projects</div>';
+    const aopRows=(d.aop_activities||[]).map(a=>`<div class="dp-linked" style="gap:.5rem"><span style="font-size:11px;color:var(--gold);background:rgba(201,168,76,.1);border-radius:3px;padding:2px 6px">${esc(a.department_code||'—')}</span><span style="font-size:12.5px;flex:1">${esc(a.activity_name)}</span>${a.completion_pct!=null?`<span style="font-size:11px;color:var(--muted)">${a.completion_pct}%</span>`:''}</div>`).join('');
+
+    el.innerHTML=`${sh('KPI Performance')}${ragSummaryHtml}${kpiRows}${sh('Linked Risks')}${riskRows}${sh('Linked Projects')}${projRows}${aopRows?sh('AOP Activities')+aopRows:''}`;
+  } catch(e) { if(el) el.innerHTML=''; }
+}
+
+// ── RISK TREATMENTS ENRICHMENT ──
+async function enrichRiskTreatments(riskId) {
+  const el = document.getElementById('dp-risk-live');
+  if (!el) return;
+  try {
+    const res = await fetch(`${API}/organisations/${SESSION.org_id}/risks/${riskId}/treatments`);
+    if (!res.ok) { el.innerHTML=''; return; }
+    const d = await res.json();
+    const esc  = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const v    = s => s!=null&&s!=='' ? esc(String(s)) : '—';
+    const sh   = label => `<div class="dp-sh">${label}</div>`;
+    const fmtD = dt => dt ? new Date(dt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : null;
+    const typeCls = {mitigate:'badge-blue',transfer:'badge-purple',accept:'badge-amber',avoid:'badge-green'};
+
+    const treatments=d.treatments||[];
+    const txHtml=treatments.length ? treatments.map(t=>`<div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:7px;padding:.75rem 1rem;margin-bottom:.5rem"><div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">${t.treatment_type?`<span class="status-badge ${typeCls[(t.treatment_type||'').toLowerCase()]||'badge-grey'}">${esc(t.treatment_type)}</span>`:''} ${t.status?`<span class="status-badge badge-grey" style="font-size:10px">${esc(t.status)}</span>`:''} ${t.due_date?`<span style="font-size:11px;color:var(--muted);margin-left:auto">${fmtD(t.due_date)}</span>`:''}</div><div style="font-size:13px;color:var(--cream);margin-bottom:.35rem">${v(t.description)}</div>${t.project_title?`<div style="font-size:11px;color:var(--muted)"><i class="ti ti-clipboard-list" style="font-size:11px"></i> ${esc(t.project_title)}</div>`:''} ${t.activity_name?`<div style="font-size:11px;color:var(--muted);margin-top:2px"><i class="ti ti-sitemap" style="font-size:11px"></i> ${esc(t.activity_name)}</div>`:''}</div>`).join('')
+      : '<div style="font-size:12px;color:var(--muted);padding:.35rem 0">No treatment records</div>';
+
+    const history=d.score_history||[];
+    const histHtml=history.length ? `<table class="data-table" style="font-size:12px"><tr><th>Date</th><th>L</th><th>I</th><th>Score</th><th>Zone</th></tr>${history.map(h=>`<tr><td>${fmtD(h.snapshot_date)||'—'}</td><td>${v(h.likelihood)}</td><td>${v(h.impact_overall)}</td><td style="font-weight:600">${v(h.score)}</td><td style="font-size:11px;color:var(--muted)">${v(h.zone)}</td></tr>`).join('')}</table>`
+      : '<div style="font-size:12px;color:var(--muted);padding:.35rem 0">No score history</div>';
+
+    el.innerHTML=`${sh('Treatments')}${txHtml}${sh('Score History')}${histHtml}`;
+  } catch(e) { if(el) el.innerHTML=''; }
 }
 
 // ── KEYBOARD / CLICK HANDLERS ──
