@@ -1910,25 +1910,37 @@ function getModalForm(type) {
     <div class="form-group"><label>Title *</label><input id="f-title" placeholder="KPI name"></div>
     <div class="form-group"><label>Description</label><textarea id="f-description" rows="3" placeholder="Optional" style="width:100%;resize:vertical"></textarea></div>
     <div class="form-row">
-      <div class="form-group"><label>Calculation Method</label><input id="f-calculation_method" placeholder="How this KPI is calculated"></div>
-      <div class="form-group"><label>Target Value</label><input id="f-target_value" type="number" step="any" placeholder="e.g. 95"></div>
-    </div>
-    <div class="form-row">
       <div class="form-group"><label>KPI Category</label>
         <select id="f-kpi_category"><option value="">— Select —</option><option value="Strategic">Strategic</option><option value="Operational">Operational</option><option value="Common">Common</option></select>
       </div>
       <div class="form-group"><label>Data Source</label><input id="f-data_source" placeholder="e.g. SIS, Finance system"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Baseline Value</label><input id="f-baseline_value" type="number" step="any" placeholder="Current baseline"></div>
+      <div class="form-group"><label>Calculation Method</label><input id="f-calculation_method" placeholder="How this KPI is calculated"></div>
       <div class="form-group"><label>Owner Name</label><input id="f-owner_name_free" placeholder="Responsible person"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Baseline Value</label><input id="f-baseline_value" type="number" step="any" placeholder="e.g. 72"></div>
+      <div class="form-group"><label>Baseline Year</label><input id="f-baseline_year" type="number" placeholder="e.g. 2024" min="2000" max="2099"></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:.5rem;margin-top:-.2rem">RAG thresholds — enter the numeric value at which each rating applies</div>
+    <div class="form-row">
+      <div class="form-group"><label style="color:#2ecc71">Green Threshold ≥</label><input id="f-target_value" type="number" step="any" placeholder="e.g. 90"></div>
+      <div class="form-group"><label style="color:#f1c40f">Amber Threshold ≥</label><input id="f-rag_amber" type="number" step="any" placeholder="e.g. 70"></div>
+      <div class="form-group"><label style="color:#e74c3c">Red Below</label><input id="f-rag_red" type="number" step="any" placeholder="e.g. 70"></div>
     </div>
     <div class="form-row">
       <div class="form-group"><label>Trend *</label>
         <select id="f-trend_preference"><option value="higher">Higher is Better</option><option value="lower">Lower is Better</option><option value="target">On Target</option></select>
       </div>
-      <div class="form-group"><label>Frequency *</label>
-        <select id="f-measurement_frequency"><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="annual">Annual</option></select>
+      <div class="form-group"><label>Reporting Period *</label>
+        <select id="f-measurement_frequency">
+          <option value="monthly">Monthly</option>
+          <option value="quarterly">Quarterly</option>
+          <option value="annual">Annual</option>
+          <option value="academic_year">Academic Year</option>
+          <option value="fiscal_year">Fiscal Year</option>
+        </select>
       </div>
     </div>`;
 
@@ -2129,10 +2141,13 @@ async function submitModal() {
       description:_combinedDesc||null,
       trend_preference:val('f-trend_preference'),
       measurement_frequency:val('f-measurement_frequency'),
-      target_value:val('f-target_value')?parseFloat(val('f-target_value')):null,
       kpi_category:val('f-kpi_category')||null,
       data_source:val('f-data_source')||null,
-      baseline_value:val('f-baseline_value')?parseFloat(val('f-baseline_value')):null,
+      baseline_value:val('f-baseline_value')||null,
+      baseline_year:val('f-baseline_year')?parseInt(val('f-baseline_year')):null,
+      rag_green_threshold:val('f-target_value')||null,
+      rag_amber_threshold:val('f-rag_amber')||null,
+      rag_red_threshold:val('f-rag_red')||null,
       owner_name_free:val('f-owner_name_free')||(UNIT_LABELS[val('f-modal-unit')]||null)};
   } else if (currentModal==='risk') {
     if (!val('f-risk_code')||!val('f-title')) { showModalError('Please fill required fields'); btn.disabled=false; btn.textContent='Save'; return; }
