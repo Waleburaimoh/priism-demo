@@ -1948,14 +1948,15 @@ async function submitModal() {
     if (!res.ok) { showModalError(data.error||data.detail||'Failed to save'); btn.disabled=false; btn.textContent='Save'; return; }
     succEl.textContent='Saved successfully!'; succEl.style.display='block';
     setTimeout(()=>{
+      const saved = currentModal;
       closeModal();
-      if (currentModal==='kpi') loadKpis();
-      if (currentModal==='risk') loadRisks();
-      if (currentModal==='project') loadProjects();
-      if (currentModal==='objective') loadObjectives();
-      if (currentModal==='activity') loadOpplans();
-      if (currentModal==='treatment') enrichRiskTreatments(_currentRiskId);
-      if (currentModal!=='activity' && currentModal!=='treatment') loadDashboard();
+      if (saved==='kpi') loadKpis();
+      if (saved==='risk') loadRisks();
+      if (saved==='project') loadProjects();
+      if (saved==='objective') loadObjectives();
+      if (saved==='activity') loadOpplans();
+      if (saved==='treatment') enrichRiskTreatments(_currentRiskId);
+      if (saved!=='activity' && saved!=='treatment') loadDashboard();
     },700);
   } catch(e) { showModalError('Network error'); btn.disabled=false; btn.textContent='Save'; }
 }
