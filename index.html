@@ -1827,17 +1827,17 @@ function getModalForm(type) {
     <div class="form-row">
       <div class="form-group"><label>Treatment Type *</label>
         <select id="f-treatment_type">
-          <option value="mitigate">Mitigate</option>
-          <option value="transfer">Transfer</option>
-          <option value="accept">Accept</option>
-          <option value="avoid">Avoid</option>
+          <option value="project">Project</option>
+          <option value="process_change">Process Change</option>
+          <option value="inmodule">In-Module</option>
         </select>
       </div>
       <div class="form-group"><label>Status *</label>
         <select id="f-treatment_status">
-          <option value="open">Open</option>
+          <option value="not_started">Not Started</option>
           <option value="in_progress">In Progress</option>
           <option value="complete">Complete</option>
+          <option value="overdue">Overdue</option>
           <option value="cancelled">Cancelled</option>
         </select>
       </div>
@@ -1937,7 +1937,7 @@ async function submitModal() {
       title:          val('f-treatment_title'),
       description:    val('f-treatment_description')||null,
       due_date:       val('f-treatment_due_date')||null,
-      status:         val('f-treatment_status')||'open',
+      status:         val('f-treatment_status')||'not_started',
       cost_estimate:  val('f-treatment_cost')?parseFloat(val('f-treatment_cost')):null
     };
   }
@@ -2469,7 +2469,7 @@ async function enrichRiskTreatments(riskId) {
     const esc  = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const v    = s => s!=null&&s!=='' ? esc(String(s)) : '—';
     const fmtD = dt => dt ? new Date(dt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : null;
-    const typeCls = {mitigate:'badge-blue',transfer:'badge-purple',accept:'badge-amber',avoid:'badge-green'};
+    const typeCls = {project:'badge-blue',process_change:'badge-teal',inmodule:'badge-purple'};
 
     const addBtn = `<button class="btn-sm" onclick="openModal('treatment')" style="margin-left:auto;font-size:11px;padding:3px 10px"><i class="ti ti-plus"></i> Add Treatment</button>`;
     const txHeader = `<div style="display:flex;align-items:center;margin-bottom:.5rem"><div class="dp-sh" style="margin:0">Treatments</div>${addBtn}</div>`;
