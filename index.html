@@ -1304,11 +1304,11 @@ function renderDashVisuals(filteredKpis, filteredRisks, filteredProjs, analysis)
     if (Object.prototype.hasOwnProperty.call(zc, z)) zc[z]++;
   });
   const riskTotal = filteredRisks.length;
-  const riskSegs = [{v: zc.Critical, c: '#e74c3c'}, {v: zc.High, c: '#e67e22'}, {v: zc.Medium, c: '#f39c12'}, {v: zc.Low, c: '#2ecc71'}];
+  const riskSegs = [{v: zc.Critical, c: '#e74c3c'}, {v: zc.High, c: '#ff6600'}, {v: zc.Medium, c: '#f1c40f'}, {v: zc.Low, c: '#2ecc71'}];
   const riskLegend = [
     zc.Critical ? `<span style="font-size:11px;color:#e74c3c;letter-spacing:.2px">● ${zc.Critical} Critical</span>` : '',
-    zc.High     ? `<span style="font-size:11px;color:#e67e22;letter-spacing:.2px">● ${zc.High} High</span>` : '',
-    zc.Medium   ? `<span style="font-size:11px;color:#f39c12;letter-spacing:.2px">● ${zc.Medium} Medium</span>` : '',
+    zc.High     ? `<span style="font-size:11px;color:#ff6600;letter-spacing:.2px">● ${zc.High} High</span>` : '',
+    zc.Medium   ? `<span style="font-size:11px;color:#f1c40f;letter-spacing:.2px">● ${zc.Medium} Medium</span>` : '',
     zc.Low      ? `<span style="font-size:11px;color:#2ecc71;letter-spacing:.2px">● ${zc.Low} Low</span>` : '',
     `<span style="font-size:10px;color:var(--muted);margin-top:2px">${riskTotal} total risks</span>`,
   ].filter(Boolean).join('');
@@ -1974,9 +1974,13 @@ function getModalForm(type) {
     <div class="form-group"><label>Mitigation</label><textarea id="f-mitigation" rows="2" placeholder="Mitigation actions" style="width:100%;resize:vertical"></textarea></div>
     <div class="form-row">
       <div class="form-group"><label>Control Rating</label>
-        <select id="f-control_rating"><option value="">— Select —</option><option value="Good">Good</option><option value="Partial">Partial</option><option value="Insufficient">Insufficient</option></select>
+        <select id="f-control_rating" onchange="toggleControlDetails(this.value)"><option value="">— Select —</option><option value="Good">Good</option><option value="Partial">Partial</option><option value="Insufficient">Insufficient</option></select>
       </div>
       <div class="form-group"><label>KRI Title</label><input id="f-kri_title" placeholder="Key Risk Indicator"></div>
+    </div>
+    <div id="f-control-details" style="display:none">
+      <div class="form-group"><label>Control Description</label><textarea id="f-controls_description" rows="3" placeholder="Describe the existing controls in place" style="width:100%;resize:vertical"></textarea></div>
+      <div class="form-group"><label>Upload Evidence</label><input id="f-control-evidence" type="file" style="width:100%;color:var(--cream-dark)"><p style="font-size:11px;color:var(--muted);margin-top:4px">Evidence file will be referenced for audit purposes.</p></div>
     </div>`;
 
   if (type==='project') return `
@@ -2066,7 +2070,13 @@ function getModalForm(type) {
       <div class="form-group"><label>End Date</label><input id="f-end_date" type="date"></div>
     </div>
     <div class="form-group"><label>Activity KPI</label><input id="f-activity_kpi" placeholder="How success will be measured"></div>
-    <div class="form-group"><label>Inputs Required</label><textarea id="f-inputs_required" rows="2" placeholder="Resources needed" style="width:100%;resize:vertical"></textarea></div>
+    <div class="form-group"><label>Inputs Required</label>
+      <div class="form-row" style="margin-bottom:.4rem">
+        <div class="form-group" style="margin-bottom:0"><label style="font-size:11px;color:var(--muted)">Manpower</label><input id="f-res-manpower" placeholder="e.g. 2 staff × 3 months"></div>
+        <div class="form-group" style="margin-bottom:0"><label style="font-size:11px;color:var(--muted)">Procurement</label><input id="f-res-procurement" placeholder="e.g. Software licences"></div>
+      </div>
+      <div class="form-group" style="margin-bottom:0"><label style="font-size:11px;color:var(--muted)">Financial</label><input id="f-res-financial" placeholder="e.g. AED 50,000 operating budget"></div>
+    </div>
     <div class="form-group"><label>Outputs to Deliver</label><textarea id="f-outputs_to_deliver" rows="2" placeholder="Expected deliverables" style="width:100%;resize:vertical"></textarea></div>`;
   }
 
@@ -2134,6 +2144,7 @@ async function submitModal() {
       causes:val('f-cause')||null,
       consequences:val('f-consequences')||null,
       existing_controls:val('f-mitigation')||null,
+      controls_description:val('f-controls_description')||null,
       initial_likelihood:val('f-initial_likelihood')?parseInt(val('f-initial_likelihood')):null,
       initial_impact_overall:val('f-initial_impact_overall')?parseInt(val('f-initial_impact_overall')):null};
   } else if (currentModal==='objective') {
@@ -2174,7 +2185,7 @@ async function submitModal() {
       end_date:       val('f-end_date')||null,
       activity_kpi:   val('f-activity_kpi')||null,
       owner_name:     val('f-owner_name')||null,
-      inputs_required:    val('f-inputs_required')||null,
+      inputs_required:    [val('f-res-manpower')?`Manpower: ${val('f-res-manpower')}`:'', val('f-res-procurement')?`Procurement: ${val('f-res-procurement')}`:'', val('f-res-financial')?`Financial: ${val('f-res-financial')}`:''].filter(Boolean).join(' | ')||null,
       outputs_to_deliver: val('f-outputs_to_deliver')||null
     };
   } else if (currentModal==='treatment') {
@@ -2208,6 +2219,11 @@ async function submitModal() {
       if (saved!=='activity' && saved!=='treatment') loadDashboard();
     },700);
   } catch(e) { showModalError('Network error'); btn.disabled=false; btn.textContent='Save'; }
+}
+
+function toggleControlDetails(val) {
+  const el = document.getElementById('f-control-details');
+  if (el) el.style.display = (val === 'Partial' || val === 'Insufficient') ? 'block' : 'none';
 }
 
 function showModalError(msg) {
