@@ -3537,7 +3537,7 @@ async function enrichRiskTreatments(riskId) {
             ${t.status ? `<span class="status-badge ${statusCls[t.status]||'badge-grey'}" style="font-size:10px">${esc(t.status.replace(/_/g,' '))}</span>` : ''}
           </div>
           <div style="font-size:13px;font-weight:500;color:var(--cream);margin-bottom:.3rem">${v(t.title)}</div>
-          ${t.description ? `<div style="font-size:12px;color:var(--muted);margin-bottom:.35rem">${esc(t.description)}</div>` : ''}
+          ${t.description && t.description.trim() !== (t.title||'').trim() ? `<div style="font-size:12px;color:var(--muted);margin-bottom:.35rem">${esc(t.description)}</div>` : ''}
           ${t.project_id && t.project_code ? `<div style="font-size:11.5px;cursor:pointer;margin-top:.2rem" onclick="navToDetail('project','${t.project_id}')"><i class="ti ti-clipboard-list" style="color:var(--gold)"></i> <span style="color:#7dd3e8;text-decoration:underline dotted">${esc(t.project_code)}</span> <span style="color:var(--muted)">${esc(t.project_title||'')}</span> <i class="ti ti-arrow-right" style="font-size:9px;color:var(--gold)"></i></div>` : ''}
           ${t.activity_id && t.activity_name ? `<div style="font-size:11.5px;color:var(--muted);margin-top:.2rem"><i class="ti ti-sitemap" style="color:var(--gold)"></i> ${esc(t.activity_name)}</div>` : ''}
         </div>`;
