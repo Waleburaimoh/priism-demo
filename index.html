@@ -2079,46 +2079,68 @@ function getModalForm(type) {
     <div id="modal-msg-error" class="msg-error"></div>
     ${unitDropdown()}
     <div class="form-row">
-      <div class="form-group"><label>Risk Code *</label><input id="f-risk_code" placeholder="RSK002"></div>
+      <div class="form-group"><label>Risk Code *</label><input id="f-risk_code" placeholder="e.g. HR-RSK-001"></div>
       <div class="form-group"><label>Risk Type *</label>
-        <select id="f-risk_type"><option value="strategic">Strategic</option><option value="financial">Financial</option><option value="operational">Operational</option><option value="reputational">Reputational</option><option value="people">People</option><option value="legal">Legal</option></select>
+        <select id="f-risk_type">
+          <option value="strategic">Strategic</option>
+          <option value="financial">Financial</option>
+          <option value="operational">Operational</option>
+          <option value="reputational">Reputational</option>
+          <option value="people">People</option>
+          <option value="legal">Legal</option>
+        </select>
       </div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Title *</label><input id="f-title" placeholder="Risk title"></div>
-      <div class="form-group"><label>Department</label><input id="f-department" placeholder="Owning department"></div>
+      <div class="form-group"><label>Risk Category</label>
+        <select id="f-risk_category">
+          <option value="">— Select —</option>
+          <option value="Strategic">Strategic</option>
+          <option value="Financial">Financial</option>
+          <option value="Operational">Operational</option>
+          <option value="Compliance">Compliance</option>
+          <option value="Reputational">Reputational</option>
+          <option value="People">People</option>
+          <option value="Cyber">Cyber</option>
+          <option value="Environmental">Environmental</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Risk Owner</label><input id="f-risk_owner" placeholder="Responsible person or role"></div>
     </div>
-    <div class="form-group"><label>Description</label><textarea id="f-description" rows="2" placeholder="Overview of the risk" style="width:100%;resize:vertical"></textarea></div>
-    <div class="form-row">
-      <div class="form-group"><label>Cause</label><input id="f-cause" placeholder="Root cause"></div>
-      <div class="form-group"><label>Consequences</label><input id="f-consequences" placeholder="Potential consequences"></div>
-    </div>
+    <div class="form-group"><label>Title *</label><input id="f-title" placeholder="Short risk title"></div>
+    <div class="form-group"><label>Description</label><textarea id="f-description" rows="3" placeholder="Overview of what could go wrong and why it matters" style="width:100%;resize:vertical"></textarea></div>
+    <div class="form-group"><label>Cause(s)</label><textarea id="f-cause" rows="2" placeholder="What could trigger or cause this risk?" style="width:100%;resize:vertical"></textarea></div>
+    <div class="form-group"><label>Consequences</label><textarea id="f-consequences" rows="2" placeholder="What would happen if this risk materialised?" style="width:100%;resize:vertical"></textarea></div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:.4rem;margin-top:.2rem">Initial Risk Scoring — select both to see calculated score</div>
     <div class="form-row">
       <div class="form-group"><label>Likelihood</label>
-        <select id="f-initial_likelihood">
+        <select id="f-initial_likelihood" onchange="updateModalRiskScore()">
           <option value="">— Select —</option>
-          <option value="5">Almost Certain</option>
-          <option value="4">Likely</option>
-          <option value="3">Possible</option>
-          <option value="2">Unlikely</option>
+          <option value="5">5 — Almost Certain</option>
+          <option value="4">4 — Likely</option>
+          <option value="3">3 — Possible</option>
+          <option value="2">2 — Unlikely</option>
+          <option value="1">1 — Rare</option>
         </select>
       </div>
       <div class="form-group"><label>Impact</label>
-        <select id="f-initial_impact_overall">
+        <select id="f-initial_impact_overall" onchange="updateModalRiskScore()">
           <option value="">— Select —</option>
-          <option value="5">Catastrophic</option>
-          <option value="4">Major</option>
-          <option value="3">Moderate</option>
-          <option value="2">Minor</option>
+          <option value="5">5 — Catastrophic</option>
+          <option value="4">4 — Major</option>
+          <option value="3">3 — Moderate</option>
+          <option value="2">2 — Minor</option>
+          <option value="1">1 — Insignificant</option>
         </select>
       </div>
     </div>
-    <div class="form-group"><label>Mitigation</label><textarea id="f-mitigation" rows="2" placeholder="Mitigation actions" style="width:100%;resize:vertical"></textarea></div>
+    <div id="f-risk-score-preview" style="display:none;background:rgba(255,255,255,.05);border-radius:6px;padding:.6rem 1rem;margin-bottom:.8rem;font-size:13px;font-weight:500"></div>
+    <div class="form-group"><label>Existing Controls / Mitigation</label><textarea id="f-mitigation" rows="3" placeholder="What controls or mitigations are already in place?" style="width:100%;resize:vertical"></textarea></div>
     <div class="form-row">
       <div class="form-group"><label>Control Rating</label>
         <select id="f-control_rating" onchange="toggleControlDetails(this.value)"><option value="">— Select —</option><option value="Good">Good</option><option value="Partial">Partial</option><option value="Insufficient">Insufficient</option></select>
       </div>
-      <div class="form-group"><label>KRI Title</label><input id="f-kri_title" placeholder="Key Risk Indicator"></div>
+      <div class="form-group"><label>KRI Title</label><input id="f-kri_title" placeholder="Key Risk Indicator (optional)"></div>
     </div>
     <div id="f-control-details" style="display:none">
       <div class="form-group"><label>Control Description</label><textarea id="f-controls_description" rows="3" placeholder="Describe the existing controls in place" style="width:100%;resize:vertical"></textarea></div>
@@ -2284,7 +2306,8 @@ async function submitModal() {
     url = `${API}/risks`;
     body = {org_id:SESSION.org_id,register_id:REGISTER_ID,
       risk_code:val('f-risk_code'),title:val('f-title'),risk_type:val('f-risk_type'),
-      owner_name_free: val('f-department')||(UNIT_LABELS[val('f-modal-unit')]||null),
+      risk_category:val('f-risk_category')||null,
+      owner_name_free: val('f-risk_owner')||(UNIT_LABELS[val('f-modal-unit')]||null),
       description:val('f-description')||null,
       causes:val('f-cause')||null,
       consequences:val('f-consequences')||null,
@@ -2369,6 +2392,23 @@ async function submitModal() {
 function toggleControlDetails(val) {
   const el = document.getElementById('f-control-details');
   if (el) el.style.display = (val === 'Partial' || val === 'Insufficient') ? 'block' : 'none';
+}
+
+function updateModalRiskScore() {
+  const el = document.getElementById('f-risk-score-preview');
+  if (!el) return;
+  const L = parseInt(document.getElementById('f-initial_likelihood')?.value);
+  const I = parseInt(document.getElementById('f-initial_impact_overall')?.value);
+  if (!L || !I) { el.style.display = 'none'; return; }
+  const score = L * I;
+  const zone  = score >= 20 ? 'Critical' : score >= 15 ? 'High' : score >= 8 ? 'Medium' : 'Low';
+  const col   = {Critical:'#FCA5A5', High:'#FB923C', Medium:'var(--gold-light)', Low:'#6EE7B7'}[zone];
+  const bg    = {Critical:'rgba(239,68,68,.1)', High:'rgba(251,146,60,.1)', Medium:'rgba(201,168,76,.1)', Low:'rgba(16,185,129,.1)'}[zone];
+  el.style.display = 'block';
+  el.style.background = bg;
+  el.style.color = col;
+  el.style.border = `1px solid ${col}`;
+  el.innerHTML = `Initial Risk Score: <strong>${score}</strong> &nbsp;·&nbsp; Zone: <strong>${zone}</strong> &nbsp;·&nbsp; <span style="font-size:11px;opacity:.8">${L} (Likelihood) × ${I} (Impact)</span>`;
 }
 
 function showModalError(msg) {
