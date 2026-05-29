@@ -1148,6 +1148,7 @@ let _kpisData = [], _risksData = [], _projectsData = [], _objectivesData = [], _
 let _activitiesData = [], _currentPlanId = null, _planYear = null;
 let _kpiTrendsData = [], _riskTrendsData = [], _kpiTab = 'pc', _riskTab = 'register';
 let _currentRiskId = null;
+let _treatmentRiskId = null, _treatmentOptions = null;
 let _editKey = null, _editType = null;
 let _pendingDetail = null;
 let currentUnit = 'INST';
@@ -2636,9 +2637,6 @@ function openDetailPanel(type, key, rowEl) {
       </div>
       ${score?`<div class="dp-section"><div class="dp-label">Combined Score (L × I)</div><div class="dp-value" style="font-size:20px;font-weight:700;color:${sevCol}">${score}<span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:6px">${sev}</span></div></div>`:''}
       ${(L&&I)?heatMap:''}
-      ${sh('Treatment')}
-      <div class="dp-section"><div class="dp-label">Treatment Strategy</div><div class="dp-value">${v(r.treatment_strategy)}</div></div>
-      <div class="dp-section"><div class="dp-label">Treatment Actions</div><div class="dp-value">${v(r.treatment_actions)}</div></div>
       ${(resL||resI)?`<div class="dp-grid2">
         <div class="dp-section"><div class="dp-label">Residual Likelihood</div><div class="dp-value">${resL!=null?`${resL}/5`:'—'}</div></div>
         <div class="dp-section"><div class="dp-label">Residual Impact</div><div class="dp-value">${resI!=null?`${resI}/5`:'—'}</div></div>
@@ -2647,7 +2645,7 @@ function openDetailPanel(type, key, rowEl) {
       ${sh('Linked objective')}
       ${linkedObj?`<div class="dp-linked"><span class="code-badge">${esc(linkedObj.objective_code)}</span>${esc(linkedObj.title)}</div>`:'<div class="dp-value">—</div>'}
       <div id="dp-risk-live"><div style="display:flex;align-items:center;gap:.5rem;padding:.6rem 0;font-size:12px;color:var(--muted)"><div class="loading-dots" style="padding:0"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div> Loading treatments…</div></div>
-      <div style="padding:.75rem 0 .25rem"><button class="btn-update" onclick="openEditModal('risk','risk_${r.risk_id}')"><i class="ti ti-shield"></i> Update Risk Score</button></div>`;
+      <div style="padding:.75rem 0 .25rem"><button class="btn-update" onclick="openEditModal('risk','risk_${r.risk_id}')"><i class="ti ti-notes"></i> Add Notes / Strategy</button></div>`;
 
   } else if (type === 'project') {
     const p = item;
@@ -2993,6 +2991,7 @@ function getEditForm(type, item) {
     const zone  = score ? (score>=20?'Critical':score>=15?'High':score>=8?'Medium':'Low') : '—';
     const zCol  = {Critical:'#FCA5A5',High:'#FB923C',Medium:'var(--gold-light)',Low:'#6EE7B7'}[zone] || 'var(--muted)';
     const existing = esc(item.review_notes || '');
+    const stratSel = s => (item.treatment_strategy === s) ? ' selected' : '';
     return `<div id="edit-msg-error" class="msg-error"></div>
       <div style="background:rgba(255,255,255,.06);border-radius:6px;padding:.65rem 1rem;margin-bottom:1rem">
         <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem">Current Risk Score</div>
@@ -3000,8 +2999,18 @@ function getEditForm(type, item) {
         <span style="font-size:12px;color:var(--muted);margin-left:8px">Zone: ${zone}</span>
         ${L && I ? `<span style="font-size:11px;color:var(--muted);margin-left:8px">L:${L} × I:${I}</span>` : ''}
       </div>
+      <div class="form-group">
+        <label>Treatment Strategy <span id="ef-strategy-saved" style="display:none;font-size:11px;color:#6EE7B7;font-weight:400;text-transform:none;letter-spacing:0">✓ Saved</span></label>
+        <select id="ef-treatment_strategy" onchange="saveRiskStrategy(this)">
+          <option value="">— Not set —</option>
+          <option value="avoid"${stratSel('avoid')}>Avoid — eliminate the risk entirely</option>
+          <option value="reduce"${stratSel('reduce')}>Reduce — lower likelihood or impact</option>
+          <option value="transfer"${stratSel('transfer')}>Transfer — share or insure against</option>
+          <option value="accept"${stratSel('accept')}>Accept — tolerate within appetite</option>
+        </select>
+      </div>
       <div class="form-group"><label>Risk Notes / Commentary</label>
-        <textarea id="ef-notes" rows="5" placeholder="Add context, review findings, or mitigation progress…" style="width:100%;resize:vertical">${existing}</textarea>
+        <textarea id="ef-notes" rows="4" placeholder="Add context, review findings, or mitigation progress…" style="width:100%;resize:vertical">${existing}</textarea>
       </div>`;
   }
   if (type === 'project') {
@@ -3067,6 +3076,22 @@ function handleEvidenceFile(input) {
   const txtEl  = document.getElementById('ef-evidence-name-text');
   if (file && nameEl && txtEl) { nameEl.style.display = 'block'; txtEl.textContent = file.name; }
   else if (nameEl) { nameEl.style.display = 'none'; }
+}
+
+async function saveRiskStrategy(el) {
+  const item = _dpMap[_editKey] || {};
+  if (!item.risk_id) return;
+  try {
+    const res = await fetch(`${API}/organisations/${SESSION.org_id}/risks/${item.risk_id}/treatment-strategy`, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ treatment_strategy: el.value || null })
+    });
+    if (res.ok) {
+      item.treatment_strategy = el.value || null;
+      const s = document.getElementById('ef-strategy-saved');
+      if (s) { s.style.display = 'inline'; setTimeout(() => { s.style.display = 'none'; }, 2200); }
+    }
+  } catch {}
 }
 
 function calcRagPreview() {
@@ -3360,6 +3385,112 @@ async function enrichObjectiveSummary(objId) {
 }
 
 // ── RISK TREATMENTS ENRICHMENT ──
+function openAddTreatmentModal(riskId) {
+  _treatmentRiskId  = riskId;
+  _treatmentOptions = null;
+  document.getElementById('tm-type').value = '';
+  document.getElementById('tm-options-area').innerHTML = '';
+  document.getElementById('tm-linked-fields').style.display = 'none';
+  document.getElementById('treatment-submit-btn').disabled = true;
+  const errEl = document.getElementById('treatment-msg-error');
+  if (errEl) errEl.textContent = '';
+  if (document.getElementById('tm-description')) document.getElementById('tm-description').value = '';
+  document.getElementById('treatment-modal-overlay').classList.add('open');
+}
+
+function closeAddTreatmentModal() {
+  document.getElementById('treatment-modal-overlay').classList.remove('open');
+  _treatmentRiskId  = null;
+  _treatmentOptions = null;
+}
+
+async function handleTreatmentTypeChange() {
+  const type       = document.getElementById('tm-type').value;
+  const area       = document.getElementById('tm-options-area');
+  const linked     = document.getElementById('tm-linked-fields');
+  const submitBtn  = document.getElementById('treatment-submit-btn');
+  const esc        = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  if (!type) { area.innerHTML=''; linked.style.display='none'; submitBtn.disabled=true; return; }
+
+  area.innerHTML = '<div style="display:flex;align-items:center;gap:.5rem;padding:.5rem 0;font-size:12px;color:var(--muted)"><div class="loading-dots" style="padding:0"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div> Loading options…</div>';
+
+  if (!_treatmentOptions) {
+    try {
+      const r = await fetch(`${API}/organisations/${SESSION.org_id}/risks/${_treatmentRiskId}/treatment-options`);
+      _treatmentOptions = r.ok ? await r.json() : { projects:[], activities:[] };
+    } catch { _treatmentOptions = { dept_code:'', projects:[], activities:[] }; }
+  }
+
+  const deptCode = esc(_treatmentOptions.dept_code || '');
+
+  if (type === 'project') {
+    const items = _treatmentOptions.projects || [];
+    if (!items.length) {
+      area.innerHTML = `<div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:7px;padding:.75rem 1rem;font-size:12.5px;color:var(--muted);margin-bottom:.75rem">No projects found for department <strong style="color:var(--gold)">${deptCode}</strong>. Please create a project first, then return here to link it as a treatment action.</div>`;
+      linked.style.display='none'; submitBtn.disabled=true;
+    } else {
+      area.innerHTML = `<div class="form-group"><label>Select Project *</label><select id="tm-linked-id" onchange="onTreatmentItemSelect()"><option value="">— Choose a project —</option>${items.map(p=>`<option value="${esc(p.project_id)}">${esc(p.project_code)} — ${esc(p.title)}</option>`).join('')}</select></div><div class="form-group"><label>Linked Project</label><input id="tm-linked-name" readonly style="opacity:.6;cursor:default" value=""></div>`;
+      linked.style.display='block'; submitBtn.disabled=true;
+    }
+  } else if (type === 'inmodule') {
+    const items = _treatmentOptions.activities || [];
+    if (!items.length) {
+      area.innerHTML = `<div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:7px;padding:.75rem 1rem;font-size:12.5px;color:var(--muted);margin-bottom:.75rem">No operating plan activities found for department <strong style="color:var(--gold)">${deptCode}</strong>. Please create an operating plan activity first, then return here to link it as a treatment action.</div>`;
+      linked.style.display='none'; submitBtn.disabled=true;
+    } else {
+      area.innerHTML = `<div class="form-group"><label>Select Activity *</label><select id="tm-linked-id" onchange="onTreatmentItemSelect()"><option value="">— Choose an activity —</option>${items.map(a=>`<option value="${esc(a.activity_id)}">${esc(a.title||a.activity_name||'')}</option>`).join('')}</select></div><div class="form-group"><label>Linked Activity</label><input id="tm-linked-name" readonly style="opacity:.6;cursor:default" value=""></div>`;
+      linked.style.display='block'; submitBtn.disabled=true;
+    }
+  }
+}
+
+function onTreatmentItemSelect() {
+  const sel = document.getElementById('tm-linked-id');
+  const nameIn = document.getElementById('tm-linked-name');
+  const submitBtn = document.getElementById('treatment-submit-btn');
+  if (!sel?.value) { if (nameIn) nameIn.value=''; submitBtn.disabled=true; return; }
+  if (nameIn) nameIn.value = sel.options[sel.selectedIndex]?.text || '';
+  submitBtn.disabled = false;
+}
+
+async function submitAddTreatment() {
+  const btn   = document.getElementById('treatment-submit-btn');
+  const errEl = document.getElementById('treatment-msg-error');
+  if (errEl) errEl.textContent = '';
+  const type     = document.getElementById('tm-type')?.value;
+  const linkedId = document.getElementById('tm-linked-id')?.value;
+  if (!type || !linkedId) { if (errEl) errEl.textContent = 'Please select a treatment type and linked item.'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  const body = {
+    treatment_type: type,
+    description:    document.getElementById('tm-description')?.value?.trim() || null,
+    status:         document.getElementById('tm-status')?.value || 'not_started'
+  };
+  if (type === 'project')  body.linked_project_id  = linkedId;
+  if (type === 'inmodule') body.linked_activity_id = linkedId;
+
+  try {
+    const res = await fetch(`${API}/organisations/${SESSION.org_id}/risks/${_treatmentRiskId}/treatments`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    const savedRiskId = _treatmentRiskId;
+    closeAddTreatmentModal();
+    await enrichRiskTreatments(savedRiskId);
+    showToast('Treatment added', 'success');
+  } catch(e) {
+    if (errEl) errEl.textContent = e.message;
+    btn.disabled = false;
+    btn.textContent = 'Add Treatment';
+  }
+}
+
 async function enrichRiskTreatments(riskId) {
   _currentRiskId = riskId;
   const el = document.getElementById('dp-risk-live');
@@ -3371,30 +3502,60 @@ async function enrichRiskTreatments(riskId) {
     const esc  = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const v    = s => s!=null&&s!=='' ? esc(String(s)) : '—';
     const fmtD = dt => dt ? new Date(dt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : null;
-    const typeCls = {project:'badge-blue',process_change:'badge-teal',inmodule:'badge-purple'};
 
-    const addBtn = `<button class="btn-sm" onclick="openModal('treatment')" style="margin-left:auto;font-size:11px;padding:3px 10px"><i class="ti ti-plus"></i> Add Treatment</button>`;
-    const txHeader = `<div style="display:flex;align-items:center;margin-bottom:.5rem"><div class="dp-sh" style="margin:0">Treatments</div>${addBtn}</div>`;
+    const strat = d.risk?.treatment_strategy;
+    const stratCfg = {
+      avoid:    { label:'Avoid',    col:'#FCA5A5',          bg:'rgba(239,68,68,.14)' },
+      reduce:   { label:'Reduce',   col:'var(--gold-light)', bg:'rgba(201,168,76,.14)' },
+      transfer: { label:'Transfer', col:'#7dd3e8',           bg:'rgba(125,211,232,.12)' },
+      accept:   { label:'Accept',   col:'#6EE7B7',           bg:'rgba(16,185,129,.12)' }
+    };
+    const stratBadge = strat && stratCfg[strat]
+      ? `<span class="status-badge" style="background:${stratCfg[strat].bg};color:${stratCfg[strat].col}">${stratCfg[strat].label}</span>`
+      : '';
 
-    const treatments=d.treatments||[];
-    const txHtml=treatments.length ? treatments.map(t=>`<div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:7px;padding:.75rem 1rem;margin-bottom:.5rem">
-      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem">
-        ${t.treatment_type?`<span class="status-badge ${typeCls[(t.treatment_type||'').toLowerCase()]||'badge-grey'}">${esc(t.treatment_type)}</span>`:''}
-        ${t.status?`<span class="status-badge badge-grey" style="font-size:10px">${esc(t.status)}</span>`:''}
-        ${t.due_date?`<span style="font-size:11px;color:var(--muted);margin-left:auto">${fmtD(t.due_date)}</span>`:''}
-      </div>
-      <div style="font-size:13px;font-weight:500;color:var(--cream);margin-bottom:.25rem">${v(t.title)}</div>
-      ${t.description?`<div style="font-size:12px;color:var(--muted);margin-bottom:.35rem">${esc(t.description)}</div>`:''}
-      ${t.project_title?`<div style="font-size:11px;color:var(--muted)"><i class="ti ti-clipboard-list" style="font-size:11px"></i> ${esc(t.project_title)}</div>`:''}
-      ${t.activity_name?`<div style="font-size:11px;color:var(--muted);margin-top:2px"><i class="ti ti-sitemap" style="font-size:11px"></i> ${esc(t.activity_name)}</div>`:''}
-    </div>`).join('')
-      : '<div style="font-size:12px;color:var(--muted);padding:.25rem 0 .6rem">No treatment records</div>';
+    const typeCls   = { project:'badge-blue', inmodule:'badge-purple' };
+    const typeLabel = { project:'Project', inmodule:'AOP Activity' };
+    const statusCls = { not_started:'badge-grey', in_progress:'badge-amber', complete:'badge-green', overdue:'badge-red', cancelled:'badge-grey' };
 
-    const history=d.score_history||[];
-    const histHtml=history.length ? `<table class="data-table" style="font-size:12px"><tr><th>Date</th><th>L</th><th>I</th><th>Score</th><th>Zone</th></tr>${history.map(h=>`<tr><td>${fmtD(h.snapshot_date)||'—'}</td><td>${v(h.likelihood)}</td><td>${v(h.impact_overall)}</td><td style="font-weight:600">${v(h.score)}</td><td style="font-size:11px;color:var(--muted)">${v(h.zone)}</td></tr>`).join('')}</table>`
+    const addBtn   = `<button class="btn-sm" onclick="openAddTreatmentModal('${riskId}')" style="margin-left:auto;font-size:11px;padding:3px 10px"><i class="ti ti-plus"></i> Add Treatment</button>`;
+    const txHeader = `<div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.5rem"><div class="dp-sh" style="margin:0">Treatments</div>${stratBadge}${addBtn}</div>`;
+
+    const treatments = d.treatments || [];
+    let txHtml;
+    if (!treatments.length) {
+      const emptyMsg = (!strat)
+        ? 'No treatments recorded. Add a linked project or operating plan activity as a treatment action.'
+        : 'No treatment actions linked yet. Use the button above to link a project or AOP activity.';
+      txHtml = `<div style="font-size:12px;color:var(--muted);padding:.35rem 0 .6rem">${emptyMsg}</div>`;
+    } else {
+      txHtml = treatments.map(t => {
+        const tType = (t.treatment_type || '').toLowerCase();
+        return `<div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:7px;padding:.75rem 1rem;margin-bottom:.5rem">
+          <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.35rem;flex-wrap:wrap">
+            ${tType ? `<span class="status-badge ${typeCls[tType]||'badge-grey'}" style="font-size:10px">${typeLabel[tType]||tType}</span>` : ''}
+            ${t.status ? `<span class="status-badge ${statusCls[t.status]||'badge-grey'}" style="font-size:10px">${esc(t.status.replace(/_/g,' '))}</span>` : ''}
+          </div>
+          <div style="font-size:13px;font-weight:500;color:var(--cream);margin-bottom:.3rem">${v(t.title)}</div>
+          ${t.description ? `<div style="font-size:12px;color:var(--muted);margin-bottom:.35rem">${esc(t.description)}</div>` : ''}
+          ${t.project_id && t.project_code ? `<div style="font-size:11.5px;cursor:pointer;margin-top:.2rem" onclick="navToDetail('project','${t.project_id}')"><i class="ti ti-clipboard-list" style="color:var(--gold)"></i> <span style="color:#7dd3e8;text-decoration:underline dotted">${esc(t.project_code)}</span> <span style="color:var(--muted)">${esc(t.project_title||'')}</span> <i class="ti ti-arrow-right" style="font-size:9px;color:var(--gold)"></i></div>` : ''}
+          ${t.activity_id && t.activity_name ? `<div style="font-size:11.5px;color:var(--muted);margin-top:.2rem"><i class="ti ti-sitemap" style="color:var(--gold)"></i> ${esc(t.activity_name)}</div>` : ''}
+        </div>`;
+      }).join('');
+    }
+
+    const history = d.score_history || [];
+    const histHtml = history.length
+      ? `<table class="data-table" style="font-size:12px"><tr><th>Date</th><th>L</th><th>I</th><th>Score</th><th>Zone</th></tr>${history.map(h=>`<tr><td>${fmtD(h.snapshot_date)||'—'}</td><td>${v(h.likelihood)}</td><td>${v(h.impact_overall)}</td><td style="font-weight:600">${v(h.score)}</td><td style="font-size:11px;color:var(--muted)">${v(h.zone)}</td></tr>`).join('')}</table>`
       : '<div style="font-size:12px;color:var(--muted);padding:.35rem 0">No score history</div>';
 
-    el.innerHTML=`${txHeader}${txHtml}<div class="dp-sh">Score History</div>${histHtml}`;
+    el.innerHTML = `${txHeader}${txHtml}<div class="dp-sh">Score History</div>${histHtml}`;
+
+    // Keep _dpMap in sync if treatment_strategy was returned
+    const riskKey = 'risk_' + riskId;
+    if (d.risk?.treatment_strategy !== undefined && _dpMap[riskKey]) {
+      _dpMap[riskKey].treatment_strategy = d.risk.treatment_strategy;
+    }
   } catch(e) { if(el) el.innerHTML=''; }
 }
 
@@ -3417,6 +3578,48 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeDetailPanel(
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
       <button class="btn-submit" id="edit-modal-submit-btn" onclick="submitEditModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- TREATMENT ADD MODAL -->
+<div class="modal-overlay" id="treatment-modal-overlay">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div class="modal-title">Add Treatment Action</div>
+      <button class="modal-close" onclick="closeAddTreatmentModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body" id="treatment-modal-body">
+      <div id="treatment-msg-error" class="msg-error"></div>
+      <div class="form-group">
+        <label>Treatment Type *</label>
+        <select id="tm-type" onchange="handleTreatmentTypeChange()">
+          <option value="">— Select type —</option>
+          <option value="project">Link to Project</option>
+          <option value="inmodule">Link to Operating Plan Activity</option>
+        </select>
+      </div>
+      <div id="tm-options-area"></div>
+      <div id="tm-linked-fields" style="display:none">
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="tm-description" rows="3" style="width:100%;resize:vertical" placeholder="Additional context for this treatment link…"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="tm-status">
+            <option value="not_started">Not Started</option>
+            <option value="in_progress">In Progress</option>
+            <option value="complete">Complete</option>
+            <option value="overdue">Overdue</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeAddTreatmentModal()">Cancel</button>
+      <button class="btn-submit" id="treatment-submit-btn" onclick="submitAddTreatment()" disabled>Add Treatment</button>
     </div>
   </div>
 </div>
