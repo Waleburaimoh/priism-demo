@@ -2574,6 +2574,7 @@ function openDetailPanel(type, key, rowEl) {
         ${pctAchieved!=null?`<div class="dp-section"><div class="dp-label">Achievement</div><div class="dp-value" style="font-size:18px;font-weight:600;color:${progCol}">${pctAchieved}%</div></div>`:''}
       </div>
       ${pctAchieved!=null?`<div style="margin-bottom:1rem"><div class="prog-track" style="height:7px"><div class="prog-fill" style="width:${Math.min(pctAchieved,100)}%;background:${progCol}"></div></div></div>`:''}
+      ${k.evidence_reference?`<div style="margin:.1rem 0 .85rem;padding:.35rem .7rem;background:rgba(125,211,232,.07);border-radius:5px;font-size:12.5px;color:var(--cream-dark)"><span style="font-size:10.5px;color:var(--muted);display:block;margin-bottom:.2rem;text-transform:uppercase;letter-spacing:.04em">Evidence on file</span><i class="ti ti-paperclip" style="color:var(--gold);margin-right:.35rem"></i>${esc(k.evidence_reference)}</div>`:''}
       ${(k.rag_red_threshold!=null||k.rag_amber_threshold!=null||k.rag_green_threshold!=null)?`
       <div class="dp-section"><div class="dp-label">RAG Thresholds</div>
         <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.35rem">
@@ -2971,7 +2972,18 @@ function getEditForm(type, item) {
           <input id="ef-actual_value" type="number" step="any" placeholder="e.g. 87.5" oninput="calcRagPreview()">
         </div>
         <div id="ef-rag-preview" style="display:none;border-radius:6px;padding:.5rem .9rem;margin-bottom:.75rem;font-size:13px;font-weight:500"></div>
-        <div class="form-group"><label>Evidence Reference</label><input id="ef-evidence" placeholder="e.g. HR Report March 2026, Page 4"></div>
+        <div class="form-group">
+          <label>Upload Evidence</label>
+          <label for="ef-evidence-file" style="display:block;border:1.5px dashed rgba(125,211,232,.35);border-radius:8px;padding:.65rem 1rem;cursor:pointer;text-align:center;color:var(--muted);font-size:12.5px" onmouseover="this.style.borderColor='rgba(125,211,232,.65)'" onmouseout="this.style.borderColor='rgba(125,211,232,.35)'">
+            <i class="ti ti-upload" style="font-size:16px;display:block;margin-bottom:.3rem;color:var(--gold)"></i>
+            Click to browse &nbsp;·&nbsp; PDF, Word, Excel, Image
+          </label>
+          <input type="file" id="ef-evidence-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" style="display:none" onchange="handleEvidenceFile(this)">
+          <div id="ef-evidence-name" style="display:none;margin-top:.45rem;font-size:12.5px;color:var(--cream-dark);padding:.35rem .65rem;background:rgba(125,211,232,.08);border-radius:5px">
+            <i class="ti ti-paperclip" style="color:var(--gold);margin-right:.3rem"></i><span id="ef-evidence-name-text"></span>
+          </div>
+          <p style="font-size:11px;color:var(--muted);margin-top:.4rem;margin-bottom:0">File referenced for audit purposes. Full SharePoint/OneDrive integration in Phase 2.</p>
+        </div>
       </div>`;
   }
   if (type === 'risk') {
@@ -3047,6 +3059,14 @@ function checkPeriodLock(val) {
   document.getElementById('edit-locked-msg').style.display = locked ? 'block' : 'none';
   document.getElementById('ef-unlocked-fields').style.display = locked ? 'none' : 'block';
   document.getElementById('edit-modal-submit-btn').disabled = locked;
+}
+
+function handleEvidenceFile(input) {
+  const file   = input.files[0];
+  const nameEl = document.getElementById('ef-evidence-name');
+  const txtEl  = document.getElementById('ef-evidence-name-text');
+  if (file && nameEl && txtEl) { nameEl.style.display = 'block'; txtEl.textContent = file.name; }
+  else if (nameEl) { nameEl.style.display = 'none'; }
 }
 
 function calcRagPreview() {
@@ -3158,16 +3178,25 @@ async function submitEditModal() {
 
     } else if (_editType === 'kpi-actual') {
       const item = _dpMap[_editKey] || {};
+      const refreshKey = _editKey;
       const [py, pq] = (document.getElementById('ef-period').value||'2026_2').split('_').map(Number);
+      const evidenceRef = document.getElementById('ef-evidence-file')?.files[0]?.name || '';
+      const actualValStr = document.getElementById('ef-actual_value').value;
       const res  = await fetch(`${API}/organisations/${SESSION.org_id}/kpis/${item.kpi_id}/actuals`, {
         method: 'PATCH', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ period_year: py, period_quarter: pq, actual_value: document.getElementById('ef-actual_value').value, evidence_reference: document.getElementById('ef-evidence').value })
+        body: JSON.stringify({ period_year: py, period_quarter: pq, actual_value: actualValStr, evidence_reference: evidenceRef })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       if (data.locked) throw new Error(data.message || 'Period is locked');
-      if (data.rag_status) { item.rag_status = data.rag_status; item.actual_value = document.getElementById('ef-actual_value').value; }
+      const savedVal = parseFloat(actualValStr);
+      if (data.rag_status) {
+        item.rag_status = data.rag_status;
+        if (!isNaN(savedVal)) item.current_value = savedVal;
+        if (evidenceRef) item.evidence_reference = evidenceRef;
+      }
       closeEditModal();
+      openDetailPanel('kpi', refreshKey);
       showToast(`KPI actual saved — RAG: ${data.rag_status || 'calculated'}`, 'success');
 
     } else if (_editType === 'risk') {
