@@ -2152,44 +2152,90 @@ function getModalForm(type) {
     <div id="modal-msg-error" class="msg-error"></div>
     ${unitDropdown()}
     <div class="form-row">
-      <div class="form-group"><label>Project Code *</label><input id="f-project_code" placeholder="PRJ001"></div>
+      <div class="form-group"><label>Project Code *</label><input id="f-project_code" placeholder="e.g. INST-PRJ-001"></div>
       <div class="form-group"><label>Project Type *</label>
-        <select id="f-project_type"><option value="strategic">Strategic</option><option value="operational">Operational</option><option value="infrastructure">Infrastructure</option><option value="compliance">Compliance</option></select>
+        <select id="f-project_type">
+          <option value="strategic">Strategic</option>
+          <option value="operational">Operational</option>
+          <option value="infrastructure">Infrastructure</option>
+          <option value="compliance">Compliance</option>
+          <option value="research">Research</option>
+        </select>
       </div>
     </div>
-    <div class="form-group"><label>Title *</label><input id="f-title" placeholder="Project name"></div>
-    <div class="form-group"><label>Description</label><textarea id="f-description" rows="2" placeholder="Project overview" style="width:100%;resize:vertical"></textarea></div>
+    <div class="form-group"><label>Title *</label><input id="f-title" placeholder="Full project name"></div>
+    <div class="form-group"><label>Description</label><textarea id="f-description" rows="3" placeholder="What this project will deliver and why it matters" style="width:100%;resize:vertical"></textarea></div>
     <div class="form-row">
-      <div class="form-group"><label>Project Manager</label><input id="f-project_manager" placeholder="Manager name"></div>
-      <div class="form-group"><label>Priority</label>
-        <select id="f-priority"><option value="">— Select —</option><option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option></select>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>Start Date</label><input id="f-start_date" type="date"></div>
-      <div class="form-group"><label>End Date</label><input id="f-end_date" type="date"></div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>Budget Amount</label><input id="f-budget_amount" type="number" step="any" placeholder="e.g. 500000"></div>
-      <div class="form-group"><label>Budget Currency</label>
-        <select id="f-budget_currency"><option value="AED">AED</option><option value="USD">USD</option><option value="GBP">GBP</option></select>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>Methodology *</label>
-        <select id="f-methodology"><option value="agile">Agile</option><option value="waterfall">Waterfall</option><option value="hybrid">Hybrid</option></select>
-      </div>
-      <div class="form-group"><label>Register Type *</label>
-        <select id="f-register_type"><option value="project">Project</option><option value="departmental">Departmental</option><option value="institutional">Institutional</option></select>
+      <div class="form-group"><label>Project Manager / Owner</label><input id="f-owner_name_free" placeholder="Responsible person or role"></div>
+      <div class="form-group"><label>Current Phase</label>
+        <select id="f-current_phase">
+          <option value="initiation">Initiation</option>
+          <option value="Planning">Planning</option>
+          <option value="Execution">Execution</option>
+          <option value="Monitoring & Control">Monitoring &amp; Control</option>
+          <option value="Closure">Closure</option>
+          <option value="Sprint">Sprint</option>
+        </select>
       </div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Budget Source *</label>
-        <select id="f-budget_source"><option value="capex">CAPEX</option><option value="opex">OPEX</option><option value="grant">Grant</option><option value="mixed">Mixed</option></select>
-      </div>
       <div class="form-group"><label>Status *</label>
-        <select id="f-status"><option value="planning">Planning</option><option value="active">Active</option><option value="on_hold">On Hold</option><option value="completed">Completed</option></select>
+        <select id="f-status">
+          <option value="pipeline">Pipeline</option>
+          <option value="active">Active</option>
+          <option value="on_hold">On Hold</option>
+          <option value="completed">Completed</option>
+        </select>
       </div>
+      <div class="form-group"><label>Methodology *</label>
+        <select id="f-methodology">
+          <option value="PMBOK">PMBOK</option>
+          <option value="Agile">Agile</option>
+          <option value="Hybrid">Hybrid</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Register Type *</label>
+        <select id="f-register_type">
+          <option value="institutional">Institutional</option>
+          <option value="departmental">Departmental</option>
+          <option value="project">Project</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Budget Source *</label>
+        <select id="f-budget_source">
+          <option value="capex">CAPEX</option>
+          <option value="opex">OPEX</option>
+          <option value="grant">Grant</option>
+          <option value="mixed">Mixed</option>
+        </select>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin:.5rem 0 .3rem">Timeline</div>
+    <div class="form-row">
+      <div class="form-group"><label>Planned Start Date</label><input id="f-planned_start_date" type="date"></div>
+      <div class="form-group"><label>Planned End Date</label><input id="f-planned_end_date" type="date"></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin:.5rem 0 .3rem">Budget</div>
+    <div class="form-row">
+      <div class="form-group"><label>Approved Budget</label><input id="f-approved_budget" type="number" step="any" placeholder="e.g. 500000"></div>
+      <div class="form-group"><label>Currency</label>
+        <select id="f-budget_currency"><option value="AED">AED</option><option value="USD">USD</option><option value="GBP">GBP</option><option value="EUR">EUR</option></select>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin:.5rem 0 .3rem">Initial Health Assessment <span style="opacity:.6">(optional)</span></div>
+    <div class="form-row">
+      <div class="form-group"><label>Schedule Health %</label><input id="f-health_schedule_pct" type="number" min="0" max="100" placeholder="e.g. 80"></div>
+      <div class="form-group"><label>Budget Health %</label><input id="f-health_budget_pct" type="number" min="0" max="100" placeholder="e.g. 90"></div>
+    </div>
+    <div class="form-group"><label>Scope Status</label>
+      <select id="f-health_scope_status">
+        <option value="">— Select —</option>
+        <option value="on_track">On Track</option>
+        <option value="at_risk">At Risk</option>
+        <option value="critical">Critical</option>
+      </select>
     </div>`;
 
   if (type==='objective') return `
@@ -2331,12 +2377,15 @@ async function submitModal() {
       project_type:val('f-project_type'),methodology:val('f-methodology'),
       register_type:val('f-register_type'),budget_source:val('f-budget_source'),status:val('f-status'),
       description:val('f-description')||null,
-      project_manager_name_free:val('f-project_manager')||null,
-      priority:val('f-priority')||null,
-      start_date:val('f-start_date')||null,
-      end_date:val('f-end_date')||null,
-      budget_amount:val('f-budget_amount')?parseFloat(val('f-budget_amount')):null,
-      budget_currency:val('f-budget_currency')||null};
+      owner_name_free:val('f-owner_name_free')||(UNIT_LABELS[val('f-modal-unit')]||null),
+      current_phase:val('f-current_phase')||'initiation',
+      planned_start_date:val('f-planned_start_date')||null,
+      planned_end_date:val('f-planned_end_date')||null,
+      approved_budget:val('f-approved_budget')?parseFloat(val('f-approved_budget')):null,
+      budget_currency:val('f-budget_currency')||'AED',
+      health_schedule_pct:val('f-health_schedule_pct')?parseFloat(val('f-health_schedule_pct')):null,
+      health_budget_pct:val('f-health_budget_pct')?parseFloat(val('f-health_budget_pct')):null,
+      health_scope_status:val('f-health_scope_status')||null};
   } else if (currentModal==='activity') {
     if (!val('f-activity_name')) { showModalError('Activity title is required'); btn.disabled=false; btn.textContent='Save'; return; }
     if (!_currentPlanId) { showModalError('No operating plan loaded'); btn.disabled=false; btn.textContent='Save'; return; }
@@ -2598,7 +2647,7 @@ function openDetailPanel(type, key, rowEl) {
   } else if (type === 'project') {
     const p = item;
     const fmt    = d => fmtD(d) || 'TBD';
-    const budget = p.approved_budget!=null ? Number(p.approved_budget) : null;
+    const budget = (p.budget_allocated!=null ? Number(p.budget_allocated) : null) ?? (p.approved_budget!=null ? Number(p.approved_budget) : null);
     const spent  = p.actual_spend!=null    ? Number(p.actual_spend)    : null;
     // Budget variance as % per spec: ((actual-budget)/budget)*100
     const varPct = (budget!=null && spent!=null && budget!==0)
@@ -2634,7 +2683,7 @@ function openDetailPanel(type, key, rowEl) {
       ${sh('Project details')}
       <div class="dp-section"><div class="dp-label">Description</div><div class="dp-value">${v(p.description)}</div></div>
       <div class="dp-grid2">
-        <div class="dp-section"><div class="dp-label">Project Manager</div><div class="dp-value">${v(p.project_manager_name||p.owner_name_free)}</div></div>
+        <div class="dp-section"><div class="dp-label">Project Manager</div><div class="dp-value">${v(p.owner_name_free||p.owner_name)}</div></div>
         <div class="dp-section"><div class="dp-label">Department</div><div class="dp-value">${v(p.department_name)}</div></div>
       </div>
       <div class="dp-grid2">
