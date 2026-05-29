@@ -1149,6 +1149,7 @@ let _activitiesData = [], _currentPlanId = null, _planYear = null;
 let _kpiTrendsData = [], _riskTrendsData = [], _kpiTab = 'pc', _riskTab = 'register';
 let _currentRiskId = null;
 let _editKey = null, _editType = null;
+let _pendingDetail = null;
 let currentUnit = 'INST';
 let currentUnitPrefix = null; // null = Institutional (show all); otherwise the prefix code, e.g. 'CA'
 const UNIT_LABELS = {INST:'Institutional',CA:'College of Agriculture',CVM:'College of Veterinary Medicine',BA:'College of Business Administration',CL:'College of Law',CI:'College of Computing & Intelligent Systems',CS:'College of Arts Humanities & Social Sciences',COE:'Centre of Excellence',SA:'Student Affairs',AD:'Admissions & Registration',RI:'Research & Innovation',LB:'Library',FN:'Finance',PC:'Procurement',IT:'Information Technology',HR:'Human Resources',GS:'Facilities',CD:'Corporate Communications',IEA:'Institutional Effectiveness',IA:'Internal Audit',SP:'Strategy & Development',LA:'Legal Affairs',VCA:'Vice Chancellor Academic',IN:'International Relations',VCCA:'Vice Chancellor Community',VCAF:'Vice Chancellor Admin & Finance'};
@@ -1643,6 +1644,7 @@ async function loadKpis() {
       _kpisData = _kpisData.filter(k => instObjIds.has(k.objective_id));
     }
     renderKpis();
+    checkAndOpenPending('kpi');
   } catch(e) { document.getElementById('kpis-table').innerHTML='<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load KPIs</p>'; }
 }
 
@@ -1771,6 +1773,7 @@ async function loadRisks() {
     }
     _risksData = [...risks].sort((a,b)=>((b.initial_likelihood||0)*(b.initial_impact_overall||0))-((a.initial_likelihood||0)*(a.initial_impact_overall||0)));
     renderRisks();
+    checkAndOpenPending('risk');
   } catch(e) { document.getElementById('risks-table').innerHTML='<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load risks</p>'; }
 }
 
@@ -1827,6 +1830,7 @@ async function loadProjects() {
       _projectsData = _projectsData.filter(p => (p.project_code||'').startsWith('ORG-'));
     }
     renderProjects();
+    checkAndOpenPending('project');
   } catch(e) { document.getElementById('projects-table').innerHTML='<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load projects</p>'; }
 }
 
@@ -2915,8 +2919,8 @@ function openEditModal(type, dpKey) {
   _editType = type;
   _editKey  = dpKey;
   const item = _dpMap[dpKey] || {};
-  const titles = { 'objective':'Update Status', 'kpi-actual':'Update Actual', 'risk':'Update Risk Score', 'project':'Update Project Health', 'activity':'Update Activity' };
-  const btns   = { 'objective':'Save', 'kpi-actual':'Save Actual', 'risk':'Update Risk Score', 'project':'Update Project Health', 'activity':'Update Activity' };
+  const titles = { 'objective':'Update Status', 'kpi-actual':'Update Actual', 'risk':'Risk Notes', 'project':'Update Project Health', 'activity':'Update Activity' };
+  const btns   = { 'objective':'Save', 'kpi-actual':'Save Actual', 'risk':'Save Notes', 'project':'Update Project Health', 'activity':'Update Activity' };
   document.getElementById('edit-modal-title').textContent = titles[type] || 'Update';
   document.getElementById('edit-modal-body').innerHTML = getEditForm(type, item);
   const sb = document.getElementById('edit-modal-submit-btn');
@@ -2949,6 +2953,8 @@ function getEditForm(type, item) {
       </div>`;
   }
   if (type === 'kpi-actual') {
+    const target = item.target_value != null ? Number(item.target_value) : null;
+    const unit   = esc(item.unit || '');
     return `<div id="edit-msg-error" class="msg-error"></div>
       <div id="edit-locked-msg" class="locked-notice" style="display:none">🔒 This period is locked and cannot be edited.</div>
       <div class="form-group"><label>Period</label>
@@ -2960,37 +2966,31 @@ function getEditForm(type, item) {
         </select>
       </div>
       <div id="ef-unlocked-fields">
-        <div class="form-group"><label>Actual Value</label><input id="ef-actual_value" type="number" step="any" placeholder="e.g. 87.5"></div>
-        <div class="form-group"><label>RAG Status</label>
-          <select id="ef-rag_status">
-            <option value="">— Select —</option>
-            <option value="Green">Green</option>
-            <option value="Amber">Amber</option>
-            <option value="Red">Red</option>
-          </select>
+        <div class="form-group">
+          <label>Actual Value${target != null ? ` <span style="font-size:11px;color:var(--muted);font-weight:400">(Target: ${target}${unit ? ' ' + unit : ''})</span>` : ''}</label>
+          <input id="ef-actual_value" type="number" step="any" placeholder="e.g. 87.5" oninput="calcRagPreview()">
         </div>
+        <div id="ef-rag-preview" style="display:none;border-radius:6px;padding:.5rem .9rem;margin-bottom:.75rem;font-size:13px;font-weight:500"></div>
         <div class="form-group"><label>Evidence Reference</label><input id="ef-evidence" placeholder="e.g. HR Report March 2026, Page 4"></div>
       </div>`;
   }
   if (type === 'risk') {
-    const llabels = {1:'Rare',2:'Unlikely',3:'Possible',4:'Likely',5:'Almost Certain'};
-    const ilabels = {1:'Insignificant',2:'Minor',3:'Moderate',4:'Major',5:'Catastrophic'};
-    const L = item.current_likelihood || item.initial_likelihood || 3;
-    const I = item.current_impact_overall || item.initial_impact_overall || 3;
-    const score = L * I;
-    const zone = score>=20?'Critical':score>=15?'High':score>=8?'Medium':'Low';
-    const zCol = {Critical:'#FCA5A5',High:'#FB923C',Medium:'var(--gold-light)',Low:'#6EE7B7'}[zone];
+    const L = item.current_likelihood || item.initial_likelihood || 0;
+    const I = item.current_impact_overall || item.initial_impact_overall || 0;
+    const score = L && I ? L * I : null;
+    const zone  = score ? (score>=20?'Critical':score>=15?'High':score>=8?'Medium':'Low') : '—';
+    const zCol  = {Critical:'#FCA5A5',High:'#FB923C',Medium:'var(--gold-light)',Low:'#6EE7B7'}[zone] || 'var(--muted)';
+    const existing = esc(item.review_notes || '');
     return `<div id="edit-msg-error" class="msg-error"></div>
-      <div class="form-group"><label>Current Likelihood — <span id="ef-l-lbl" style="color:var(--gold)">${L}/5 ${llabels[L]||''}</span></label>
-        <input type="range" id="ef-likelihood" min="1" max="5" value="${L}" class="edit-slider" oninput="updateScoreDisplay()">
+      <div style="background:rgba(255,255,255,.06);border-radius:6px;padding:.65rem 1rem;margin-bottom:1rem">
+        <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem">Current Risk Score</div>
+        <span style="font-size:22px;font-weight:700;color:${zCol}">${score != null ? score : '—'}</span>
+        <span style="font-size:12px;color:var(--muted);margin-left:8px">Zone: ${zone}</span>
+        ${L && I ? `<span style="font-size:11px;color:var(--muted);margin-left:8px">L:${L} × I:${I}</span>` : ''}
       </div>
-      <div class="form-group"><label>Current Impact — <span id="ef-i-lbl" style="color:#FCA5A5">${I}/5 ${ilabels[I]||''}</span></label>
-        <input type="range" id="ef-impact" min="1" max="5" value="${I}" class="edit-slider" oninput="updateScoreDisplay()">
-      </div>
-      <div id="ef-score-display" style="background:rgba(255,255,255,.06);border-radius:6px;padding:.7rem 1rem;margin-bottom:.8rem;font-size:14px;font-weight:600">
-        Score: <span style="font-size:20px;color:${zCol}">${score}</span> <span style="font-size:12px;font-weight:400;color:var(--muted);margin-left:6px">(Zone: ${zone})</span>
-      </div>
-      <div class="form-group"><label>Notes</label><textarea id="ef-notes" rows="3" placeholder="Context for this score update…" style="width:100%;resize:vertical"></textarea></div>`;
+      <div class="form-group"><label>Risk Notes / Commentary</label>
+        <textarea id="ef-notes" rows="5" placeholder="Add context, review findings, or mitigation progress…" style="width:100%;resize:vertical">${existing}</textarea>
+      </div>`;
   }
   if (type === 'project') {
     const sel = (v, cur) => cur === v ? ' selected' : '';
@@ -3049,6 +3049,30 @@ function checkPeriodLock(val) {
   document.getElementById('edit-modal-submit-btn').disabled = locked;
 }
 
+function calcRagPreview() {
+  const item    = _dpMap[_editKey] || {};
+  const val     = parseFloat(document.getElementById('ef-actual_value')?.value);
+  const preview = document.getElementById('ef-rag-preview');
+  if (!preview) return;
+  if (isNaN(val)) { preview.style.display = 'none'; return; }
+  const target = item.target_value != null ? Number(item.target_value) : null;
+  const trend  = item.trend_preference || 'higher_better';
+  let rag = 'Green';
+  if (target != null) {
+    if (trend === 'lower_better') {
+      rag = val <= target ? 'Green' : val <= target * 1.2 ? 'Amber' : 'Red';
+    } else {
+      rag = val >= target ? 'Green' : val >= target * 0.8 ? 'Amber' : 'Red';
+    }
+  }
+  const col = rag==='Green'?'#6EE7B7':rag==='Amber'?'var(--gold-light)':'#FCA5A5';
+  const bg  = rag==='Green'?'rgba(16,185,129,.12)':rag==='Amber'?'rgba(201,168,76,.12)':'rgba(239,68,68,.12)';
+  preview.style.display = 'block';
+  preview.style.background = bg;
+  preview.style.color = col;
+  preview.textContent = `Auto RAG: ${rag}${target != null ? ` (Target: ${target})` : ''}`;
+}
+
 function updateScoreDisplay() {
   const llabels = {1:'Rare',2:'Unlikely',3:'Possible',4:'Likely',5:'Almost Certain'};
   const ilabels = {1:'Insignificant',2:'Minor',3:'Moderate',4:'Major',5:'Catastrophic'};
@@ -3089,6 +3113,27 @@ function updateActivityStatus() {
   document.getElementById('ef-act-status').textContent = `Status: ${status}`;
 }
 
+function navToDetail(type, id) {
+  closeDetailPanel();
+  _pendingDetail = { type, id };
+  const pageMap = { kpi: 'kpis', risk: 'risks', project: 'projects' };
+  showPage(pageMap[type] || (type + 's'));
+}
+
+function checkAndOpenPending(type) {
+  if (!_pendingDetail || _pendingDetail.type !== type) return;
+  const id = _pendingDetail.id;
+  _pendingDetail = null;
+  let item;
+  if (type === 'kpi')     item = (_kpisData    || []).find(k => k.kpi_id     === id);
+  else if (type === 'risk')    item = (_risksData    || []).find(r => r.risk_id    === id);
+  else if (type === 'project') item = (_projectsData || []).find(p => p.project_id === id);
+  if (!item) return;
+  const key = type + '_' + id;
+  _dpMap[key] = item;
+  setTimeout(() => openDetailPanel(type, key), 80);
+}
+
 async function submitEditModal() {
   const btn    = document.getElementById('edit-modal-submit-btn');
   const errEl  = document.getElementById('edit-msg-error');
@@ -3116,30 +3161,26 @@ async function submitEditModal() {
       const [py, pq] = (document.getElementById('ef-period').value||'2026_2').split('_').map(Number);
       const res  = await fetch(`${API}/organisations/${SESSION.org_id}/kpis/${item.kpi_id}/actuals`, {
         method: 'PATCH', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ period_year: py, period_quarter: pq, actual_value: document.getElementById('ef-actual_value').value, rag_status: document.getElementById('ef-rag_status').value, evidence_reference: document.getElementById('ef-evidence').value })
+        body: JSON.stringify({ period_year: py, period_quarter: pq, actual_value: document.getElementById('ef-actual_value').value, evidence_reference: document.getElementById('ef-evidence').value })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       if (data.locked) throw new Error(data.message || 'Period is locked');
+      if (data.rag_status) { item.rag_status = data.rag_status; item.actual_value = document.getElementById('ef-actual_value').value; }
       closeEditModal();
-      showToast('KPI actual saved successfully', 'success');
+      showToast(`KPI actual saved — RAG: ${data.rag_status || 'calculated'}`, 'success');
 
     } else if (_editType === 'risk') {
       const item = _dpMap[_editKey] || {};
-      const L = parseInt(document.getElementById('ef-likelihood').value);
-      const I = parseInt(document.getElementById('ef-impact').value);
       const res  = await fetch(`${API}/organisations/${SESSION.org_id}/risks/${item.risk_id}`, {
         method: 'PATCH', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ current_likelihood: L, current_impact_overall: I, notes: document.getElementById('ef-notes').value })
+        body: JSON.stringify({ notes: document.getElementById('ef-notes').value })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      item.current_likelihood = L;
-      item.current_impact_overall = I;
-      item.current_score = data.current_score;
-      item.current_zone  = data.current_zone;
+      item.review_notes = data.review_notes;
       closeEditModal();
-      showToast(`Risk score updated — ${data.current_score} (${data.current_zone})`, 'success');
+      showToast('Risk notes saved', 'success');
 
     } else if (_editType === 'project') {
       const item = _dpMap[_editKey] || {};
@@ -3280,9 +3321,9 @@ async function enrichObjectiveSummary(objId) {
       ${rag.red?`<span class="rag-chip" style="background:rgba(239,68,68,.14);color:#FCA5A5"><i class="ti ti-circle-filled" style="font-size:9px"></i> Red ${rag.red}</span>`:''}
       ${rag.no_data?`<span class="rag-chip" style="background:rgba(255,255,255,.06);color:var(--muted)"><i class="ti ti-circle-filled" style="font-size:9px"></i> No data ${rag.no_data}</span>`:''}
     </div>`;
-    const kpiRows=(d.kpis||[]).map(k=>`<div class="dp-linked" style="flex-direction:column;align-items:flex-start;gap:.25rem"><div style="display:flex;gap:.5rem;align-items:center;width:100%"><span class="code-badge">${esc(k.kpi_code)}</span><span style="font-size:12.5px;flex:1">${esc(k.title)}</span>${k.rag_status?`<span class="status-badge" style="background:${ragBg(k.rag_status)};color:${ragColor(k.rag_status)}">${k.rag_status}</span>`:'<span style="font-size:11px;color:var(--muted)">No data</span>'}</div>${k.actual_value!=null?`<div style="font-size:11px;color:var(--muted);padding-left:.25rem">Latest: ${esc(String(k.actual_value))} ${esc(k.unit||'')}</div>`:''}</div>`).join('')||'<div style="font-size:12px;color:var(--muted);padding:.35rem 0">No linked KPIs</div>';
-    const riskRows=(d.risks||[]).map(r=>`<div class="dp-linked" style="gap:.5rem"><span class="code-badge">${esc(r.risk_code)}</span><span style="font-size:12.5px;flex:1">${esc(r.title)}</span>${r.current_score!=null?`<span class="status-badge" style="background:${r.current_score>=12?'rgba(239,68,68,.14)':r.current_score>=8?'rgba(201,168,76,.14)':'rgba(16,185,129,.12)'};color:${scoreColor(r.current_score)}">${r.current_score}</span>`:''}<span style="font-size:11px;color:var(--muted)">${r.treatment_count} tx</span></div>`).join('')||'<div style="font-size:12px;color:var(--muted);padding:.35rem 0">No linked risks</div>';
-    const projRows=(d.projects||[]).map(p=>`<div class="dp-linked" style="gap:.5rem"><span class="code-badge">${esc(p.project_code)}</span><span style="font-size:12.5px;flex:1">${esc(p.title)}</span>${p.health_schedule_pct!=null?`<span style="font-size:11px;color:${p.health_schedule_pct<80?'#FCA5A5':'#6EE7B7'}">${p.health_schedule_pct}%</span>`:''}</div>`).join('')||'<div style="font-size:12px;color:var(--muted);padding:.35rem 0">No linked projects</div>';
+    const kpiRows=(d.kpis||[]).map(k=>`<div class="dp-linked" style="flex-direction:column;align-items:flex-start;gap:.25rem;cursor:pointer" onclick="navToDetail('kpi','${k.kpi_id}')" title="Open ${esc(k.kpi_code)} in KPIs"><div style="display:flex;gap:.5rem;align-items:center;width:100%"><span class="code-badge">${esc(k.kpi_code)}</span><span style="font-size:12.5px;flex:1">${esc(k.title)}</span>${k.rag_status?`<span class="status-badge" style="background:${ragBg(k.rag_status)};color:${ragColor(k.rag_status)}">${k.rag_status}</span>`:'<span style="font-size:11px;color:var(--muted)">No data</span>'}<i class="ti ti-arrow-right" style="font-size:10px;color:var(--gold);flex-shrink:0;margin-left:2px"></i></div>${k.actual_value!=null?`<div style="font-size:11px;color:var(--muted);padding-left:.25rem">Latest: ${esc(String(k.actual_value))} ${esc(k.unit||'')}</div>`:''}</div>`).join('')||'<div style="font-size:12px;color:var(--muted);padding:.35rem 0">No linked KPIs</div>';
+    const riskRows=(d.risks||[]).map(r=>`<div class="dp-linked" style="gap:.5rem;cursor:pointer" onclick="navToDetail('risk','${r.risk_id}')" title="Open ${esc(r.risk_code)} in Risks"><span class="code-badge">${esc(r.risk_code)}</span><span style="font-size:12.5px;flex:1">${esc(r.title)}</span>${r.current_score!=null?`<span class="status-badge" style="background:${r.current_score>=12?'rgba(239,68,68,.14)':r.current_score>=8?'rgba(201,168,76,.14)':'rgba(16,185,129,.12)'};color:${scoreColor(r.current_score)}">${r.current_score}</span>`:''}<span style="font-size:11px;color:var(--muted)">${r.treatment_count} tx</span><i class="ti ti-arrow-right" style="font-size:10px;color:var(--gold);flex-shrink:0"></i></div>`).join('')||'<div style="font-size:12px;color:var(--muted);padding:.35rem 0">No linked risks</div>';
+    const projRows=(d.projects||[]).map(p=>`<div class="dp-linked" style="gap:.5rem;cursor:pointer" onclick="navToDetail('project','${p.project_id}')" title="Open ${esc(p.project_code)} in Projects"><span class="code-badge">${esc(p.project_code)}</span><span style="font-size:12.5px;flex:1">${esc(p.title)}</span>${p.health_schedule_pct!=null?`<span style="font-size:11px;color:${p.health_schedule_pct<80?'#FCA5A5':'#6EE7B7'}">${p.health_schedule_pct}%</span>`:''}<i class="ti ti-arrow-right" style="font-size:10px;color:var(--gold);flex-shrink:0"></i></div>`).join('')||'<div style="font-size:12px;color:var(--muted);padding:.35rem 0">No linked projects</div>';
     const aopRows=(d.aop_activities||[]).map(a=>`<div class="dp-linked" style="gap:.5rem"><span style="font-size:11px;color:var(--gold);background:rgba(201,168,76,.1);border-radius:3px;padding:2px 6px">${esc(a.department_code||'—')}</span><span style="font-size:12.5px;flex:1">${esc(a.activity_name)}</span>${a.completion_pct!=null?`<span style="font-size:11px;color:var(--muted)">${a.completion_pct}%</span>`:''}</div>`).join('');
 
     el.innerHTML=`${sh('KPI Performance')}${ragSummaryHtml}${kpiRows}${sh('Linked Risks')}${riskRows}${sh('Linked Projects')}${projRows}${aopRows?sh('AOP Activities')+aopRows:''}`;
