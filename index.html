@@ -1148,7 +1148,7 @@ let _kpisData = [], _risksData = [], _projectsData = [], _objectivesData = [], _
 let _activitiesData = [], _currentPlanId = null, _planYear = null;
 let _kpiTrendsData = [], _riskTrendsData = [], _kpiTab = 'pc', _riskTab = 'register';
 let _currentRiskId = null;
-let _treatmentRiskId = null, _treatmentOptions = null;
+let _treatmentRiskId = null, _treatmentOptions = null, _treatmentValidationResult = null;
 let _editKey = null, _editType = null;
 let _pendingDetail = null;
 let currentUnit = 'INST';
@@ -3386,15 +3386,26 @@ async function enrichObjectiveSummary(objId) {
 
 // ── RISK TREATMENTS ENRICHMENT ──
 function openAddTreatmentModal(riskId) {
-  _treatmentRiskId  = riskId;
+  _treatmentRiskId = riskId;
   _treatmentOptions = null;
+  _treatmentValidationResult = null;
   document.getElementById('tm-type').value = '';
   document.getElementById('tm-options-area').innerHTML = '';
   document.getElementById('tm-linked-fields').style.display = 'none';
-  document.getElementById('treatment-submit-btn').disabled = true;
+  document.getElementById('tm-selection-form').style.display = 'block';
+  document.getElementById('tm-validation-panel').style.display = 'none';
+  document.getElementById('tm-validation-panel').innerHTML = '';
+  const submitBtn = document.getElementById('treatment-submit-btn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Validate & Add Treatment';
+  submitBtn.onclick = submitAddTreatment;
+  const cancelBtn = document.getElementById('treatment-cancel-btn');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = closeAddTreatmentModal;
   const errEl = document.getElementById('treatment-msg-error');
   if (errEl) errEl.textContent = '';
-  if (document.getElementById('tm-description')) document.getElementById('tm-description').value = '';
+  const descEl = document.getElementById('tm-description');
+  if (descEl) descEl.value = '';
   document.getElementById('treatment-modal-overlay').classList.add('open');
 }
 
@@ -3405,11 +3416,11 @@ function closeAddTreatmentModal() {
 }
 
 async function handleTreatmentTypeChange() {
-  const type       = document.getElementById('tm-type').value;
-  const area       = document.getElementById('tm-options-area');
-  const linked     = document.getElementById('tm-linked-fields');
-  const submitBtn  = document.getElementById('treatment-submit-btn');
-  const esc        = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const type      = document.getElementById('tm-type').value;
+  const area      = document.getElementById('tm-options-area');
+  const linked    = document.getElementById('tm-linked-fields');
+  const submitBtn = document.getElementById('treatment-submit-btn');
+  const esc       = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
   if (!type) { area.innerHTML=''; linked.style.display='none'; submitBtn.disabled=true; return; }
 
@@ -3418,25 +3429,34 @@ async function handleTreatmentTypeChange() {
   if (!_treatmentOptions) {
     try {
       const r = await fetch(`${API}/organisations/${SESSION.org_id}/risks/${_treatmentRiskId}/treatment-options`);
-      _treatmentOptions = r.ok ? await r.json() : { projects:[], activities:[] };
-    } catch { _treatmentOptions = { dept_code:'', projects:[], activities:[] }; }
+      _treatmentOptions = r.ok ? await r.json() : { dept_projects:[], institutional_projects:[], activities:[] };
+    } catch { _treatmentOptions = { dept_code:'', dept_projects:[], institutional_projects:[], activities:[] }; }
   }
 
   const deptCode = esc(_treatmentOptions.dept_code || '');
 
   if (type === 'project') {
-    const items = _treatmentOptions.projects || [];
+    const items = _treatmentOptions.dept_projects || [];
     if (!items.length) {
-      area.innerHTML = `<div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:7px;padding:.75rem 1rem;font-size:12.5px;color:var(--muted);margin-bottom:.75rem">No projects found for department <strong style="color:var(--gold)">${deptCode}</strong>. Please create a project first, then return here to link it as a treatment action.</div>`;
+      area.innerHTML = `<div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:7px;padding:.75rem 1rem;font-size:12.5px;color:var(--muted);margin-bottom:.75rem">No departmental projects found for <strong style="color:var(--gold)">${deptCode}</strong>. Create a project first, then return here to link it as a treatment action.</div>`;
       linked.style.display='none'; submitBtn.disabled=true;
     } else {
-      area.innerHTML = `<div class="form-group"><label>Select Project *</label><select id="tm-linked-id" onchange="onTreatmentItemSelect()"><option value="">— Choose a project —</option>${items.map(p=>`<option value="${esc(p.project_id)}">${esc(p.project_code)} — ${esc(p.title)}</option>`).join('')}</select></div><div class="form-group"><label>Linked Project</label><input id="tm-linked-name" readonly style="opacity:.6;cursor:default" value=""></div>`;
+      area.innerHTML = `<div class="form-group"><label>Select Departmental Project *</label><select id="tm-linked-id" onchange="onTreatmentItemSelect()"><option value="">— Choose a project —</option>${items.map(p=>`<option value="${esc(p.project_id)}">${esc(p.project_code)} — ${esc(p.title)}</option>`).join('')}</select></div><div class="form-group"><label>Linked Project</label><input id="tm-linked-name" readonly style="opacity:.6;cursor:default" value=""></div>`;
+      linked.style.display='block'; submitBtn.disabled=true;
+    }
+  } else if (type === 'inst_project') {
+    const items = _treatmentOptions.institutional_projects || [];
+    if (!items.length) {
+      area.innerHTML = `<div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:7px;padding:.75rem 1rem;font-size:12.5px;color:var(--muted);margin-bottom:.75rem">No institutional projects (ORG-/INST- codes) found. Please ensure institutional projects are registered with the correct code prefix.</div>`;
+      linked.style.display='none'; submitBtn.disabled=true;
+    } else {
+      area.innerHTML = `<div style="background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.22);border-radius:6px;padding:.55rem .85rem;margin-bottom:.65rem;font-size:12px;color:var(--gold-light)">⚠️ Institutional Projects — ensure relevance to departmental risk</div><div class="form-group"><label>Select Institutional Project *</label><select id="tm-linked-id" onchange="onTreatmentItemSelect()" style="border-left:2px solid var(--gold)"><option value="">— Choose an institutional project —</option>${items.map(p=>`<option value="${esc(p.project_id)}">${esc(p.project_code)} — ${esc(p.title)}</option>`).join('')}</select></div><div class="form-group"><label>Linked Project</label><input id="tm-linked-name" readonly style="opacity:.6;cursor:default" value=""></div>`;
       linked.style.display='block'; submitBtn.disabled=true;
     }
   } else if (type === 'inmodule') {
     const items = _treatmentOptions.activities || [];
     if (!items.length) {
-      area.innerHTML = `<div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:7px;padding:.75rem 1rem;font-size:12.5px;color:var(--muted);margin-bottom:.75rem">No operating plan activities found for department <strong style="color:var(--gold)">${deptCode}</strong>. Please create an operating plan activity first, then return here to link it as a treatment action.</div>`;
+      area.innerHTML = `<div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:7px;padding:.75rem 1rem;font-size:12.5px;color:var(--muted);margin-bottom:.75rem">No operating plan activities found for department <strong style="color:var(--gold)">${deptCode}</strong>. Create an operating plan activity first, then return here to link it as a treatment action.</div>`;
       linked.style.display='none'; submitBtn.disabled=true;
     } else {
       area.innerHTML = `<div class="form-group"><label>Select Activity *</label><select id="tm-linked-id" onchange="onTreatmentItemSelect()"><option value="">— Choose an activity —</option>${items.map(a=>`<option value="${esc(a.activity_id)}">${esc(a.title||a.activity_name||'')}</option>`).join('')}</select></div><div class="form-group"><label>Linked Activity</label><input id="tm-linked-name" readonly style="opacity:.6;cursor:default" value=""></div>`;
@@ -3463,15 +3483,142 @@ async function submitAddTreatment() {
   if (!type || !linkedId) { if (errEl) errEl.textContent = 'Please select a treatment type and linked item.'; return; }
 
   btn.disabled = true;
+  btn.innerHTML = 'Validating<span class="loading-dots" style="display:inline-flex;gap:2px;margin-left:5px;vertical-align:middle"><div class="dot" style="width:4px;height:4px;margin:0"></div><div class="dot" style="width:4px;height:4px;margin:0"></div><div class="dot" style="width:4px;height:4px;margin:0"></div></span>';
+
+  const riskKey  = 'risk_' + _treatmentRiskId;
+  const risk     = _dpMap[riskKey] || {};
+  const isInst   = (type === 'inst_project');
+  const sel      = document.getElementById('tm-linked-id');
+  const itemText = sel?.options[sel.selectedIndex]?.text || '';
+  const codePart = itemText.split(' — ')[0] || '';
+  const titlePart = itemText.split(' — ').slice(1).join(' — ') || itemText;
+
+  let linkedItemDesc = '';
+  if (type === 'project') {
+    const item = (_treatmentOptions?.dept_projects || []).find(p => p.project_id === linkedId);
+    linkedItemDesc = item?.description || '';
+  } else if (type === 'inst_project') {
+    const item = (_treatmentOptions?.institutional_projects || []).find(p => p.project_id === linkedId);
+    linkedItemDesc = item?.description || '';
+  }
+
+  try {
+    const vRes = await fetch(`${API}/organisations/${SESSION.org_id}/risks/${_treatmentRiskId}/validate-treatment`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        risk_id:                _treatmentRiskId,
+        risk_title:             risk.title             || '',
+        risk_description:       risk.description       || '',
+        risk_causes:            risk.risk_causes       || '',
+        risk_consequences:      risk.consequences      || '',
+        risk_category:          risk.risk_category     || '',
+        treatment_type:         type === 'inmodule' ? 'Operating Plan Activity' : 'Project',
+        linked_item_title:      titlePart,
+        linked_item_description: linkedItemDesc,
+        linked_item_code:       codePart,
+        is_institutional:       isInst
+      })
+    });
+    const vData = await vRes.json();
+    if (!vRes.ok) throw new Error(vData.error || `Validation HTTP ${vRes.status}`);
+
+    _treatmentValidationResult = vData;
+    showTreatmentValidationPanel(vData);
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Validate & Add Treatment';
+    if (errEl) errEl.textContent = 'AI validation failed: ' + (e.message || 'Unknown error');
+  }
+}
+
+function showTreatmentValidationPanel(data) {
+  const esc = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const { suitability, confidence, rationale, concerns } = data;
+
+  const cfgMap = {
+    'High':        { icon:'✅', col:'#6EE7B7',          bg:'rgba(16,185,129,.1)',   border:'rgba(16,185,129,.22)',  submitLabel:'Confirm Treatment',     needsJust:false, justMin:0,  warn:false },
+    'Medium':      { icon:'⚠️', col:'var(--gold-light)', bg:'rgba(201,168,76,.1)',   border:'rgba(201,168,76,.22)',  submitLabel:'Proceed Anyway',        needsJust:true,  justMin:20, warn:false, justPh:'Explain why this treatment is appropriate despite AI concerns…' },
+    'Low':         { icon:'❌', col:'#FCA5A5',           bg:'rgba(239,68,68,.1)',    border:'rgba(239,68,68,.22)',   submitLabel:'Override & Save',       needsJust:true,  justMin:50, warn:true,  justPh:'Provide justification for overriding AI recommendation (required for audit trail)…' },
+    'Not Suitable':{ icon:'❌', col:'#FCA5A5',           bg:'rgba(239,68,68,.1)',    border:'rgba(239,68,68,.22)',   submitLabel:'Override & Save',       needsJust:true,  justMin:50, warn:true,  justPh:'Provide justification for overriding AI recommendation (required for audit trail)…' },
+  };
+  const c = cfgMap[suitability] || cfgMap['High'];
+
+  let html = `<div style="border:1px solid ${c.border};background:${c.bg};border-radius:8px;padding:.9rem 1.1rem;margin-bottom:.75rem">
+    <div style="font-size:13px;font-weight:600;color:${c.col};margin-bottom:.45rem">${c.icon} AI Assessment: ${esc(suitability)} Suitability (${confidence}% confidence)</div>
+    <div style="font-size:12.5px;color:var(--cream-dark)${concerns?';margin-bottom:.4rem':''}">${esc(rationale)}</div>
+    ${concerns ? `<div style="font-size:12px;color:var(--gold-light);margin-top:.35rem"><strong>Concern:</strong> ${esc(concerns)}</div>` : ''}
+  </div>`;
+
+  if (c.warn) {
+    html += `<div style="font-size:12px;font-weight:600;color:#FCA5A5;margin-bottom:.6rem">⚠️ Overriding AI recommendation requires a written justification which will be recorded in the audit trail.</div>`;
+  }
+  if (c.needsJust) {
+    html += `<div class="form-group"><label>Justification *</label><textarea id="tm-override-justification" rows="3" style="width:100%;resize:vertical" placeholder="${c.justPh}" oninput="checkTreatmentJustification(${c.justMin})"></textarea><div style="font-size:11px;color:var(--muted);margin-top:.25rem">Minimum ${c.justMin} characters required</div></div>`;
+  }
+
+  const panel = document.getElementById('tm-validation-panel');
+  panel.innerHTML = html;
+  panel.style.display = 'block';
+  document.getElementById('tm-selection-form').style.display = 'none';
+
+  const submitBtn = document.getElementById('treatment-submit-btn');
+  const cancelBtn = document.getElementById('treatment-cancel-btn');
+
+  submitBtn.textContent = c.submitLabel;
+  submitBtn.disabled = c.needsJust;
+  submitBtn.onclick = confirmAddTreatment;
+
+  cancelBtn.textContent = 'Choose Different Treatment';
+  cancelBtn.onclick = resetTreatmentToSelection;
+
+  const errEl = document.getElementById('treatment-msg-error');
+  if (errEl) errEl.textContent = '';
+}
+
+function checkTreatmentJustification(minLen) {
+  const val = document.getElementById('tm-override-justification')?.value || '';
+  document.getElementById('treatment-submit-btn').disabled = val.trim().length < minLen;
+}
+
+function resetTreatmentToSelection() {
+  _treatmentValidationResult = null;
+  document.getElementById('tm-selection-form').style.display = 'block';
+  document.getElementById('tm-validation-panel').style.display = 'none';
+  document.getElementById('tm-validation-panel').innerHTML = '';
+  const submitBtn = document.getElementById('treatment-submit-btn');
+  submitBtn.textContent = 'Validate & Add Treatment';
+  submitBtn.onclick = submitAddTreatment;
+  submitBtn.disabled = !document.getElementById('tm-linked-id')?.value;
+  const cancelBtn = document.getElementById('treatment-cancel-btn');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = closeAddTreatmentModal;
+}
+
+async function confirmAddTreatment() {
+  const btn   = document.getElementById('treatment-submit-btn');
+  const errEl = document.getElementById('treatment-msg-error');
+  if (errEl) errEl.textContent = '';
+
+  const type     = document.getElementById('tm-type')?.value;
+  const linkedId = document.getElementById('tm-linked-id')?.value;
+  if (!type || !linkedId) return;
+
+  const justification = document.getElementById('tm-override-justification')?.value?.trim() || null;
+  const prevLabel     = btn.textContent;
+  btn.disabled = true;
   btn.textContent = 'Saving…';
 
   const body = {
-    treatment_type: type,
-    description:    document.getElementById('tm-description')?.value?.trim() || null,
-    status:         document.getElementById('tm-status')?.value || 'not_started'
+    treatment_type:           (type === 'inst_project') ? 'project' : type,
+    description:              document.getElementById('tm-description')?.value?.trim() || null,
+    status:                   document.getElementById('tm-status')?.value || 'not_started',
+    ai_suitability:           _treatmentValidationResult?.suitability  || null,
+    ai_confidence:            _treatmentValidationResult?.confidence   ?? null,
+    ai_rationale:             _treatmentValidationResult?.rationale    || null,
+    override_justification:   justification
   };
-  if (type === 'project')  body.linked_project_id  = linkedId;
-  if (type === 'inmodule') body.linked_activity_id = linkedId;
+  if (type === 'project' || type === 'inst_project') body.linked_project_id  = linkedId;
+  if (type === 'inmodule')                           body.linked_activity_id = linkedId;
 
   try {
     const res = await fetch(`${API}/organisations/${SESSION.org_id}/risks/${_treatmentRiskId}/treatments`, {
@@ -3485,9 +3632,9 @@ async function submitAddTreatment() {
     await enrichRiskTreatments(savedRiskId);
     showToast('Treatment added', 'success');
   } catch(e) {
-    if (errEl) errEl.textContent = e.message;
     btn.disabled = false;
-    btn.textContent = 'Add Treatment';
+    btn.textContent = prevLabel;
+    if (errEl) errEl.textContent = e.message || 'Failed to save treatment';
   }
 }
 
@@ -3517,6 +3664,12 @@ async function enrichRiskTreatments(riskId) {
     const typeCls   = { project:'badge-blue', inmodule:'badge-purple' };
     const typeLabel = { project:'Project', inmodule:'AOP Activity' };
     const statusCls = { not_started:'badge-grey', in_progress:'badge-amber', complete:'badge-green', overdue:'badge-red', cancelled:'badge-grey' };
+    const aiCfg     = {
+      'High':        { label:'AI: High ✅',      col:'#6EE7B7',          bg:'rgba(16,185,129,.12)' },
+      'Medium':      { label:'AI: Medium ⚠️',     col:'var(--gold-light)', bg:'rgba(201,168,76,.12)' },
+      'Low':         { label:'AI: Low ❌',         col:'#FCA5A5',           bg:'rgba(239,68,68,.12)' },
+      'Not Suitable':{ label:'AI: Unsuitable ❌', col:'#FCA5A5',           bg:'rgba(239,68,68,.12)' },
+    };
 
     const addBtn   = `<button class="btn-sm" onclick="openAddTreatmentModal('${riskId}')" style="margin-left:auto;font-size:11px;padding:3px 10px"><i class="ti ti-plus"></i> Add Treatment</button>`;
     const txHeader = `<div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.5rem"><div class="dp-sh" style="margin:0">Treatments</div>${stratBadge}${addBtn}</div>`;
@@ -3530,11 +3683,21 @@ async function enrichRiskTreatments(riskId) {
       txHtml = `<div style="font-size:12px;color:var(--muted);padding:.35rem 0 .6rem">${emptyMsg}</div>`;
     } else {
       txHtml = treatments.map(t => {
-        const tType = (t.treatment_type || '').toLowerCase();
+        const tType  = (t.treatment_type || '').toLowerCase();
+        const isInst = t.project_code && /^(ORG|INST)-/i.test(t.project_code);
+        const aiItem = aiCfg[t.ai_suitability];
+        const aiBadge       = aiItem
+          ? `<span class="status-badge" style="background:${aiItem.bg};color:${aiItem.col};font-size:9.5px">${aiItem.label}</span>`
+          : `<span class="status-badge badge-grey" style="font-size:9.5px">Unvalidated</span>`;
+        const instBadge     = isInst ? `<span class="status-badge" style="background:rgba(201,168,76,.1);color:var(--gold);font-size:9.5px">🏛️ Institutional</span>` : '';
+        const overrideBadge = t.override_justification ? `<span class="status-badge" style="background:rgba(245,158,11,.08);color:var(--gold-light);font-size:9.5px">⚠️ Override on record</span>` : '';
         return `<div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:7px;padding:.75rem 1rem;margin-bottom:.5rem">
           <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.35rem;flex-wrap:wrap">
             ${tType ? `<span class="status-badge ${typeCls[tType]||'badge-grey'}" style="font-size:10px">${typeLabel[tType]||tType}</span>` : ''}
+            ${instBadge}
             ${t.status ? `<span class="status-badge ${statusCls[t.status]||'badge-grey'}" style="font-size:10px">${esc(t.status.replace(/_/g,' '))}</span>` : ''}
+            ${aiBadge}
+            ${overrideBadge}
           </div>
           <div style="font-size:13px;font-weight:500;color:var(--cream);margin-bottom:.3rem">${v(t.title)}</div>
           ${t.description && t.description.trim() !== (t.title||'').trim() ? `<div style="font-size:12px;color:var(--muted);margin-bottom:.35rem">${esc(t.description)}</div>` : ''}
@@ -3591,35 +3754,39 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeDetailPanel(
     </div>
     <div class="modal-body" id="treatment-modal-body">
       <div id="treatment-msg-error" class="msg-error"></div>
-      <div class="form-group">
-        <label>Treatment Type *</label>
-        <select id="tm-type" onchange="handleTreatmentTypeChange()">
-          <option value="">— Select type —</option>
-          <option value="project">Link to Project</option>
-          <option value="inmodule">Link to Operating Plan Activity</option>
-        </select>
-      </div>
-      <div id="tm-options-area"></div>
-      <div id="tm-linked-fields" style="display:none">
+      <div id="tm-selection-form">
         <div class="form-group">
-          <label>Description</label>
-          <textarea id="tm-description" rows="3" style="width:100%;resize:vertical" placeholder="Additional context for this treatment link…"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Status</label>
-          <select id="tm-status">
-            <option value="not_started">Not Started</option>
-            <option value="in_progress">In Progress</option>
-            <option value="complete">Complete</option>
-            <option value="overdue">Overdue</option>
-            <option value="cancelled">Cancelled</option>
+          <label>Treatment Type *</label>
+          <select id="tm-type" onchange="handleTreatmentTypeChange()">
+            <option value="">— Select type —</option>
+            <option value="project">Link to Departmental Project</option>
+            <option value="inst_project">Link to Institutional Project</option>
+            <option value="inmodule">Link to Operating Plan Activity</option>
           </select>
         </div>
+        <div id="tm-options-area"></div>
+        <div id="tm-linked-fields" style="display:none">
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="tm-description" rows="3" style="width:100%;resize:vertical" placeholder="Additional context for this treatment link…"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="tm-status">
+              <option value="not_started">Not Started</option>
+              <option value="in_progress">In Progress</option>
+              <option value="complete">Complete</option>
+              <option value="overdue">Overdue</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+        </div>
       </div>
+      <div id="tm-validation-panel" style="display:none"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeAddTreatmentModal()">Cancel</button>
-      <button class="btn-submit" id="treatment-submit-btn" onclick="submitAddTreatment()" disabled>Add Treatment</button>
+      <button class="btn-cancel" id="treatment-cancel-btn" onclick="closeAddTreatmentModal()">Cancel</button>
+      <button class="btn-submit" id="treatment-submit-btn" onclick="submitAddTreatment()" disabled>Validate &amp; Add Treatment</button>
     </div>
   </div>
 </div>
