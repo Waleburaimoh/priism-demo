@@ -141,6 +141,14 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
 /* ── BUTTONS ── */
 .btn-sm{background:rgba(201,168,76,.1);border:1px solid var(--border2);border-radius:6px;padding:6px 13px;font-size:12px;font-weight:500;font-family:var(--font-body);color:var(--gold);cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s}
 .btn-sm:hover{background:rgba(201,168,76,.18)}
+.btn-update{background:rgba(125,211,232,.1);border:1px solid rgba(125,211,232,.3);border-radius:6px;padding:8px 16px;font-size:12.5px;font-weight:500;font-family:var(--font-body);color:#7dd3e8;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;width:100%;justify-content:center}
+.btn-update:hover{background:rgba(125,211,232,.18)}
+.edit-slider{width:100%;height:5px;border-radius:3px;outline:none;cursor:pointer;accent-color:var(--gold)}
+#toast-container{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem;pointer-events:none}
+.toast-el{padding:.65rem 1.1rem;border-radius:8px;font-size:13px;font-weight:500;pointer-events:auto;box-shadow:0 4px 16px rgba(0,0,0,.3);transition:opacity .3s;opacity:0}
+.toast-success{background:rgba(16,185,129,.92);color:#fff}
+.toast-error{background:rgba(239,68,68,.92);color:#fff}
+.locked-notice{background:rgba(201,168,76,.12);color:var(--gold-light);border:1px solid rgba(201,168,76,.28);border-radius:6px;padding:.6rem .9rem;font-size:12.5px;margin-bottom:.8rem}
 
 /* ── MODAL ── */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center;padding:1rem}
@@ -1140,6 +1148,7 @@ let _kpisData = [], _risksData = [], _projectsData = [], _objectivesData = [], _
 let _activitiesData = [], _currentPlanId = null, _planYear = null;
 let _kpiTrendsData = [], _riskTrendsData = [], _kpiTab = 'pc', _riskTab = 'register';
 let _currentRiskId = null;
+let _editKey = null, _editType = null;
 let currentUnit = 'INST';
 let currentUnitPrefix = null; // null = Institutional (show all); otherwise the prefix code, e.g. 'CA'
 const UNIT_LABELS = {INST:'Institutional',CA:'College of Agriculture',CVM:'College of Veterinary Medicine',BA:'College of Business Administration',CL:'College of Law',CI:'College of Computing & Intelligent Systems',CS:'College of Arts Humanities & Social Sciences',COE:'Centre of Excellence',SA:'Student Affairs',AD:'Admissions & Registration',RI:'Research & Innovation',LB:'Library',FN:'Finance',PC:'Procurement',IT:'Information Technology',HR:'Human Resources',GS:'Facilities',CD:'Corporate Communications',IEA:'Institutional Effectiveness',IA:'Internal Audit',SP:'Strategy & Development',LA:'Legal Affairs',VCA:'Vice Chancellor Academic',IN:'International Relations',VCCA:'Vice Chancellor Community',VCAF:'Vice Chancellor Admin & Finance'};
@@ -1936,7 +1945,7 @@ function renderActivities() {
   };
   const trunc = (s,n) => s&&s.length>n?s.slice(0,n)+'…':(s||'—');
 
-  const TH = `<tr><th style="width:38px">#</th><th>Department</th><th>Objective</th><th>Core Process</th><th>Activity</th><th>KPI</th><th style="width:86px">Start</th><th style="width:86px">End</th><th style="width:100px">Status</th><th style="width:72px">%</th></tr>`;
+  const TH = `<tr><th style="width:38px">#</th><th>Department</th><th>Objective</th><th>Core Process</th><th>Activity</th><th>KPI</th><th style="width:86px">Start</th><th style="width:86px">End</th><th style="width:100px">Status</th><th style="width:72px">%</th><th style="width:34px"></th></tr>`;
 
   if (currentUnitPrefix) {
     // Flat table for single-unit view
@@ -1951,8 +1960,9 @@ function renderActivities() {
       <td style="font-size:12px">${fmtDate(a.end_date)}</td>
       <td>${statusBadge(a.status)}</td>
       <td>${prog(a.completion_pct)}</td>
+      <td onclick="event.stopPropagation();openEditModal('activity','act_${a.activity_id}')" title="Update activity" style="text-align:center"><button class="btn-sm" style="padding:3px 7px;font-size:11px;min-width:0"><i class="ti ti-edit"></i></button></td>
     </tr>`).join('');
-    el.innerHTML = `<div class="section-card" style="overflow-x:auto"><table class="data-table" style="min-width:900px">${TH}${rows}</table></div>`;
+    el.innerHTML = `<div class="section-card" style="overflow-x:auto"><table class="data-table" style="min-width:960px">${TH}${rows}</table></div>`;
   } else {
     // Grouped by department for institutional view
     const groups = {};
@@ -1975,6 +1985,7 @@ function renderActivities() {
         <td style="font-size:12px">${fmtDate(a.end_date)}</td>
         <td>${statusBadge(a.status)}</td>
         <td>${prog(a.completion_pct)}</td>
+        <td onclick="event.stopPropagation();openEditModal('activity','act_${a.activity_id}')" title="Update activity" style="text-align:center"><button class="btn-sm" style="padding:3px 7px;font-size:11px;min-width:0"><i class="ti ti-edit"></i></button></td>
       </tr>`).join('');
       return `<div class="section-card" style="margin-bottom:.75rem">
         <div class="section-card-header" style="cursor:pointer" onclick="toggleSection('${gid}')">
@@ -1987,7 +1998,7 @@ function renderActivities() {
           <i class="ti ti-chevron-down" id="icon-${gid}" style="color:var(--muted);font-size:14px;transition:transform .2s"></i>
         </div>
         <div id="${gid}" style="overflow-x:auto">
-          <table class="data-table" style="min-width:900px">${TH}${rows}</table>
+          <table class="data-table" style="min-width:960px">${TH}${rows}</table>
         </div>
       </div>`;
     }).join('');
@@ -2427,7 +2438,8 @@ function openDetailPanel(type, key, rowEl) {
           <div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)">Projects</div>
         </div>
       </div>
-      <div id="dp-obj-live"><div style="display:flex;align-items:center;gap:.5rem;padding:.6rem 0;font-size:12px;color:var(--muted)"><div class="loading-dots" style="padding:0"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div> Loading live data…</div></div>`;
+      <div id="dp-obj-live"><div style="display:flex;align-items:center;gap:.5rem;padding:.6rem 0;font-size:12px;color:var(--muted)"><div class="loading-dots" style="padding:0"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div> Loading live data…</div></div>
+      <div style="padding:.75rem 0 .25rem"><button class="btn-update" onclick="openEditModal('objective','obj_${o.objective_id}')"><i class="ti ti-edit"></i> Update Status</button></div>`;
 
   } else if (type === 'kpi') {
     const k = item;
@@ -2477,7 +2489,8 @@ function openDetailPanel(type, key, rowEl) {
           ${k.rag_green_threshold!=null?`<span class="rag-chip" style="background:rgba(16,185,129,.12);color:#6EE7B7">● Green ≥ ${k.rag_green_threshold}</span>`:''}
         </div>
       </div>`:''}
-      ${parentObj?`${sh('Linked objective')}<div class="dp-linked"><span class="code-badge">${esc(parentObj.objective_code)}</span><div><div style="font-size:12.5px">${esc(parentObj.title)}</div>${pNum2?`<span class="status-badge ${PBADGE[pNum2]||'badge-grey'}" style="margin-top:3px;font-size:10px">${PMAP[pNum2]}</span>`:''}</div></div>`:''}`;
+      ${parentObj?`${sh('Linked objective')}<div class="dp-linked"><span class="code-badge">${esc(parentObj.objective_code)}</span><div><div style="font-size:12.5px">${esc(parentObj.title)}</div>${pNum2?`<span class="status-badge ${PBADGE[pNum2]||'badge-grey'}" style="margin-top:3px;font-size:10px">${PMAP[pNum2]}</span>`:''}</div></div>`:''}
+      <div style="padding:.75rem 0 .25rem"><button class="btn-update" onclick="openEditModal('kpi-actual','kpi_${k.kpi_id}')"><i class="ti ti-activity"></i> Update Actual</button></div>`;
 
   } else if (type === 'risk') {
     const r = item;
@@ -2539,7 +2552,8 @@ function openDetailPanel(type, key, rowEl) {
       </div>`:''}
       ${sh('Linked objective')}
       ${linkedObj?`<div class="dp-linked"><span class="code-badge">${esc(linkedObj.objective_code)}</span>${esc(linkedObj.title)}</div>`:'<div class="dp-value">—</div>'}
-      <div id="dp-risk-live"><div style="display:flex;align-items:center;gap:.5rem;padding:.6rem 0;font-size:12px;color:var(--muted)"><div class="loading-dots" style="padding:0"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div> Loading treatments…</div></div>`;
+      <div id="dp-risk-live"><div style="display:flex;align-items:center;gap:.5rem;padding:.6rem 0;font-size:12px;color:var(--muted)"><div class="loading-dots" style="padding:0"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div> Loading treatments…</div></div>
+      <div style="padding:.75rem 0 .25rem"><button class="btn-update" onclick="openEditModal('risk','risk_${r.risk_id}')"><i class="ti ti-shield"></i> Update Risk Score</button></div>`;
 
   } else if (type === 'project') {
     const p = item;
@@ -2609,7 +2623,8 @@ function openDetailPanel(type, key, rowEl) {
       </div>
       ${p.status?`<div style="margin-top:.6rem"><div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem">Overall Status</div><span class="status-badge ${statusCls[statusKey]||'badge-grey'}">${statusLabel}</span></div>`:''}
       ${sh('Linked objective')}
-      ${linkedObj?`<div class="dp-linked"><span class="code-badge">${esc(linkedObj.objective_code)}</span>${esc(linkedObj.title)}</div>`:'<div class="dp-value">—</div>'}`;
+      ${linkedObj?`<div class="dp-linked"><span class="code-badge">${esc(linkedObj.objective_code)}</span>${esc(linkedObj.title)}</div>`:'<div class="dp-value">—</div>'}
+      <div style="padding:.75rem 0 .25rem"><button class="btn-update" onclick="openEditModal('project','proj_${p.project_id}')"><i class="ti ti-heart-rate-monitor"></i> Update Health</button></div>`;
 
   } else if (type === 'activity') {
     const a = item;
@@ -2651,7 +2666,8 @@ function openDetailPanel(type, key, rowEl) {
       <div class="dp-section"><div class="dp-label">Actual Spend</div><div class="dp-value">${a.actual_spend!=null?Number(a.actual_spend).toLocaleString()+' '+(a.budget_currency||'AED'):'—'}</div></div>
       ${sh('Delivery')}
       <div class="dp-section"><div class="dp-label">Inputs Required</div><div class="dp-value">${v(a.inputs_required)}</div></div>
-      <div class="dp-section"><div class="dp-label">Outputs to Deliver</div><div class="dp-value">${v(a.outputs_to_deliver)}</div></div>`;
+      <div class="dp-section"><div class="dp-label">Outputs to Deliver</div><div class="dp-value">${v(a.outputs_to_deliver)}</div></div>
+      <div style="padding:.75rem 0 .25rem"><button class="btn-update" onclick="openEditModal('activity','act_${a.activity_id}')"><i class="ti ti-edit"></i> Update Activity</button></div>`;
   }
 
   document.getElementById('dp-header-code').textContent = codeText;
@@ -2791,6 +2807,292 @@ function _printReport(bodyId, cardId, ts) {
 function _closeReport(outId) {
   const el = document.getElementById(outId);
   if (el) el.style.display = 'none';
+}
+
+// ── TOAST ──
+function showToast(msg, type) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const el = document.createElement('div');
+  el.className = `toast-el toast-${type === 'success' ? 'success' : 'error'}`;
+  el.textContent = msg;
+  container.appendChild(el);
+  requestAnimationFrame(() => { el.style.opacity = '1'; });
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 320); }, 3000);
+}
+
+// ── EDIT MODAL ──
+function openEditModal(type, dpKey) {
+  _editType = type;
+  _editKey  = dpKey;
+  const item = _dpMap[dpKey] || {};
+  const titles = { 'objective':'Update Status', 'kpi-actual':'Update Actual', 'risk':'Update Risk Score', 'project':'Update Project Health', 'activity':'Update Activity' };
+  const btns   = { 'objective':'Save', 'kpi-actual':'Save Actual', 'risk':'Update Risk Score', 'project':'Update Project Health', 'activity':'Update Activity' };
+  document.getElementById('edit-modal-title').textContent = titles[type] || 'Update';
+  document.getElementById('edit-modal-body').innerHTML = getEditForm(type, item);
+  const sb = document.getElementById('edit-modal-submit-btn');
+  sb.disabled = false;
+  sb.textContent = btns[type] || 'Save';
+  document.getElementById('edit-modal-overlay').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal-overlay').classList.remove('open');
+  _editKey = null; _editType = null;
+}
+
+function getEditForm(type, item) {
+  const esc = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  if (type === 'objective') {
+    const sel = v => item.status === v ? ' selected' : '';
+    return `<div id="edit-msg-error" class="msg-error"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="ef-status">
+          <option value="draft"${sel('draft')}>Draft</option>
+          <option value="active"${sel('active')}>Active</option>
+          <option value="on_hold"${sel('on_hold')}>On Hold</option>
+          <option value="completed"${sel('completed')}>Completed</option>
+          <option value="cancelled"${sel('cancelled')}>Cancelled</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Commentary</label>
+        <textarea id="ef-commentary" rows="4" placeholder="Add strategic commentary…" style="width:100%;resize:vertical">${esc(item.commentary||'')}</textarea>
+      </div>`;
+  }
+  if (type === 'kpi-actual') {
+    return `<div id="edit-msg-error" class="msg-error"></div>
+      <div id="edit-locked-msg" class="locked-notice" style="display:none">🔒 This period is locked and cannot be edited.</div>
+      <div class="form-group"><label>Period</label>
+        <select id="ef-period" onchange="checkPeriodLock(this.value)">
+          <option value="2026_1" disabled>Q1 2026 🔒</option>
+          <option value="2026_2" selected>Q2 2026 (current) ✓</option>
+          <option value="2026_3">Q3 2026</option>
+          <option value="2026_4">Q4 2026</option>
+        </select>
+      </div>
+      <div id="ef-unlocked-fields">
+        <div class="form-group"><label>Actual Value</label><input id="ef-actual_value" type="number" step="any" placeholder="e.g. 87.5"></div>
+        <div class="form-group"><label>RAG Status</label>
+          <select id="ef-rag_status">
+            <option value="">— Select —</option>
+            <option value="Green">Green</option>
+            <option value="Amber">Amber</option>
+            <option value="Red">Red</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Evidence Reference</label><input id="ef-evidence" placeholder="e.g. HR Report March 2026, Page 4"></div>
+      </div>`;
+  }
+  if (type === 'risk') {
+    const llabels = {1:'Rare',2:'Unlikely',3:'Possible',4:'Likely',5:'Almost Certain'};
+    const ilabels = {1:'Insignificant',2:'Minor',3:'Moderate',4:'Major',5:'Catastrophic'};
+    const L = item.current_likelihood || item.initial_likelihood || 3;
+    const I = item.current_impact_overall || item.initial_impact_overall || 3;
+    const score = L * I;
+    const zone = score>=20?'Critical':score>=15?'High':score>=8?'Medium':'Low';
+    const zCol = {Critical:'#FCA5A5',High:'#FB923C',Medium:'var(--gold-light)',Low:'#6EE7B7'}[zone];
+    return `<div id="edit-msg-error" class="msg-error"></div>
+      <div class="form-group"><label>Current Likelihood — <span id="ef-l-lbl" style="color:var(--gold)">${L}/5 ${llabels[L]||''}</span></label>
+        <input type="range" id="ef-likelihood" min="1" max="5" value="${L}" class="edit-slider" oninput="updateScoreDisplay()">
+      </div>
+      <div class="form-group"><label>Current Impact — <span id="ef-i-lbl" style="color:#FCA5A5">${I}/5 ${ilabels[I]||''}</span></label>
+        <input type="range" id="ef-impact" min="1" max="5" value="${I}" class="edit-slider" oninput="updateScoreDisplay()">
+      </div>
+      <div id="ef-score-display" style="background:rgba(255,255,255,.06);border-radius:6px;padding:.7rem 1rem;margin-bottom:.8rem;font-size:14px;font-weight:600">
+        Score: <span style="font-size:20px;color:${zCol}">${score}</span> <span style="font-size:12px;font-weight:400;color:var(--muted);margin-left:6px">(Zone: ${zone})</span>
+      </div>
+      <div class="form-group"><label>Notes</label><textarea id="ef-notes" rows="3" placeholder="Context for this score update…" style="width:100%;resize:vertical"></textarea></div>`;
+  }
+  if (type === 'project') {
+    const sel = (v, cur) => cur === v ? ' selected' : '';
+    const sch = item.health_schedule_pct != null ? Number(item.health_schedule_pct) : 75;
+    const bud = item.health_budget_pct   != null ? Number(item.health_budget_pct)   : 75;
+    const schCol = sch>=70?'#6EE7B7':sch>=40?'var(--gold-light)':'#FCA5A5';
+    const budCol = bud>=70?'#6EE7B7':bud>=40?'var(--gold-light)':'#FCA5A5';
+    const rag = (sch<40||bud<40)?'Red / Critical':(sch<70||bud<70)?'Amber / At Risk':'Green / On Track';
+    const ragColor = rag.startsWith('Red')?'#FCA5A5':rag.startsWith('Amber')?'var(--gold-light)':'#6EE7B7';
+    const scopeVal = (item.health_scope_status||'on_track').toLowerCase().replace(/[\s/]/g,'_');
+    const normScope = scopeVal.includes('risk')?'at_risk':scopeVal.includes('crit')?'critical':'on_track';
+    return `<div id="edit-msg-error" class="msg-error"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="ef-proj-status">
+          <option value="pipeline"${sel('pipeline',item.status)}>Pipeline</option>
+          <option value="active"${sel('active',item.status)}>Active</option>
+          <option value="on_hold"${sel('on_hold',item.status)}>On Hold</option>
+          <option value="completed"${sel('completed',item.status)}>Completed</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Schedule % — <span id="ef-sch-lbl" style="color:${schCol}">${sch}%</span></label>
+        <input type="range" id="ef-schedule" min="0" max="100" value="${sch}" class="edit-slider" oninput="updateProjectRag()">
+      </div>
+      <div class="form-group"><label>Budget % — <span id="ef-bud-lbl" style="color:${budCol}">${bud}%</span></label>
+        <input type="range" id="ef-budget" min="0" max="100" value="${bud}" class="edit-slider" oninput="updateProjectRag()">
+      </div>
+      <div class="form-group"><label>Scope Status</label>
+        <select id="ef-scope">
+          <option value="on_track"${sel('on_track',normScope)}>On Track</option>
+          <option value="at_risk"${sel('at_risk',normScope)}>At Risk</option>
+          <option value="critical"${sel('critical',normScope)}>Critical</option>
+        </select>
+      </div>
+      <div id="ef-proj-rag" style="background:rgba(255,255,255,.06);border-radius:6px;padding:.7rem 1rem;margin-bottom:.8rem;font-size:13px;font-weight:500;color:${ragColor}">Derived RAG: ${rag}</div>
+      <div class="form-group"><label>Notes</label><textarea id="ef-proj-notes" rows="3" placeholder="Health update context…" style="width:100%;resize:vertical"></textarea></div>`;
+  }
+  if (type === 'activity') {
+    const pct = item.completion_pct || 0;
+    const status = pct===100?'Complete':pct>0?'In Progress':'Not Started';
+    const progCol = pct>=100?'#6EE7B7':pct>=50?'var(--gold)':'#7dd3e8';
+    return `<div id="edit-msg-error" class="msg-error"></div>
+      <div class="form-group"><label>Progress % — <span id="ef-pct-lbl" style="color:${progCol}">${pct}%</span></label>
+        <input type="range" id="ef-progress" min="0" max="100" value="${pct}" class="edit-slider" oninput="updateActivityStatus()">
+      </div>
+      <div id="ef-act-status" style="margin-bottom:.8rem;font-size:13px;font-weight:500;color:${progCol}">Status: ${status}</div>
+      <div class="form-group"><label>Notes</label><textarea id="ef-act-notes" rows="3" placeholder="Progress notes…" style="width:100%;resize:vertical"></textarea></div>`;
+  }
+  return '';
+}
+
+function checkPeriodLock(val) {
+  const [y, q] = val.split('_').map(Number);
+  const locked = y < 2026 || (y === 2026 && q < 2);
+  document.getElementById('edit-locked-msg').style.display = locked ? 'block' : 'none';
+  document.getElementById('ef-unlocked-fields').style.display = locked ? 'none' : 'block';
+  document.getElementById('edit-modal-submit-btn').disabled = locked;
+}
+
+function updateScoreDisplay() {
+  const llabels = {1:'Rare',2:'Unlikely',3:'Possible',4:'Likely',5:'Almost Certain'};
+  const ilabels = {1:'Insignificant',2:'Minor',3:'Moderate',4:'Major',5:'Catastrophic'};
+  const L = parseInt(document.getElementById('ef-likelihood').value);
+  const I = parseInt(document.getElementById('ef-impact').value);
+  const score = L * I;
+  const zone = score>=20?'Critical':score>=15?'High':score>=8?'Medium':'Low';
+  const zCol = {Critical:'#FCA5A5',High:'#FB923C',Medium:'var(--gold-light)',Low:'#6EE7B7'}[zone];
+  document.getElementById('ef-l-lbl').textContent = `${L}/5 ${llabels[L]||''}`;
+  document.getElementById('ef-l-lbl').style.color = 'var(--gold)';
+  document.getElementById('ef-i-lbl').textContent = `${I}/5 ${ilabels[I]||''}`;
+  document.getElementById('ef-i-lbl').style.color = '#FCA5A5';
+  document.getElementById('ef-score-display').innerHTML = `Score: <span style="font-size:20px;color:${zCol}">${score}</span> <span style="font-size:12px;font-weight:400;color:var(--muted);margin-left:6px">(Zone: ${zone})</span>`;
+}
+
+function updateProjectRag() {
+  const sch = parseInt(document.getElementById('ef-schedule').value);
+  const bud = parseInt(document.getElementById('ef-budget').value);
+  const schCol = sch>=70?'#6EE7B7':sch>=40?'var(--gold-light)':'#FCA5A5';
+  const budCol = bud>=70?'#6EE7B7':bud>=40?'var(--gold-light)':'#FCA5A5';
+  const rag = (sch<40||bud<40)?'Red / Critical':(sch<70||bud<70)?'Amber / At Risk':'Green / On Track';
+  const ragColor = rag.startsWith('Red')?'#FCA5A5':rag.startsWith('Amber')?'var(--gold-light)':'#6EE7B7';
+  document.getElementById('ef-sch-lbl').textContent = `${sch}%`;
+  document.getElementById('ef-sch-lbl').style.color = schCol;
+  document.getElementById('ef-bud-lbl').textContent = `${bud}%`;
+  document.getElementById('ef-bud-lbl').style.color = budCol;
+  document.getElementById('ef-proj-rag').style.color = ragColor;
+  document.getElementById('ef-proj-rag').textContent = `Derived RAG: ${rag}`;
+}
+
+function updateActivityStatus() {
+  const pct = parseInt(document.getElementById('ef-progress').value);
+  const status = pct===100?'Complete':pct>0?'In Progress':'Not Started';
+  const progCol = pct>=100?'#6EE7B7':pct>=50?'var(--gold)':'#7dd3e8';
+  document.getElementById('ef-pct-lbl').textContent = `${pct}%`;
+  document.getElementById('ef-pct-lbl').style.color = progCol;
+  document.getElementById('ef-act-status').style.color = progCol;
+  document.getElementById('ef-act-status').textContent = `Status: ${status}`;
+}
+
+async function submitEditModal() {
+  const btn    = document.getElementById('edit-modal-submit-btn');
+  const errEl  = document.getElementById('edit-msg-error');
+  if (errEl) errEl.textContent = '';
+  btn.disabled = true;
+  const origLabel = btn.textContent;
+  btn.innerHTML = '<span class="loading-dots" style="padding:0;display:inline-flex;gap:3px"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>';
+  try {
+    if (_editType === 'objective') {
+      const item = _dpMap[_editKey] || {};
+      const res  = await fetch(`${API}/organisations/${SESSION.org_id}/objectives/${item.objective_id}`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ status: document.getElementById('ef-status').value, commentary: document.getElementById('ef-commentary').value })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      item.status = document.getElementById('ef-status').value;
+      item.commentary = document.getElementById('ef-commentary').value;
+      closeEditModal();
+      showToast('Objective updated successfully', 'success');
+      renderObjectives && renderObjectives();
+
+    } else if (_editType === 'kpi-actual') {
+      const item = _dpMap[_editKey] || {};
+      const [py, pq] = (document.getElementById('ef-period').value||'2026_2').split('_').map(Number);
+      const res  = await fetch(`${API}/organisations/${SESSION.org_id}/kpis/${item.kpi_id}/actuals`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ period_year: py, period_quarter: pq, actual_value: document.getElementById('ef-actual_value').value, rag_status: document.getElementById('ef-rag_status').value, evidence_reference: document.getElementById('ef-evidence').value })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      if (data.locked) throw new Error(data.message || 'Period is locked');
+      closeEditModal();
+      showToast('KPI actual saved successfully', 'success');
+
+    } else if (_editType === 'risk') {
+      const item = _dpMap[_editKey] || {};
+      const L = parseInt(document.getElementById('ef-likelihood').value);
+      const I = parseInt(document.getElementById('ef-impact').value);
+      const res  = await fetch(`${API}/organisations/${SESSION.org_id}/risks/${item.risk_id}`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ current_likelihood: L, current_impact_overall: I, notes: document.getElementById('ef-notes').value })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      item.current_likelihood = L;
+      item.current_impact_overall = I;
+      item.current_score = data.current_score;
+      item.current_zone  = data.current_zone;
+      closeEditModal();
+      showToast(`Risk score updated — ${data.current_score} (${data.current_zone})`, 'success');
+
+    } else if (_editType === 'project') {
+      const item = _dpMap[_editKey] || {};
+      const sch  = parseInt(document.getElementById('ef-schedule').value);
+      const bud  = parseInt(document.getElementById('ef-budget').value);
+      const res  = await fetch(`${API}/organisations/${SESSION.org_id}/projects/${item.project_id}`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ status: document.getElementById('ef-proj-status').value, health_schedule_pct: sch, health_budget_pct: bud, health_scope_status: document.getElementById('ef-scope').value, notes: document.getElementById('ef-proj-notes').value })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      item.status = document.getElementById('ef-proj-status').value;
+      item.health_schedule_pct = sch;
+      item.health_budget_pct   = bud;
+      closeEditModal();
+      showToast(`Project health updated — ${data.derived_rag || 'saved'}`, 'success');
+      renderProjects && renderProjects();
+
+    } else if (_editType === 'activity') {
+      const item   = _dpMap[_editKey] || {};
+      const pct    = parseInt(document.getElementById('ef-progress').value);
+      const status = pct===100?'complete':pct>0?'in_progress':'not_started';
+      const res    = await fetch(`${API}/operating-plans/activities/${item.activity_id}`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ progress_pct: pct, status, notes: document.getElementById('ef-act-notes').value })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      item.completion_pct = pct;
+      item.status = status;
+      closeEditModal();
+      showToast('Activity updated successfully', 'success');
+      renderActivities();
+    }
+  } catch(e) {
+    if (errEl) errEl.textContent = e.message;
+    btn.disabled = false;
+    btn.textContent = origLabel;
+    return;
+  }
+  btn.disabled = false;
+  btn.textContent = origLabel;
 }
 
 async function generateReport(cardId, endpoint, btn) {
@@ -2944,6 +3246,24 @@ document.getElementById('modal-overlay').addEventListener('click', e=>{ if(e.tar
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeDetailPanel(); });
 </script>
 <div id="print-frame" style="display:none"></div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="edit-modal-title">Update</div>
+      <button class="modal-close" onclick="closeEditModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body" id="edit-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+      <button class="btn-submit" id="edit-modal-submit-btn" onclick="submitEditModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast-container"></div>
 </body>
 </html>
 
