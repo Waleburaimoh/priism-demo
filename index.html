@@ -3546,7 +3546,6 @@ async function generateCustomReport(btn) {
     if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `HTTP ${res.status}`); }
     const data = await res.json();
     const ts = new Date(data.generated_at).toLocaleString();
-    const dataHtml = data.report_data ? _renderReportData(data.report_data) : '';
     outEl.innerHTML = `
       <div class="ir-output-header">
         <span class="ir-ts">Generated ${ts} · AI-enhanced · Review before sharing</span>
@@ -3556,8 +3555,7 @@ async function generateCustomReport(btn) {
           <button class="btn-sm" onclick="_closeReport('ir-out-custom')"><i class="ti ti-x"></i> Close</button>
         </div>
       </div>
-      ${dataHtml}
-      <div class="ir-output-body" id="ir-body-custom" style="${dataHtml ? 'margin-top:.6rem;padding-top:.7rem;border-top:1px solid var(--border)' : ''}">${_reportEsc(data.report_text || '')}</div>`;
+      <div class="ir-output-body" id="ir-body-custom">${_reportEsc(data.report_text || '')}</div>`;
   } catch(e) {
     outEl.innerHTML = `<p style="color:#FCA5A5;font-size:13px;padding:.5rem 0"><i class="ti ti-alert-circle"></i> Failed: ${_reportEsc(e.message)}</p>`;
   } finally {
