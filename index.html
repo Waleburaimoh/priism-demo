@@ -3309,7 +3309,14 @@ async function generateReport(cardId, endpoint, btn) {
     const tglId = `ir-tgl-${cardId}`;
     const tglBtnId = `ir-tglbtn-${cardId}`;
     const dataHtml = data.report_data ? _renderReportData(data.report_data) : '';
-    const shortNarr = _extractShortNarrative(data.report_text, data.short_narrative);
+    const fullText = data.report_text || '';
+    const shortNarr = _extractShortNarrative(fullText, data.short_narrative);
+    const fullHtml = _reportEsc(fullText);
+    const bodyDiv = `<div class="ir-output-body" id="${bid}" style="margin-top:.6rem;padding-top:.7rem;border-top:1px solid var(--border)"><strong style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.5rem">AI Executive Summary</strong>${fullHtml}</div>`;
+    const hasMore = (fullText.match(/[.!?]/g) || []).length > 4;
+    const fullSection = hasMore
+      ? `<button class="ir-toggle-btn" id="${tglBtnId}" onclick="_toggleFullReport('${tglId}','${tglBtnId}')">View Full Analysis &#x25bc;</button><div id="${tglId}" style="display:none">${bodyDiv}</div>`
+      : bodyDiv;
     outEl.innerHTML = `
       <div class="ir-output-header">
         <span class="ir-ts">Generated ${ts} · AI-assisted · Review before sharing</span>
@@ -3321,10 +3328,7 @@ async function generateReport(cardId, endpoint, btn) {
       </div>
       ${dataHtml}
       <p style="font-style:italic;color:#9CA3AF;font-size:.95rem;margin:.5rem 0 .3rem;line-height:1.7">${shortNarr}</p>
-      <button class="ir-toggle-btn" id="${tglBtnId}" onclick="_toggleFullReport('${tglId}','${tglBtnId}')">View Full Analysis &#x25bc;</button>
-      <div id="${tglId}" style="display:none">
-        <div class="ir-output-body" id="${bid}" style="margin-top:.6rem;padding-top:.7rem;border-top:1px solid var(--border)"><strong style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.5rem">AI Executive Summary</strong>${_reportEsc(data.report_text || '')}</div>
-      </div>`;
+      ${fullSection}`;
   } catch(e) {
     outEl.innerHTML = `<p style="color:#FCA5A5;font-size:13px;padding:.5rem 0"><i class="ti ti-alert-circle"></i> Failed: ${_reportEsc(e.message)}</p>`;
   } finally {
