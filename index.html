@@ -1196,6 +1196,9 @@ function enterApp() {
   document.getElementById('sb-user-role').textContent = SESSION.roles?.[0]?.role_name || 'User';
   const initials = SESSION.display_name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('sb-avatar').textContent = initials;
+  currentUnit = 'INST';
+  currentUnitPrefix = null;
+  document.getElementById('unit-selector').value = 'INST';
   showPage('dashboard');
 }
 
@@ -1715,7 +1718,7 @@ function renderKpis() {
   if (currentUnit === 'INST') {
     const instObjs = _objectivesData.filter(o=>(o.objective_code||'').startsWith('INST-'))
       .sort((a,b)=>(a.objective_code||'').localeCompare(b.objective_code||''));
-    const cards = instObjs.map(o => objCard(o, visible.filter(k=>k.objective_id===o.objective_id), false, 'inst')).filter(Boolean).join('');
+    const cards = instObjs.map(o => { const ok = visible.filter(k=>k.objective_id===o.objective_id); return objCard(o, ok, ok.length > 0, 'inst'); }).filter(Boolean).join('');
     el.innerHTML = `<div class="pc-section">
       ${sectionHdr('ti-building-bank','Institutional Objectives &amp; KPIs',`${visible.length} KPI${visible.length!==1?'s':''} across ${instObjs.length} objectives`)}
       ${cards || '<div class="empty-state" style="padding:2.5rem"><i class="ti ti-chart-line"></i><p>No KPIs found for current filter.</p></div>'}
@@ -1742,17 +1745,17 @@ function renderKpis() {
   const s1Cards = instObjs.map(o => {
     const oNum = instObjNum(o);
     const objKpis = s1.filter(k => { const kNum = kpiInstNum(k); return kNum !== null ? kNum === oNum : k.objective_id === o.objective_id; });
-    return objCard(o, objKpis, false, 'inst');
+    return objCard(o, objKpis, objKpis.length > 0, 'inst');
   }).filter(Boolean).join('');
   const kpiDeptCode = k => (k.kpi_code||'').replace(/\.\d+$/, '');
   const s2Cards = deptObjs.map(o => {
     const objCode = o.objective_code || '';
     const objKpis = s2.filter(k => { const dc = kpiDeptCode(k); return dc === objCode || k.objective_id === o.objective_id; });
-    return objCard(o, objKpis, false, 'dept');
+    return objCard(o, objKpis, objKpis.length > 0, 'dept');
   }).filter(Boolean).join('');
   const s3ObjIds = new Set(s3.map(k=>k.objective_id).filter(Boolean));
   const s3Objs = _objectivesData.filter(o=>s3ObjIds.has(o.objective_id)).sort((a,b)=>(a.objective_code||'').localeCompare(b.objective_code||''));
-  const s3Cards = s3Objs.map(o=>objCard(o, s3.filter(k=>k.objective_id===o.objective_id), false, 'common')).filter(Boolean).join('');
+  const s3Cards = s3Objs.map(o => { const ok = s3.filter(k=>k.objective_id===o.objective_id); return objCard(o, ok, ok.length > 0, 'common'); }).filter(Boolean).join('');
 
   el.innerHTML = `
     <div class="pc-section">
