@@ -1825,7 +1825,7 @@ function renderRisks() {
         <div class="section-card-title">${riskTypeBadge(type)}<span style="margin-left:8px;font-size:12px;font-family:var(--font-body);font-weight:400;opacity:.6">${items.length} risk${items.length!==1?'s':''}</span></div>
         <i class="ti ti-chevron-down" id="icon-${gid}" style="color:var(--muted);font-size:14px;transition:transform .2s"></i>
       </div>
-      <div id="${gid}"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Department</th><th>Likelihood</th><th>Impact</th><th>Score</th></tr>${rows}</table></div>
+      <div id="${gid}"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Owner</th><th>Likelihood</th><th>Impact</th><th>Score</th></tr>${rows}</table></div>
     </div>`;
   }).join('');
 }
