@@ -1815,7 +1815,7 @@ function renderRisks() {
     const rows = items.map(r => `<tr onclick="openDetailPanel('risk','risk_${r.risk_id}',this)" style="cursor:pointer" title="Click to view details">
       <td><span class="code-badge">${r.risk_code}</span></td>
       <td style="font-weight:500">${r.title}</td>
-      <td style="font-size:12px;color:var(--muted)">${r.owner_name_free||'—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${r.owner||r.owner_name_free||'—'}</td>
       <td>${liBadge(r.initial_likelihood)}</td>
       <td>${liBadge(r.initial_impact_overall)}</td>
       <td>${r.initial_likelihood&&r.initial_impact_overall?`<span class="status-badge ${scoreColor(r.initial_likelihood*r.initial_impact_overall)}">${r.initial_likelihood*r.initial_impact_overall}</span>`:'—'}</td>
@@ -2636,7 +2636,7 @@ function openDetailPanel(type, key, rowEl) {
       ${sh('Risk details')}
       <div class="dp-section"><div class="dp-label">Description</div><div class="dp-value">${v(r.description)}</div></div>
       <div class="dp-grid2">
-        <div class="dp-section"><div class="dp-label">Risk Owner</div><div class="dp-value">${v(r.owner_name_free)}</div></div>
+        <div class="dp-section"><div class="dp-label">Risk Owner</div><div class="dp-value">${v(r.owner||r.owner_name_free)}</div></div>
         <div class="dp-section"><div class="dp-label">Department</div><div class="dp-value">${v(r.department_name)}</div></div>
       </div>
       <div class="dp-section"><div class="dp-label">Risk Category</div><div class="dp-value">${v(r.risk_category)}</div></div>
