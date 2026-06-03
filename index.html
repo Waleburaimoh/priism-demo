@@ -2771,7 +2771,52 @@ function openDetailPanel(type, key, rowEl) {
       ${sh('Delivery')}
       <div class="dp-section"><div class="dp-label">Inputs Required</div><div class="dp-value">${v(a.inputs_required)}</div></div>
       <div class="dp-section"><div class="dp-label">Outputs to Deliver</div><div class="dp-value">${v(a.outputs_to_deliver)}</div></div>
-      <div style="padding:.75rem 0 .25rem"><button class="btn-update" onclick="openEditModal('activity','act_${a.activity_id}')"><i class="ti ti-edit"></i> Update Activity</button></div>`;
+      <div style="padding:.75rem 0 .25rem"><button class="btn-update" onclick="openEditModal('activity','act_${a.activity_id}')"><i class="ti ti-edit"></i> Update Activity</button></div>
+      <div style="border:1px solid var(--border);border-radius:8px;margin-top:1rem;overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem;background:rgba(30,51,58,.55);cursor:pointer;user-select:none" onclick="toggleImprovementActions('${a.activity_id}')">
+          <span style="font-size:13px;font-weight:500;color:var(--cream)">⚡ Improvement Actions</span>
+          <i class="ti ti-chevron-down" id="ia-chevron" style="color:var(--muted);font-size:14px;transition:transform .2s"></i>
+        </div>
+        <div id="ia-body" style="display:none;padding:.9rem 1rem">
+          <button onclick="requestAiSuggestion('${a.activity_id}')" style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:6px;padding:8px 16px;font-size:12.5px;font-weight:500;font-family:var(--font-body);color:var(--gold-light);cursor:pointer;display:flex;align-items:center;gap:6px;width:100%;justify-content:center;margin-bottom:.85rem;transition:all .15s" onmouseover="this.style.background='rgba(201,168,76,.2)'" onmouseout="this.style.background='rgba(201,168,76,.1)'">🤖 Request AI Suggestion</button>
+          <div id="ia-ai-status" style="display:none;text-align:center;padding:.3rem 0 .8rem;font-size:13px;color:var(--muted)"><div class="loading-dots" style="display:inline-flex;margin-right:.5rem"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>Analysing activity...</div>
+          <div id="ia-list"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+          <div id="ia-form" style="display:none;margin-top:.9rem;border-top:1px solid var(--border);padding-top:.9rem">
+            <div id="ia-ai-notice" class="locked-notice" style="display:none;margin-bottom:.8rem">⚠ AI suggested — please review before saving</div>
+            <div class="dp-section">
+              <div class="dp-label">Root Cause *</div>
+              <textarea id="ia-root-cause" rows="3" placeholder="Describe the root cause…" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:7px;padding:8px 11px;font-size:13px;font-family:var(--font-body);color:var(--cream);outline:none;resize:vertical;box-sizing:border-box"></textarea>
+            </div>
+            <div class="dp-section">
+              <div class="dp-label">Corrective Action *</div>
+              <textarea id="ia-corrective-action" rows="3" placeholder="Describe the corrective action…" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:7px;padding:8px 11px;font-size:13px;font-family:var(--font-body);color:var(--cream);outline:none;resize:vertical;box-sizing:border-box"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem">
+              <div>
+                <div class="dp-label">Target Date</div>
+                <input type="date" id="ia-target-date" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:7px;padding:8px 11px;font-size:13px;font-family:var(--font-body);color:var(--cream);outline:none;box-sizing:border-box">
+              </div>
+              <div>
+                <div class="dp-label">Owner Name</div>
+                <input type="text" id="ia-owner-name" placeholder="Owner…" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:7px;padding:8px 11px;font-size:13px;font-family:var(--font-body);color:var(--cream);outline:none;box-sizing:border-box">
+              </div>
+            </div>
+            <div class="dp-section">
+              <div class="dp-label">Status</div>
+              <select id="ia-status" style="width:100%;background:rgba(30,51,58,.8);border:1px solid var(--border2);border-radius:7px;padding:8px 11px;font-size:13px;font-family:var(--font-body);color:var(--cream);outline:none">
+                <option value="open">Open</option>
+                <option value="in_progress">In Progress</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+            <div id="ia-form-error" style="color:#FCA5A5;font-size:12.5px;margin-bottom:.6rem;display:none"></div>
+            <div style="display:flex;gap:.6rem">
+              <button onclick="saveImprovementAction('${a.activity_id}')" style="flex:1;background:rgba(125,211,232,.1);border:1px solid rgba(125,211,232,.3);border-radius:6px;padding:8px 16px;font-size:12.5px;font-weight:500;font-family:var(--font-body);color:#7dd3e8;cursor:pointer;transition:all .15s">Save Action</button>
+              <button onclick="resetImprovementForm()" style="background:rgba(255,255,255,.06);border:1px solid var(--border2);border-radius:6px;padding:8px 14px;font-size:12.5px;font-family:var(--font-body);color:var(--muted);cursor:pointer;transition:all .15s">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
   }
 
   document.getElementById('dp-header-code').textContent = codeText;
@@ -3935,6 +3980,165 @@ async function enrichRiskTreatments(riskId) {
       _dpMap[riskKey].treatment_strategy = d.risk.treatment_strategy;
     }
   } catch(e) { if(el) el.innerHTML=''; }
+}
+
+// ── IMPROVEMENT ACTIONS ──
+let _iaEditId = null;
+let _iaLoaded = {};
+
+function toggleImprovementActions(activityId) {
+    const body = document.getElementById('ia-body');
+    const chevron = document.getElementById('ia-chevron');
+    if (!body) return;
+    const open = body.style.display === 'block';
+    body.style.display = open ? 'none' : 'block';
+    if (chevron) chevron.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
+    if (!open && !_iaLoaded[activityId]) {
+        _iaLoaded[activityId] = true;
+        loadImprovementActions(activityId);
+    }
+}
+
+async function loadImprovementActions(activityId) {
+    const listEl = document.getElementById('ia-list');
+    if (!listEl) return;
+    listEl.innerHTML = '<span class="loading-dots"></span> Loading…';
+    try {
+        const res = await fetch(`${BASE_URL}/organisations/${SESSION.org_id}/activities/${activityId}/improvement-actions`, {
+            headers: { 'Authorization': `Basic ${SESSION.token}` }
+        });
+        const data = await res.json();
+        renderImprovementActions(activityId, data.improvement_actions || []);
+    } catch (e) {
+        listEl.innerHTML = '<span style="color:var(--danger);font-size:.8rem">Failed to load actions.</span>';
+    }
+}
+
+function renderImprovementActions(activityId, actions) {
+    const listEl = document.getElementById('ia-list');
+    if (!listEl) return;
+    if (!actions.length) {
+        listEl.innerHTML = '<p style="color:var(--text-muted);font-size:.8rem;margin:.5rem 0">No improvement actions yet. Use AI suggestion or create manually.</p>';
+        return;
+    }
+    const badgeClass = { open: 'badge-amber', in_progress: 'badge-blue', closed: 'badge-green' };
+    listEl.innerHTML = actions.map(a => {
+        const badge = badgeClass[a.status] || 'badge-grey';
+        const rc = a.root_cause ? (a.root_cause.length > 80 ? a.root_cause.slice(0, 80) + '…' : a.root_cause) : '—';
+        const ca = a.corrective_action ? (a.corrective_action.length > 80 ? a.corrective_action.slice(0, 80) + '…' : a.corrective_action) : '—';
+        return `<div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:.7rem .85rem;margin-bottom:.55rem;cursor:pointer" onclick="editImprovementAction('${activityId}', ${JSON.stringify(a).replace(/"/g,'&quot;')})">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem">
+                <span class="status-badge ${badge}" style="font-size:.72rem">${a.status.replace('_',' ')}</span>
+                ${a.is_ai_suggested ? '<span style="font-size:.7rem;color:var(--text-muted)">🤖 AI</span>' : ''}
+            </div>
+            <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.15rem"><strong style="color:var(--text-primary)">Root cause:</strong> ${rc}</div>
+            <div style="font-size:.78rem;color:var(--text-muted)"><strong style="color:var(--text-primary)">Action:</strong> ${ca}</div>
+        </div>`;
+    }).join('');
+}
+
+function editImprovementAction(activityId, action) {
+    _iaEditId = action.action_id;
+    document.getElementById('ia-root-cause').value = action.root_cause || '';
+    document.getElementById('ia-corrective-action').value = action.corrective_action || '';
+    document.getElementById('ia-target-date').value = action.suggested_target_date ? action.suggested_target_date.slice(0,10) : '';
+    document.getElementById('ia-owner-name').value = action.owner_name || '';
+    document.getElementById('ia-status').value = action.status || 'open';
+    const notice = document.getElementById('ia-ai-notice');
+    if (notice) notice.style.display = action.is_ai_suggested ? 'block' : 'none';
+    document.getElementById('ia-form').style.display = 'block';
+    document.getElementById('ia-form-error').style.display = 'none';
+}
+
+async function requestAiSuggestion(activityId) {
+    const aiStatus = document.getElementById('ia-ai-status');
+    if (aiStatus) { aiStatus.style.display = 'flex'; }
+    try {
+        const res = await fetch(`${BASE_URL}/organisations/${SESSION.org_id}/activities/${activityId}/suggest-improvement`, {
+            method: 'POST',
+            headers: { 'Authorization': `Basic ${SESSION.token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'AI suggestion failed');
+        _iaEditId = null;
+        document.getElementById('ia-root-cause').value = data.root_cause || '';
+        document.getElementById('ia-corrective-action').value = data.corrective_action || '';
+        document.getElementById('ia-target-date').value = data.suggested_target_date ? data.suggested_target_date.slice(0,10) : '';
+        document.getElementById('ia-owner-name').value = '';
+        document.getElementById('ia-status').value = 'open';
+        const notice = document.getElementById('ia-ai-notice');
+        if (notice) notice.style.display = 'block';
+        document.getElementById('ia-form').style.display = 'block';
+        document.getElementById('ia-form-error').style.display = 'none';
+    } catch (e) {
+        showToast(e.message || 'AI suggestion failed', 'error');
+    } finally {
+        if (aiStatus) aiStatus.style.display = 'none';
+    }
+}
+
+async function saveImprovementAction(activityId) {
+    const rootCause = document.getElementById('ia-root-cause').value.trim();
+    const correctiveAction = document.getElementById('ia-corrective-action').value.trim();
+    const targetDate = document.getElementById('ia-target-date').value;
+    const ownerName = document.getElementById('ia-owner-name').value.trim();
+    const status = document.getElementById('ia-status').value;
+    const errEl = document.getElementById('ia-form-error');
+
+    if (!rootCause || !correctiveAction) {
+        errEl.textContent = 'Root cause and corrective action are required.';
+        errEl.style.display = 'block';
+        return;
+    }
+    errEl.style.display = 'none';
+
+    const payload = { root_cause: rootCause, corrective_action: correctiveAction, status };
+    if (targetDate) payload.suggested_target_date = targetDate;
+    if (ownerName) payload.owner_name = ownerName;
+
+    try {
+        let res, data;
+        if (_iaEditId) {
+            res = await fetch(`${BASE_URL}/organisations/${SESSION.org_id}/activities/${activityId}/improvement-actions/${_iaEditId}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Basic ${SESSION.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } else {
+            payload.is_ai_suggested = !!document.getElementById('ia-ai-notice') && document.getElementById('ia-ai-notice').style.display !== 'none';
+            res = await fetch(`${BASE_URL}/organisations/${SESSION.org_id}/activities/${activityId}/improvement-actions`, {
+                method: 'POST',
+                headers: { 'Authorization': `Basic ${SESSION.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        }
+        data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Save failed');
+        showToast(_iaEditId ? 'Action updated' : 'Action created', 'success');
+        resetImprovementForm();
+        _iaLoaded[activityId] = false;
+        loadImprovementActions(activityId);
+    } catch (e) {
+        errEl.textContent = e.message || 'Save failed';
+        errEl.style.display = 'block';
+    }
+}
+
+function resetImprovementForm() {
+    _iaEditId = null;
+    ['ia-root-cause','ia-corrective-action','ia-target-date','ia-owner-name'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    const statusEl = document.getElementById('ia-status');
+    if (statusEl) statusEl.value = 'open';
+    const notice = document.getElementById('ia-ai-notice');
+    if (notice) notice.style.display = 'none';
+    const form = document.getElementById('ia-form');
+    if (form) form.style.display = 'none';
+    const errEl = document.getElementById('ia-form-error');
+    if (errEl) errEl.style.display = 'none';
 }
 
 // ── KEYBOARD / CLICK HANDLERS ──
