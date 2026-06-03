@@ -1160,6 +1160,7 @@ let _currentRiskId = null;
 let _treatmentRiskId = null, _treatmentOptions = null, _treatmentValidationResult = null;
 let _editKey = null, _editType = null;
 let _pendingDetail = null;
+let _activityVerifyFile = null;
 let currentUnit = 'INST';
 let currentUnitPrefix = null; // null = Institutional (show all); otherwise the prefix code, e.g. 'CA'
 const UNIT_LABELS = {INST:'Institutional',CA:'College of Agriculture',CVM:'College of Veterinary Medicine',BA:'College of Business Administration',CL:'College of Law',CI:'College of Computing & Intelligent Systems',CS:'College of Arts Humanities & Social Sciences',COE:'Centre of Excellence',SA:'Student Affairs',AD:'Admissions & Registration',RI:'Research & Innovation',LB:'Library',FN:'Finance',PC:'Procurement',IT:'Information Technology',HR:'Human Resources',GS:'Facilities',CD:'Corporate Communications',IEA:'Institutional Effectiveness',IA:'Internal Audit',SP:'Strategy & Development',LA:'Legal Affairs',VCA:'Vice Chancellor Academic',IN:'International Relations',VCCA:'Vice Chancellor Community',VCAF:'Vice Chancellor Admin & Finance'};
@@ -3062,10 +3063,23 @@ function openEditModal(type, dpKey) {
   const titles = { 'objective':'Update Status', 'kpi-actual':'Update Actual', 'risk':'Risk Notes', 'project':'Update Project Health', 'activity':'Update Activity' };
   const btns   = { 'objective':'Save', 'kpi-actual':'Save Actual', 'risk':'Save Notes', 'project':'Update Project Health', 'activity':'Update Activity' };
   document.getElementById('edit-modal-title').textContent = titles[type] || 'Update';
+  _activityVerifyFile = null;
   document.getElementById('edit-modal-body').innerHTML = getEditForm(type, item);
   const sb = document.getElementById('edit-modal-submit-btn');
   sb.disabled = false;
-  sb.textContent = btns[type] || 'Save';
+  if (type === 'activity') {
+    sb.textContent = 'Submit for Verification 🔍';
+    sb.style.background = 'linear-gradient(135deg,#6366f1,#8b5cf6)';
+    sb.style.color = '#fff';
+    sb.style.border = 'none';
+    sb.onclick = submitActivityVerification;
+  } else {
+    sb.textContent = btns[type] || 'Save';
+    sb.style.background = '';
+    sb.style.color = '';
+    sb.style.border = '';
+    sb.onclick = submitEditModal;
+  }
   document.getElementById('edit-modal-overlay').classList.add('open');
 }
 
@@ -3198,7 +3212,29 @@ function getEditForm(type, item) {
         <input type="range" id="ef-progress" min="0" max="100" value="${pct}" class="edit-slider" oninput="updateActivityStatus()">
       </div>
       <div id="ef-act-status" style="margin-bottom:.8rem;font-size:13px;font-weight:500;color:${progCol}">Status: ${status}</div>
-      <div class="form-group"><label>Notes</label><textarea id="ef-act-notes" rows="3" placeholder="Progress notes…" style="width:100%;resize:vertical"></textarea></div>`;
+      <div class="form-group"><label>Notes</label><textarea id="ef-act-notes" rows="2" placeholder="Progress notes…" style="width:100%;resize:vertical"></textarea></div>
+      <div class="form-group"><label>Progress Commentary <span style="color:#FCA5A5">*</span></label>
+        <textarea id="ef-act-commentary" rows="3" placeholder="Describe what work was actually completed since the last update…" style="width:100%;resize:vertical"></textarea>
+        <div id="ef-commentary-err" style="display:none;font-size:11px;color:#FCA5A5;margin-top:.25rem"></div>
+      </div>
+      <div class="form-group"><label>Evidence Description</label>
+        <textarea id="ef-act-evidence-text" rows="3" placeholder="Describe the evidence that supports this progress — outputs produced, milestones reached, approvals received…" style="width:100%;resize:vertical"></textarea>
+      </div>
+      <div class="form-group"><label>Evidence URL</label>
+        <input type="text" id="ef-act-evidence-url" placeholder="https:// link to document, report, or output" style="width:100%">
+      </div>
+      <div class="form-group"><label>Upload Supporting File</label>
+        <label for="ef-act-file" style="display:block;border:1.5px dashed rgba(99,102,241,.4);border-radius:8px;padding:.65rem 1rem;cursor:pointer;text-align:center;color:var(--muted);font-size:12.5px" onmouseover="this.style.borderColor='rgba(99,102,241,.75)'" onmouseout="this.style.borderColor='rgba(99,102,241,.4)'">
+          <i class="ti ti-upload" style="font-size:16px;display:block;margin-bottom:.3rem;color:#a5b4fc"></i>
+          Click to browse &nbsp;·&nbsp; PDF, Word, Image
+        </label>
+        <input type="file" id="ef-act-file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" style="display:none" onchange="handleActivityVerifyFile(this)">
+        <div id="ef-act-file-name" style="display:none;margin-top:.45rem;font-size:12.5px;color:var(--cream-dark);padding:.35rem .65rem;background:rgba(99,102,241,.08);border-radius:5px">
+          <i class="ti ti-paperclip" style="color:#a5b4fc;margin-right:.3rem"></i><span id="ef-act-file-name-text"></span>
+        </div>
+        <div id="ef-evidence-req-err" style="display:none;font-size:11px;color:#FCA5A5;margin-top:.25rem"></div>
+      </div>
+      <div id="ef-verify-result" style="display:none"></div>`;
   }
   return '';
 }
@@ -3217,6 +3253,20 @@ function handleEvidenceFile(input) {
   const txtEl  = document.getElementById('ef-evidence-name-text');
   if (file && nameEl && txtEl) { nameEl.style.display = 'block'; txtEl.textContent = file.name; }
   else if (nameEl) { nameEl.style.display = 'none'; }
+}
+
+function handleActivityVerifyFile(input) {
+  const file = input.files[0];
+  const nameEl = document.getElementById('ef-act-file-name');
+  const txtEl  = document.getElementById('ef-act-file-name-text');
+  if (!file) { _activityVerifyFile = null; if (nameEl) nameEl.style.display = 'none'; return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const base64 = e.target.result.split(',')[1];
+    _activityVerifyFile = { name: file.name, base64 };
+    if (nameEl && txtEl) { nameEl.style.display = 'block'; txtEl.textContent = file.name; }
+  };
+  reader.readAsDataURL(file);
 }
 
 async function saveRiskStrategy(el) {
@@ -3418,6 +3468,116 @@ async function submitEditModal() {
   }
   btn.disabled = false;
   btn.textContent = origLabel;
+}
+
+async function submitActivityVerification() {
+  const esc = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const btn    = document.getElementById('edit-modal-submit-btn');
+  const errEl  = document.getElementById('edit-msg-error');
+  const resEl  = document.getElementById('ef-verify-result');
+  if (errEl) errEl.textContent = '';
+
+  const item        = _dpMap[_editKey] || {};
+  const pct         = parseInt(document.getElementById('ef-progress').value);
+  const commentary  = (document.getElementById('ef-act-commentary')?.value || '').trim();
+  const evidenceText= (document.getElementById('ef-act-evidence-text')?.value || '').trim();
+  const evidenceUrl = (document.getElementById('ef-act-evidence-url')?.value || '').trim();
+
+  // Validation
+  let valid = true;
+  const commErr = document.getElementById('ef-commentary-err');
+  const evErr   = document.getElementById('ef-evidence-req-err');
+  if (commErr) { commErr.style.display='none'; commErr.textContent=''; }
+  if (evErr)   { evErr.style.display='none';   evErr.textContent=''; }
+
+  if (!commentary) {
+    if (commErr) { commErr.textContent='Progress commentary is required.'; commErr.style.display='block'; }
+    valid = false;
+  }
+  if (!evidenceText && !evidenceUrl && !_activityVerifyFile) {
+    if (evErr) { evErr.textContent='Provide at least one of: evidence description, evidence URL, or a supporting file.'; evErr.style.display='block'; }
+    valid = false;
+  }
+  if (!valid) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-dots" style="padding:0;display:inline-flex;gap:3px"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> Verifying evidence…';
+  if (resEl) resEl.style.display = 'none';
+
+  try {
+    const body = {
+      claimed_pct:         pct,
+      commentary,
+      evidence_text:       evidenceText || null,
+      evidence_url:        evidenceUrl  || null,
+      file_name:           _activityVerifyFile ? _activityVerifyFile.name   : null,
+      file_content_base64: _activityVerifyFile ? _activityVerifyFile.base64 : null
+    };
+    const res  = await fetch(`${API}/organisations/${SESSION.org_id}/activities/${item.activity_id}/verify-progress`, {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+    const verdict = data.verdict;
+
+    if (verdict === 'VERIFIED') {
+      const conf = data.confidence_score != null ? Math.round(data.confidence_score) : null;
+      resEl.innerHTML = `<div style="border:1px solid rgba(16,185,129,.3);background:rgba(16,185,129,.08);border-radius:8px;padding:.9rem 1.1rem;margin-top:.75rem">
+        <div style="font-size:13px;font-weight:700;color:#6EE7B7;margin-bottom:.45rem">✓ Progress Verified</div>
+        <div style="font-size:12.5px;color:var(--cream-dark);margin-bottom:.4rem">${esc(data.rationale||'')}</div>
+        ${conf!=null?`<div style="font-size:12px;color:#6EE7B7;margin-bottom:.4rem">AI Confidence: ${conf}%</div>`:''}
+        <div style="font-size:12px;color:var(--muted)">Activity updated to ${pct}% completion.</div>
+      </div>`;
+      resEl.style.display = 'block';
+      item.completion_pct = pct;
+      item.status = pct===100?'complete':pct>0?'in_progress':'not_started';
+      renderActivities();
+      // Reset form fields, keep result visible
+      document.getElementById('ef-act-commentary').value = '';
+      document.getElementById('ef-act-evidence-text').value = '';
+      document.getElementById('ef-act-evidence-url').value = '';
+      const fileInput = document.getElementById('ef-act-file');
+      if (fileInput) fileInput.value = '';
+      const fileNameEl = document.getElementById('ef-act-file-name');
+      if (fileNameEl) fileNameEl.style.display = 'none';
+      _activityVerifyFile = null;
+      showToast('Progress verified and activity updated', 'success');
+
+    } else {
+      // INSUFFICIENT or UNRELATED
+      const activityId = item.activity_id;
+      const suggestedDate = data.suggested_target_date ? new Date(data.suggested_target_date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : null;
+      resEl.innerHTML = `<div style="border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.08);border-radius:8px;padding:.9rem 1.1rem;margin-top:.75rem;margin-bottom:.5rem">
+        <div style="font-size:13px;font-weight:700;color:#FCA5A5;margin-bottom:.45rem">✗ Progress Update Rejected</div>
+        <div style="font-size:12.5px;color:var(--cream-dark);margin-bottom:.45rem">${esc(data.rationale||'')}</div>
+        ${data.missing_evidence?`<div style="font-size:12px;color:var(--gold-light)"><strong>What's needed:</strong> ${esc(data.missing_evidence)}</div>`:''}
+      </div>
+      <div style="border:1px solid rgba(201,168,76,.25);background:rgba(201,168,76,.07);border-radius:8px;padding:.9rem 1.1rem">
+        <div style="font-size:13px;font-weight:700;color:var(--gold-light);margin-bottom:.45rem">⚡ Improvement Action Auto-Created</div>
+        ${data.root_cause?`<div style="font-size:12.5px;color:var(--cream-dark);margin-bottom:.35rem">${esc(data.root_cause)}</div>`:''}
+        ${data.corrective_action?`<div style="font-size:12.5px;color:var(--cream-dark);margin-bottom:.35rem">${esc(data.corrective_action)}</div>`:''}
+        ${suggestedDate?`<div style="font-size:12px;color:var(--muted);margin-bottom:.45rem">Target date: ${suggestedDate}</div>`:''}
+        <a href="#" onclick="event.preventDefault();closeEditModal();toggleImprovementActions('${activityId}');loadImprovementActions('${activityId}')" style="font-size:12px;color:var(--gold);text-decoration:none;font-weight:500">View in Improvement Actions ↓</a>
+      </div>`;
+      resEl.style.display = 'block';
+      // Scroll result into view inside modal
+      resEl.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    }
+  } catch(e) {
+    if (errEl) errEl.textContent = e.message;
+  }
+  btn.disabled = false;
+  btn.innerHTML = 'Submit for Verification 🔍';
+}
+
+function toggleImprovementActions(activityId) {
+  const el = document.getElementById('improvement-actions-section');
+  if (el) { el.style.display = el.style.display === 'none' ? 'block' : 'block'; el.scrollIntoView({ behavior:'smooth', block:'start' }); }
+}
+
+function loadImprovementActions(activityId) {
+  showToast('Improvement Actions loaded for this activity', 'success');
 }
 
 async function generateReport(cardId, endpoint, btn) {
