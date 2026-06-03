@@ -1163,6 +1163,43 @@ let _pendingDetail = null;
 let currentUnit = 'INST';
 let currentUnitPrefix = null; // null = Institutional (show all); otherwise the prefix code, e.g. 'CA'
 const UNIT_LABELS = {INST:'Institutional',CA:'College of Agriculture',CVM:'College of Veterinary Medicine',BA:'College of Business Administration',CL:'College of Law',CI:'College of Computing & Intelligent Systems',CS:'College of Arts Humanities & Social Sciences',COE:'Centre of Excellence',SA:'Student Affairs',AD:'Admissions & Registration',RI:'Research & Innovation',LB:'Library',FN:'Finance',PC:'Procurement',IT:'Information Technology',HR:'Human Resources',GS:'Facilities',CD:'Corporate Communications',IEA:'Institutional Effectiveness',IA:'Internal Audit',SP:'Strategy & Development',LA:'Legal Affairs',VCA:'Vice Chancellor Academic',IN:'International Relations',VCCA:'Vice Chancellor Community',VCAF:'Vice Chancellor Admin & Finance'};
+const DEPT_NAMES = {
+  'CA': 'College of Agriculture',
+  'BA': 'College of Business Administration',
+  'CL': 'College of Law',
+  'CS': 'College of Arts, Humanities & Social Sciences',
+  'COE': 'Centre of Excellence in Education',
+  'CI': 'College of Computing & Information Sciences',
+  'CVM': 'College of Veterinary Medicine',
+  'VCA': 'Vice Chancellor Academic Affairs',
+  'VCCA': 'Vice Chancellor Community Affairs',
+  'VCAF': 'Vice Chancellor Admin & Finance',
+  'RI': 'Deanship of Research & Innovation',
+  'CSE': 'Skills Development Centre',
+  'AD': 'Admissions & Registration',
+  'CD': 'Corporate Communications',
+  'FN': 'Finance',
+  'GS': 'General Services & Facilities',
+  'HR': 'Human Resources',
+  'IA': 'Internal Audit',
+  'IEA': 'Institutional Effectiveness & Accreditation',
+  'IN': 'International Relations',
+  'IT': 'Information Technology',
+  'LA': 'Legal Affairs',
+  'LB': 'Library',
+  'OIE': 'Office for Industry & External Engagement',
+  'PC': 'Procurement',
+  'SA': 'Student Affairs',
+  'SP': 'Strategy & Institutional Development'
+};
+const _reportTitles = {
+  overview: 'Organisational Overview',
+  objectives: 'Objectives Analysis',
+  kpis: 'KPI Performance Analysis',
+  risks: 'Risk Landscape Analysis',
+  projects: 'Project Portfolio Analysis',
+  operations: 'Operations Execution Analysis',
+};
 function getObjPrefix(code){return (code||'').replace(/[\d\-_].*$/,'').toUpperCase();}
 
 // ── AUTH ──
@@ -3346,9 +3383,12 @@ async function generateReport(cardId, endpoint, btn) {
     <div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
     <p style="margin-top:.7rem;font-size:12px;color:var(--muted)">Generating — this may take 10–20 seconds…</p>
   </div>`;
+  const unitVal = document.getElementById('unit-selector').value;
+  const deptCode = (!unitVal || unitVal === 'INST') ? null : unitVal;
+  const reqBody = deptCode ? JSON.stringify({ dept_code: deptCode }) : '{}';
   try {
     const res = await fetch(`${API}/organisations/${SESSION.org_id}/reports/${endpoint}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: reqBody,
     });
     if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `HTTP ${res.status}`); }
     const data = await res.json();
@@ -3377,6 +3417,13 @@ async function generateReport(cardId, endpoint, btn) {
       ${dataHtml}
       <p style="font-style:italic;color:#9CA3AF;font-size:.95rem;margin:.5rem 0 .3rem;line-height:1.7">${shortNarr}</p>
       ${fullSection}`;
+    const titleEl = document.querySelector(`#ir-card-${cardId} .ir-title`);
+    if (titleEl) {
+      const baseTitle = _reportTitles[cardId] || titleEl.dataset.baseTitle || titleEl.textContent;
+      titleEl.dataset.baseTitle = baseTitle;
+      const deptName = deptCode ? (DEPT_NAMES[deptCode] || UNIT_LABELS[deptCode] || deptCode) : null;
+      titleEl.textContent = deptName ? `${deptName} — ${baseTitle}` : baseTitle;
+    }
   } catch(e) {
     outEl.innerHTML = `<p style="color:#FCA5A5;font-size:13px;padding:.5rem 0"><i class="ti ti-alert-circle"></i> Failed: ${_reportEsc(e.message)}</p>`;
   } finally {
@@ -3587,9 +3634,13 @@ async function generateCustomReport(btn) {
     <p style="margin-top:.7rem;font-size:12px;color:var(--muted)">Enhancing your narrative — this may take 15–25 seconds…</p>
   </div>`;
   try {
+    const unitVal = document.getElementById('unit-selector').value;
+    const deptCode = (!unitVal || unitVal === 'INST') ? null : unitVal;
+    const customBody = { user_narrative: text };
+    if (deptCode) customBody.dept_code = deptCode;
     const res = await fetch(`${API}/organisations/${SESSION.org_id}/reports/custom-narrative`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_narrative: text }),
+      body: JSON.stringify(customBody),
     });
     if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `HTTP ${res.status}`); }
     const data = await res.json();
