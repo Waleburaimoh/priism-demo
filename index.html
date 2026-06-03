@@ -4276,21 +4276,68 @@ function renderImprovementActions(activityId, actions) {
     const listEl = document.getElementById('ia-list');
     if (!listEl) return;
     if (!actions.length) {
-        listEl.innerHTML = '<p style="color:var(--text-muted);font-size:.8rem;margin:.5rem 0">No improvement actions yet. Use AI suggestion or create manually.</p>';
+        listEl.innerHTML = '<p style="color:var(--muted);font-size:.8rem;margin:.5rem 0">No improvement actions yet. Use AI suggestion or create manually.</p>';
         return;
     }
     const badgeClass = { open: 'badge-amber', in_progress: 'badge-blue', closed: 'badge-green' };
+    const nextOpts = {
+        open:        '<option value="in_progress">In Progress</option>',
+        in_progress: '<option value="closed">Closed</option>',
+        closed:      '<option value="open">Re-Open</option>'
+    };
     listEl.innerHTML = actions.map(a => {
+        const aid = a.action_id;
         const badge = badgeClass[a.status] || 'badge-grey';
         const rc = a.root_cause ? (a.root_cause.length > 80 ? a.root_cause.slice(0, 80) + '…' : a.root_cause) : '—';
         const ca = a.corrective_action ? (a.corrective_action.length > 80 ? a.corrective_action.slice(0, 80) + '…' : a.corrective_action) : '—';
-        return `<div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:.7rem .85rem;margin-bottom:.55rem;cursor:pointer" onclick="editImprovementAction('${activityId}', ${JSON.stringify(a).replace(/"/g,'&quot;')})">
+        const opts = nextOpts[a.status] || '';
+        return `<div>
+          <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:.7rem .85rem;margin-bottom:.35rem;cursor:pointer" onclick="editImprovementAction('${activityId}', ${JSON.stringify(a).replace(/"/g,'&quot;')})">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem">
+              <div style="display:flex;align-items:center;gap:.5rem">
                 <span class="status-badge ${badge}" style="font-size:.72rem">${a.status.replace('_',' ')}</span>
-                ${a.is_ai_suggested ? '<span style="font-size:.7rem;color:var(--text-muted)">🤖 AI</span>' : ''}
+                ${a.is_ai_suggested ? '<span style="font-size:.7rem;color:var(--muted)">🤖 AI</span>' : ''}
+              </div>
+              <button onclick="event.stopPropagation();openTransitionForm('${activityId}','${aid}','${a.status}')" style="background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.28);border-radius:5px;padding:3px 9px;font-size:.72rem;font-weight:500;font-family:var(--font-body);color:#c4b5fd;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(139,92,246,.22)'" onmouseout="this.style.background='rgba(139,92,246,.12)'">Update Status</button>
             </div>
-            <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.15rem"><strong style="color:var(--text-primary)">Root cause:</strong> ${rc}</div>
-            <div style="font-size:.78rem;color:var(--text-muted)"><strong style="color:var(--text-primary)">Action:</strong> ${ca}</div>
+            <div style="font-size:.78rem;color:var(--muted);margin-bottom:.15rem"><strong style="color:var(--cream)">Root cause:</strong> ${rc}</div>
+            <div style="font-size:.78rem;color:var(--muted)"><strong style="color:var(--cream)">Action:</strong> ${ca}</div>
+          </div>
+          <div id="ia-tf-${aid}" class="ia-transition-form" style="display:none;background:rgba(20,42,52,.8);border:1px solid rgba(139,92,246,.25);border-radius:6px;padding:.85rem;margin-bottom:.55rem">
+            <div style="font-size:12.5px;font-weight:600;color:#c4b5fd;margin-bottom:.65rem">🔄 Update Status</div>
+            <div style="margin-bottom:.6rem">
+              <div class="dp-label">New Status</div>
+              <select id="ia-tf-status-${aid}" style="width:100%;background:rgba(30,51,58,.8);border:1px solid var(--border2);border-radius:7px;padding:8px 11px;font-size:13px;font-family:var(--font-body);color:var(--cream);outline:none">${opts}</select>
+            </div>
+            <div style="margin-bottom:.6rem">
+              <div class="dp-label">Commentary *</div>
+              <textarea id="ia-tf-commentary-${aid}" rows="3" placeholder="Describe what was done…" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:7px;padding:8px 11px;font-size:13px;font-family:var(--font-body);color:var(--cream);outline:none;resize:vertical;box-sizing:border-box"></textarea>
+            </div>
+            <div style="margin-bottom:.6rem">
+              <div class="dp-label">Evidence Description</div>
+              <textarea id="ia-tf-evidence-${aid}" rows="2" placeholder="Describe the evidence…" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:7px;padding:8px 11px;font-size:13px;font-family:var(--font-body);color:var(--cream);outline:none;resize:vertical;box-sizing:border-box"></textarea>
+            </div>
+            <div style="margin-bottom:.6rem">
+              <div class="dp-label">Evidence URL</div>
+              <input type="text" id="ia-tf-url-${aid}" placeholder="https://…" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:7px;padding:8px 11px;font-size:13px;font-family:var(--font-body);color:var(--cream);outline:none;box-sizing:border-box">
+            </div>
+            <div style="margin-bottom:.75rem">
+              <div class="dp-label">Upload Supporting File</div>
+              <input type="file" id="ia-tf-file-${aid}" accept=".pdf,.doc,.docx,.png,.jpg" style="display:none" onchange="handleTransitionFile('${aid}')">
+              <div style="display:flex;align-items:center;gap:.5rem;margin-top:.3rem">
+                <button onclick="document.getElementById('ia-tf-file-${aid}').click()" style="background:rgba(255,255,255,.06);border:1px solid var(--border2);border-radius:5px;padding:5px 11px;font-size:12px;font-family:var(--font-body);color:var(--muted);cursor:pointer">Choose File</button>
+                <span id="ia-tf-fname-${aid}" style="font-size:12px;color:var(--muted);font-style:italic">No file selected</span>
+              </div>
+            </div>
+            <div id="ia-tf-err-${aid}" style="color:#FCA5A5;font-size:12.5px;margin-bottom:.5rem;display:none"></div>
+            <div id="ia-tf-load-${aid}" style="display:none;align-items:center;justify-content:center;padding:.4rem 0;font-size:13px;color:var(--muted)"><div class="loading-dots" style="display:inline-flex;margin-right:.5rem"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>Verifying transition…</div>
+            <div id="ia-tf-btns-${aid}" style="display:flex;gap:.6rem;margin-bottom:.5rem">
+              <button id="ia-tf-submit-${aid}" onclick="submitTransition('${activityId}','${aid}')" style="flex:1;background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.4);border-radius:6px;padding:8px 16px;font-size:12.5px;font-weight:500;font-family:var(--font-body);color:#c4b5fd;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(139,92,246,.25)'" onmouseout="this.style.background='rgba(139,92,246,.15)'">Submit for Verification 🔍</button>
+              <button onclick="closeTransitionForm('${aid}')" style="background:rgba(255,255,255,.06);border:1px solid var(--border2);border-radius:6px;padding:8px 14px;font-size:12.5px;font-family:var(--font-body);color:var(--muted);cursor:pointer">Cancel</button>
+            </div>
+            <div id="ia-tf-result-${aid}"></div>
+            <div id="ia-tf-progress-${aid}"></div>
+          </div>
         </div>`;
     }).join('');
 }
@@ -4397,6 +4444,183 @@ function resetImprovementForm() {
     if (form) form.style.display = 'none';
     const errEl = document.getElementById('ia-form-error');
     if (errEl) errEl.style.display = 'none';
+}
+
+function openTransitionForm(activityId, actionId, currentStatus) {
+    document.querySelectorAll('.ia-transition-form').forEach(el => { el.style.display = 'none'; });
+    const form = document.getElementById('ia-tf-' + actionId);
+    if (!form) return;
+    ['ia-tf-commentary-','ia-tf-evidence-','ia-tf-url-'].forEach(p => {
+        const el = document.getElementById(p + actionId); if (el) el.value = '';
+    });
+    const fi = document.getElementById('ia-tf-file-' + actionId);    if (fi) fi.value = '';
+    const fn = document.getElementById('ia-tf-fname-' + actionId);   if (fn) fn.textContent = 'No file selected';
+    const er = document.getElementById('ia-tf-err-' + actionId);     if (er) { er.textContent = ''; er.style.display = 'none'; }
+    const lo = document.getElementById('ia-tf-load-' + actionId);    if (lo) lo.style.display = 'none';
+    const bt = document.getElementById('ia-tf-btns-' + actionId);    if (bt) bt.style.display = 'flex';
+    const sb = document.getElementById('ia-tf-submit-' + actionId);  if (sb) sb.disabled = false;
+    const re = document.getElementById('ia-tf-result-' + actionId);  if (re) re.innerHTML = '';
+    const pr = document.getElementById('ia-tf-progress-' + actionId);if (pr) pr.innerHTML = '';
+    form.style.display = 'block';
+    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closeTransitionForm(actionId) {
+    const form = document.getElementById('ia-tf-' + actionId);
+    if (form) form.style.display = 'none';
+}
+
+function handleTransitionFile(actionId) {
+    const fi = document.getElementById('ia-tf-file-' + actionId);
+    const fn = document.getElementById('ia-tf-fname-' + actionId);
+    if (fi && fi.files.length && fn) fn.textContent = fi.files[0].name;
+}
+
+function readFileBase64(file) {
+    return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = e => res(e.target.result.split(',')[1]);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+    });
+}
+
+async function submitTransition(activityId, actionId) {
+    const toStatus     = document.getElementById('ia-tf-status-' + actionId)?.value;
+    const commentary   = document.getElementById('ia-tf-commentary-' + actionId)?.value?.trim();
+    const evidenceText = document.getElementById('ia-tf-evidence-' + actionId)?.value?.trim();
+    const evidenceUrl  = document.getElementById('ia-tf-url-' + actionId)?.value?.trim();
+    const fileEl       = document.getElementById('ia-tf-file-' + actionId);
+    const errEl        = document.getElementById('ia-tf-err-' + actionId);
+    const loadEl       = document.getElementById('ia-tf-load-' + actionId);
+    const btnsEl       = document.getElementById('ia-tf-btns-' + actionId);
+    const submitEl     = document.getElementById('ia-tf-submit-' + actionId);
+    const resultEl     = document.getElementById('ia-tf-result-' + actionId);
+    const progressEl   = document.getElementById('ia-tf-progress-' + actionId);
+    const esc = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+    if (!commentary) {
+        errEl.textContent = 'Commentary is required.';
+        errEl.style.display = 'block';
+        return;
+    }
+    if ((toStatus === 'in_progress' || toStatus === 'closed') && !evidenceText && !evidenceUrl && (!fileEl || !fileEl.files.length)) {
+        errEl.textContent = 'At least one of evidence description, URL, or file is required for this transition.';
+        errEl.style.display = 'block';
+        return;
+    }
+    errEl.style.display = 'none';
+
+    let fileName = null, fileBase64 = null;
+    if (fileEl && fileEl.files.length) {
+        fileName = fileEl.files[0].name;
+        try { fileBase64 = await readFileBase64(fileEl.files[0]); } catch(e) {}
+    }
+
+    loadEl.style.display = 'flex';
+    if (btnsEl) btnsEl.style.display = 'none';
+    resultEl.innerHTML = '';
+    progressEl.innerHTML = '';
+
+    try {
+        const body = { to_status: toStatus, commentary };
+        if (evidenceText) body.evidence_text = evidenceText;
+        if (evidenceUrl)  body.evidence_url  = evidenceUrl;
+        if (fileName)     body.file_name     = fileName;
+        if (fileBase64)   body.file_content_base64 = fileBase64;
+
+        const res = await fetch(`${API}/organisations/${SESSION.org_id}/activities/${activityId}/improvement-actions/${actionId}/verify-transition`, {
+            method: 'POST',
+            headers: { 'Authorization': `Basic ${SESSION.token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Verification failed');
+
+        loadEl.style.display = 'none';
+
+        if (data.verdict === 'VERIFIED') {
+            const newStatus = data.new_status || toStatus;
+            const confLine = data.confidence != null ? `<div style="font-size:11.5px;color:var(--muted);margin-top:.2rem">Confidence: ${data.confidence}%</div>` : '';
+            const ratLine  = data.rationale ? `<div style="font-size:12.5px;color:var(--cream-dark);margin-bottom:.2rem">${esc(data.rationale)}</div>` : '';
+
+            if (newStatus === 'in_progress') {
+                resultEl.innerHTML = `<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.22);border-radius:8px;padding:.85rem 1rem">
+                  <div style="font-size:13px;font-weight:600;color:#6EE7B7;margin-bottom:.3rem">✓ Status Updated to In Progress</div>
+                  ${ratLine}${confLine}
+                </div>`;
+                _iaLoaded[activityId] = false;
+                setTimeout(() => loadImprovementActions(activityId), 1500);
+
+            } else if (newStatus === 'closed') {
+                resultEl.innerHTML = `<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.22);border-radius:8px;padding:.85rem 1rem;margin-bottom:.4rem">
+                  <div style="font-size:13px;font-weight:600;color:#6EE7B7;margin-bottom:.3rem">✓ Improvement Action Closed</div>
+                  ${ratLine}${confLine}
+                </div>`;
+                const sug = data.activity_progress_suggestion;
+                if (sug) {
+                    const sugPct = sug.suggested_pct;
+                    progressEl.innerHTML = `<div style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.28);border-radius:8px;padding:.85rem 1rem">
+                      <div style="font-size:13px;font-weight:600;color:var(--gold-light);margin-bottom:.4rem">📈 Activity Progress Impact</div>
+                      <div style="font-size:12.5px;color:var(--cream-dark);margin-bottom:.3rem">AI suggests updating <strong>${esc(sug.activity_name||'this activity')}</strong> from <strong>${sug.current_pct}%</strong> → <strong>${sugPct}%</strong></div>
+                      ${sug.reasoning ? `<div style="font-size:12px;color:var(--muted);margin-bottom:.65rem">${esc(sug.reasoning)}</div>` : ''}
+                      <div id="ia-tf-prog-btns-${actionId}" style="display:flex;gap:.6rem">
+                        <button onclick="applyActivityProgress('${activityId}','${actionId}',${sugPct})" style="flex:1;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.4);border-radius:6px;padding:7px 12px;font-size:12.5px;font-weight:500;font-family:var(--font-body);color:var(--gold-light);cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(201,168,76,.25)'" onmouseout="this.style.background='rgba(201,168,76,.15)'">Apply Progress Update</button>
+                        <button onclick="document.getElementById('ia-tf-progress-${actionId}').innerHTML=''" style="background:rgba(255,255,255,.06);border:1px solid var(--border2);border-radius:6px;padding:7px 12px;font-size:12.5px;font-family:var(--font-body);color:var(--muted);cursor:pointer">Keep Current %</button>
+                      </div>
+                    </div>`;
+                }
+
+            } else {
+                resultEl.innerHTML = `<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.22);border-radius:8px;padding:.85rem 1rem">
+                  <div style="font-size:13px;font-weight:600;color:#6EE7B7;margin-bottom:.3rem">✓ Action Re-opened</div>
+                  ${ratLine}${confLine}
+                </div>`;
+                _iaLoaded[activityId] = false;
+                setTimeout(() => loadImprovementActions(activityId), 1500);
+            }
+
+        } else {
+            resultEl.innerHTML = `<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.22);border-radius:8px;padding:.85rem 1rem">
+              <div style="font-size:13px;font-weight:600;color:#FCA5A5;margin-bottom:.3rem">✗ Transition Rejected</div>
+              ${data.rationale ? `<div style="font-size:12.5px;color:var(--cream-dark)${data.missing_evidence?';margin-bottom:.3rem':''}">${esc(data.rationale)}</div>` : ''}
+              ${data.missing_evidence ? `<div style="font-size:12px;color:var(--gold-light)"><strong>Missing evidence:</strong> ${esc(data.missing_evidence)}</div>` : ''}
+            </div>`;
+            if (btnsEl) btnsEl.style.display = 'flex';
+            if (submitEl) submitEl.disabled = false;
+        }
+    } catch(e) {
+        loadEl.style.display = 'none';
+        if (btnsEl) btnsEl.style.display = 'flex';
+        if (submitEl) submitEl.disabled = false;
+        errEl.textContent = e.message || 'Verification failed';
+        errEl.style.display = 'block';
+    }
+}
+
+async function applyActivityProgress(activityId, actionId, suggestedPct) {
+    const progressEl = document.getElementById('ia-tf-progress-' + actionId);
+    const btnsEl     = document.getElementById('ia-tf-prog-btns-' + actionId);
+    if (btnsEl) btnsEl.innerHTML = '<span style="font-size:12px;color:var(--muted);display:flex;align-items:center"><div class="loading-dots" style="display:inline-flex;margin-right:.4rem"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>Applying…</span>';
+    try {
+        const res = await fetch(`${API}/organisations/${SESSION.org_id}/activities/${activityId}/improvement-actions/${actionId}/apply-progress`, {
+            method: 'PATCH',
+            headers: { 'Authorization': `Basic ${SESSION.token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ suggested_pct: suggestedPct })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Update failed');
+        if (progressEl) progressEl.innerHTML = `<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.22);border-radius:8px;padding:.7rem 1rem">
+          <div style="font-size:13px;font-weight:600;color:#6EE7B7">✓ Activity updated to ${suggestedPct}%</div>
+        </div>`;
+        if (_currentPlanId) {
+            fetch(`${API}/organisations/${SESSION.org_id}/operating-plans/${_currentPlanId}/activities`)
+              .then(r => r.json()).then(d => { _activitiesData = d.activities || []; renderActivities(); }).catch(() => {});
+        }
+    } catch(e) {
+        showToast(e.message || 'Failed to apply progress', 'error');
+        if (btnsEl) btnsEl.innerHTML = `<button onclick="applyActivityProgress('${activityId}','${actionId}',${suggestedPct})" style="flex:1;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.4);border-radius:6px;padding:7px 12px;font-size:12.5px;font-weight:500;font-family:var(--font-body);color:var(--gold-light);cursor:pointer">Apply Progress Update</button><button onclick="document.getElementById('ia-tf-progress-${actionId}').innerHTML=''" style="background:rgba(255,255,255,.06);border:1px solid var(--border2);border-radius:6px;padding:7px 12px;font-size:12.5px;font-family:var(--font-body);color:var(--muted);cursor:pointer">Keep Current %</button>`;
+    }
 }
 
 // ── PROJECT ACTIVITIES ──
