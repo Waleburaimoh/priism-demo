@@ -2732,40 +2732,87 @@ function openDetailPanel(type, key, rowEl) {
         ${p.status?`<span class="status-badge ${statusCls[statusKey]||'badge-grey'}">${statusLabel}</span>`:''}
         ${p.current_phase?`<span class="status-badge ${phaseCls[p.current_phase]||'badge-grey'}">${esc(p.current_phase)}</span>`:''}
       </div>
-      ${sh('Project details')}
-      <div class="dp-section"><div class="dp-label">Description</div><div class="dp-value">${v(p.description)}</div></div>
-      <div class="dp-grid2">
-        <div class="dp-section"><div class="dp-label">Project Manager</div><div class="dp-value">${v(p.owner_name_free||p.owner_name)}</div></div>
-        <div class="dp-section"><div class="dp-label">Department</div><div class="dp-value">${v(p.department_name)}</div></div>
+      <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin:.8rem 0 1rem">
+        <button id="proj-tab-health" onclick="switchProjectTab('health','${p.project_id}')" style="background:none;border:none;border-bottom:2px solid var(--gold);padding:.5rem 1rem;font-size:12.5px;font-weight:600;color:var(--cream);cursor:pointer;font-family:var(--font-body);margin-bottom:-1px;transition:color .15s">Health &amp; Status</button>
+        <button id="proj-tab-activities" onclick="switchProjectTab('activities','${p.project_id}')" style="background:none;border:none;border-bottom:2px solid transparent;padding:.5rem 1rem;font-size:12.5px;font-weight:500;color:var(--muted);cursor:pointer;font-family:var(--font-body);margin-bottom:-1px;transition:color .15s">Activities</button>
       </div>
-      <div class="dp-grid2">
-        <div class="dp-section"><div class="dp-label">Methodology</div><div class="dp-value">${p.methodology?`<span class="status-badge ${methCls[p.methodology]||'badge-grey'}">${esc(p.methodology)}</span>`:'—'}</div></div>
-        <div class="dp-section"><div class="dp-label">Register Type</div><div class="dp-value">${v(p.project_type)}</div></div>
-        <div class="dp-section"><div class="dp-label">Budget Source</div><div class="dp-value">${v(p.budget_source)}</div></div>
-      </div>
-      ${sh('Timeline & Budget')}
-      <div class="dp-grid2">
-        <div class="dp-section"><div class="dp-label">Start Date</div><div class="dp-value">${fmt(p.planned_start_date)}</div></div>
-        <div class="dp-section"><div class="dp-label">End Date</div><div class="dp-value">${fmt(p.planned_end_date)}</div></div>
-        <div class="dp-section"><div class="dp-label">Budget Allocated</div><div class="dp-value">${budget!=null?budget.toLocaleString()+' '+(p.budget_currency||''):'TBD'}</div></div>
-        <div class="dp-section"><div class="dp-label">Actual Spend</div><div class="dp-value">${spent!=null?spent.toLocaleString()+' '+(p.budget_currency||''):'—'}</div></div>
-        <div class="dp-section"><div class="dp-label">Budget Variance %</div><div class="dp-value" style="color:${varCol};font-weight:600">${varStr}</div></div>
-      </div>
-      ${sh('Health indicators')}
-      <div class="dp-grid2">
-        <div style="background:rgba(255,255,255,.05);border-radius:6px;padding:.6rem .9rem">
-          <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem">Schedule</div>
-          <div style="font-size:13px;font-weight:500;color:${schCol}">${schLabel}</div>
+      <div id="proj-pane-health">
+        ${sh('Project details')}
+        <div class="dp-section"><div class="dp-label">Description</div><div class="dp-value">${v(p.description)}</div></div>
+        <div class="dp-grid2">
+          <div class="dp-section"><div class="dp-label">Project Manager</div><div class="dp-value">${v(p.owner_name_free||p.owner_name)}</div></div>
+          <div class="dp-section"><div class="dp-label">Department</div><div class="dp-value">${v(p.department_name)}</div></div>
         </div>
-        <div style="background:rgba(255,255,255,.05);border-radius:6px;padding:.6rem .9rem">
-          <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem">Budget</div>
-          <div style="font-size:13px;font-weight:500;color:${budCol}">${budLabel}</div>
+        <div class="dp-grid2">
+          <div class="dp-section"><div class="dp-label">Methodology</div><div class="dp-value">${p.methodology?`<span class="status-badge ${methCls[p.methodology]||'badge-grey'}">${esc(p.methodology)}</span>`:'—'}</div></div>
+          <div class="dp-section"><div class="dp-label">Register Type</div><div class="dp-value">${v(p.project_type)}</div></div>
+          <div class="dp-section"><div class="dp-label">Budget Source</div><div class="dp-value">${v(p.budget_source)}</div></div>
         </div>
+        ${sh('Timeline & Budget')}
+        <div class="dp-grid2">
+          <div class="dp-section"><div class="dp-label">Start Date</div><div class="dp-value">${fmt(p.planned_start_date)}</div></div>
+          <div class="dp-section"><div class="dp-label">End Date</div><div class="dp-value">${fmt(p.planned_end_date)}</div></div>
+          <div class="dp-section"><div class="dp-label">Budget Allocated</div><div class="dp-value">${budget!=null?budget.toLocaleString()+' '+(p.budget_currency||''):'TBD'}</div></div>
+          <div class="dp-section"><div class="dp-label">Actual Spend</div><div class="dp-value">${spent!=null?spent.toLocaleString()+' '+(p.budget_currency||''):'—'}</div></div>
+          <div class="dp-section"><div class="dp-label">Budget Variance %</div><div class="dp-value" style="color:${varCol};font-weight:600">${varStr}</div></div>
+        </div>
+        ${sh('Health indicators')}
+        <div class="dp-grid2">
+          <div style="background:rgba(255,255,255,.05);border-radius:6px;padding:.6rem .9rem">
+            <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem">Schedule</div>
+            <div style="font-size:13px;font-weight:500;color:${schCol}">${schLabel}</div>
+          </div>
+          <div style="background:rgba(255,255,255,.05);border-radius:6px;padding:.6rem .9rem">
+            <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem">Budget</div>
+            <div style="font-size:13px;font-weight:500;color:${budCol}">${budLabel}</div>
+          </div>
+        </div>
+        ${p.status?`<div style="margin-top:.6rem"><div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem">Overall Status</div><span class="status-badge ${statusCls[statusKey]||'badge-grey'}">${statusLabel}</span></div>`:''}
+        ${sh('Linked objective')}
+        ${linkedObj?`<div class="dp-linked"><span class="code-badge">${esc(linkedObj.objective_code)}</span>${esc(linkedObj.title)}</div>`:'<div class="dp-value">—</div>'}
+        <div style="padding:.75rem 0 .25rem"><button class="btn-update" onclick="openEditModal('project','proj_${p.project_id}')"><i class="ti ti-heart-rate-monitor"></i> Update Health</button></div>
       </div>
-      ${p.status?`<div style="margin-top:.6rem"><div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem">Overall Status</div><span class="status-badge ${statusCls[statusKey]||'badge-grey'}">${statusLabel}</span></div>`:''}
-      ${sh('Linked objective')}
-      ${linkedObj?`<div class="dp-linked"><span class="code-badge">${esc(linkedObj.objective_code)}</span>${esc(linkedObj.title)}</div>`:'<div class="dp-value">—</div>'}
-      <div style="padding:.75rem 0 .25rem"><button class="btn-update" onclick="openEditModal('project','proj_${p.project_id}')"><i class="ti ti-heart-rate-monitor"></i> Update Health</button></div>`;
+      <div id="proj-pane-activities" style="display:none">
+        <div id="proj-act-list" style="margin-bottom:.85rem"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+        <button onclick="showProjectActivityForm('${p.project_id}',null)" style="background:rgba(125,211,232,.1);border:1px solid rgba(125,211,232,.25);border-radius:6px;padding:7px 14px;font-size:12px;font-weight:500;font-family:var(--font-body);color:#7dd3e8;cursor:pointer;margin-bottom:.85rem;transition:background .15s" onmouseover="this.style.background='rgba(125,211,232,.2)'" onmouseout="this.style.background='rgba(125,211,232,.1)'"><i class="ti ti-plus"></i> Add Activity</button>
+        <div id="proj-act-form" style="display:none;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:.9rem 1rem;margin-bottom:.75rem">
+          <div style="font-size:12px;font-weight:600;color:var(--cream);margin-bottom:.75rem" id="proj-act-form-title">New Activity</div>
+          <div style="margin-bottom:.6rem">
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:.3rem">Activity Name *</label>
+            <input id="pa-name" type="text" placeholder="Activity name" style="width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:5px;color:var(--cream);font-size:12.5px;padding:7px 10px;box-sizing:border-box;font-family:var(--font-body)">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.6rem">
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:.3rem">Owner Name</label>
+              <input id="pa-owner" type="text" placeholder="Owner name" style="width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:5px;color:var(--cream);font-size:12.5px;padding:7px 10px;box-sizing:border-box;font-family:var(--font-body)">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:.3rem">Due Date</label>
+              <input id="pa-due-date" type="date" style="width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:5px;color:var(--cream);font-size:12.5px;padding:7px 10px;box-sizing:border-box;font-family:var(--font-body)">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.6rem">
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:.3rem">Status</label>
+              <select id="pa-status" style="width:100%;background:rgba(30,51,58,.9);border:1px solid var(--border);border-radius:5px;color:var(--cream);font-size:12.5px;padding:7px 10px;box-sizing:border-box;font-family:var(--font-body)">
+                <option value="not_started">Not Started</option>
+                <option value="in_progress">In Progress</option>
+                <option value="complete">Complete</option>
+                <option value="overdue">Overdue</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:.3rem">Completion %</label>
+              <input id="pa-pct" type="number" min="0" max="100" value="0" style="width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:5px;color:var(--cream);font-size:12.5px;padding:7px 10px;box-sizing:border-box;font-family:var(--font-body)">
+            </div>
+          </div>
+          <div id="proj-act-form-error" style="display:none;color:#FCA5A5;font-size:11.5px;margin-bottom:.5rem"></div>
+          <div style="display:flex;gap:.5rem">
+            <button onclick="saveProjectActivity('${p.project_id}')" style="background:var(--gold);border:none;border-radius:5px;padding:7px 16px;font-size:12.5px;font-weight:600;font-family:var(--font-body);color:#1a2a30;cursor:pointer">Save</button>
+            <button onclick="resetProjectActivityForm()" style="background:none;border:1px solid var(--border);border-radius:5px;padding:7px 14px;font-size:12.5px;font-family:var(--font-body);color:var(--muted);cursor:pointer">Cancel</button>
+          </div>
+        </div>
+      </div>`;
 
   } else if (type === 'activity') {
     const a = item;
@@ -4055,7 +4102,7 @@ async function loadImprovementActions(activityId) {
     if (!listEl) return;
     listEl.innerHTML = '<span class="loading-dots"></span> Loading…';
     try {
-        const res = await fetch(`${BASE_URL}/organisations/${SESSION.org_id}/activities/${activityId}/improvement-actions`, {
+        const res = await fetch(`${API}/organisations/${SESSION.org_id}/activities/${activityId}/improvement-actions`, {
             headers: { 'Authorization': `Basic ${SESSION.token}` }
         });
         const data = await res.json();
@@ -4105,7 +4152,7 @@ async function requestAiSuggestion(activityId) {
     const aiStatus = document.getElementById('ia-ai-status');
     if (aiStatus) { aiStatus.style.display = 'flex'; }
     try {
-        const res = await fetch(`${BASE_URL}/organisations/${SESSION.org_id}/activities/${activityId}/suggest-improvement`, {
+        const res = await fetch(`${API}/organisations/${SESSION.org_id}/activities/${activityId}/suggest-improvement`, {
             method: 'POST',
             headers: { 'Authorization': `Basic ${SESSION.token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({})
@@ -4151,14 +4198,14 @@ async function saveImprovementAction(activityId) {
     try {
         let res, data;
         if (_iaEditId) {
-            res = await fetch(`${BASE_URL}/organisations/${SESSION.org_id}/activities/${activityId}/improvement-actions/${_iaEditId}`, {
+            res = await fetch(`${API}/organisations/${SESSION.org_id}/activities/${activityId}/improvement-actions/${_iaEditId}`, {
                 method: 'PATCH',
                 headers: { 'Authorization': `Basic ${SESSION.token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
         } else {
             payload.is_ai_suggested = !!document.getElementById('ia-ai-notice') && document.getElementById('ia-ai-notice').style.display !== 'none';
-            res = await fetch(`${BASE_URL}/organisations/${SESSION.org_id}/activities/${activityId}/improvement-actions`, {
+            res = await fetch(`${API}/organisations/${SESSION.org_id}/activities/${activityId}/improvement-actions`, {
                 method: 'POST',
                 headers: { 'Authorization': `Basic ${SESSION.token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -4190,6 +4237,145 @@ function resetImprovementForm() {
     if (form) form.style.display = 'none';
     const errEl = document.getElementById('ia-form-error');
     if (errEl) errEl.style.display = 'none';
+}
+
+// ── PROJECT ACTIVITIES ──
+let _paEditId = null;
+let _paData = {};
+
+function switchProjectTab(tab, projectId) {
+    const healthTab = document.getElementById('proj-tab-health');
+    const activitiesTab = document.getElementById('proj-tab-activities');
+    const healthPane = document.getElementById('proj-pane-health');
+    const activitiesPane = document.getElementById('proj-pane-activities');
+    if (!healthTab) return;
+    if (tab === 'health') {
+        healthPane.style.display = 'block';
+        activitiesPane.style.display = 'none';
+        healthTab.style.cssText = 'background:none;border:none;border-bottom:2px solid var(--gold);padding:.5rem 1rem;font-size:12.5px;font-weight:600;color:var(--cream);cursor:pointer;font-family:var(--font-body);margin-bottom:-1px;transition:color .15s';
+        activitiesTab.style.cssText = 'background:none;border:none;border-bottom:2px solid transparent;padding:.5rem 1rem;font-size:12.5px;font-weight:500;color:var(--muted);cursor:pointer;font-family:var(--font-body);margin-bottom:-1px;transition:color .15s';
+    } else {
+        healthPane.style.display = 'none';
+        activitiesPane.style.display = 'block';
+        healthTab.style.cssText = 'background:none;border:none;border-bottom:2px solid transparent;padding:.5rem 1rem;font-size:12.5px;font-weight:500;color:var(--muted);cursor:pointer;font-family:var(--font-body);margin-bottom:-1px;transition:color .15s';
+        activitiesTab.style.cssText = 'background:none;border:none;border-bottom:2px solid var(--gold);padding:.5rem 1rem;font-size:12.5px;font-weight:600;color:var(--cream);cursor:pointer;font-family:var(--font-body);margin-bottom:-1px;transition:color .15s';
+        loadProjectActivities(projectId);
+    }
+}
+
+async function loadProjectActivities(projectId) {
+    const listEl = document.getElementById('proj-act-list');
+    if (!listEl) return;
+    listEl.innerHTML = '<div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+    try {
+        const res = await fetch(`${API}/organisations/${SESSION.org_id}/projects/${projectId}/activities`, {
+            headers: { 'Authorization': `Basic ${SESSION.token}` }
+        });
+        const data = await res.json();
+        _paData[projectId] = data.activities || [];
+        renderProjectActivities(projectId, _paData[projectId]);
+    } catch (e) {
+        listEl.innerHTML = '<span style="color:#FCA5A5;font-size:.8rem">Failed to load activities.</span>';
+    }
+}
+
+function renderProjectActivities(projectId, activities) {
+    const listEl = document.getElementById('proj-act-list');
+    if (!listEl) return;
+    if (!activities.length) {
+        listEl.innerHTML = '<p style="color:var(--muted);font-size:.82rem;margin:.3rem 0 .6rem">No activities recorded for this project.</p>';
+        return;
+    }
+    const sCls = { not_started:'badge-grey', in_progress:'badge-blue', complete:'badge-green', overdue:'badge-red' };
+    const sLbl = { not_started:'Not Started', in_progress:'In Progress', complete:'Complete', overdue:'Overdue' };
+    const esc = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const fmtD = d => d ? new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
+    const rows = activities.map(a => {
+        const pct = a.completion_pct || 0;
+        const col = pct >= 100 ? '#6EE7B7' : pct >= 50 ? 'var(--gold)' : '#7dd3e8';
+        const prog = `<div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${col}"></div></div><span style="font-size:11px;color:var(--muted);white-space:nowrap">${pct}%</span></div>`;
+        return `<tr onclick="showProjectActivityForm('${projectId}','${a.activity_id}')" style="cursor:pointer" title="Click to edit">
+          <td style="font-size:12.5px;color:var(--cream);padding:.5rem .55rem">${esc(a.activity_name)}</td>
+          <td style="font-size:12px;color:var(--muted);padding:.5rem .55rem">${esc(a.owner_name||'—')}</td>
+          <td style="font-size:12px;color:var(--muted);padding:.5rem .55rem;white-space:nowrap">${fmtD(a.due_date)}</td>
+          <td style="padding:.5rem .55rem"><span class="status-badge ${sCls[a.status]||'badge-grey'}" style="font-size:.7rem">${sLbl[a.status]||a.status||'—'}</span></td>
+          <td style="padding:.5rem .55rem;min-width:80px">${prog}</td>
+        </tr>`;
+    }).join('');
+    const thStyle = 'font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:.35rem .55rem;border-bottom:1px solid var(--border)';
+    listEl.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;margin-bottom:.2rem">
+      <thead><tr>
+        <th style="${thStyle}">Activity</th><th style="${thStyle}">Owner</th>
+        <th style="${thStyle}">Due Date</th><th style="${thStyle}">Status</th><th style="${thStyle}">Progress</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+function showProjectActivityForm(projectId, activityId) {
+    const act = activityId ? (_paData[projectId]||[]).find(a => a.activity_id === activityId) : null;
+    const form = document.getElementById('proj-act-form');
+    const titleEl = document.getElementById('proj-act-form-title');
+    if (!form) return;
+    _paEditId = act ? act.activity_id : null;
+    if (titleEl) titleEl.textContent = act ? 'Edit Activity' : 'New Activity';
+    document.getElementById('pa-name').value = act ? (act.activity_name||'') : '';
+    document.getElementById('pa-owner').value = act ? (act.owner_name||'') : '';
+    document.getElementById('pa-due-date').value = act && act.due_date ? act.due_date.slice(0,10) : '';
+    document.getElementById('pa-status').value = act ? (act.status||'not_started') : 'not_started';
+    document.getElementById('pa-pct').value = act ? (act.completion_pct!=null ? act.completion_pct : 0) : 0;
+    document.getElementById('proj-act-form-error').style.display = 'none';
+    form.style.display = 'block';
+    document.getElementById('pa-name').focus();
+}
+
+async function saveProjectActivity(projectId) {
+    const name = document.getElementById('pa-name').value.trim();
+    const ownerName = document.getElementById('pa-owner').value.trim();
+    const dueDate = document.getElementById('pa-due-date').value;
+    const status = document.getElementById('pa-status').value;
+    const pct = parseInt(document.getElementById('pa-pct').value, 10) || 0;
+    const errEl = document.getElementById('proj-act-form-error');
+    if (!name) { errEl.textContent = 'Activity name is required.'; errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    const payload = { activity_name: name, status, completion_pct: pct };
+    if (ownerName) payload.owner_name = ownerName;
+    if (dueDate) payload.due_date = dueDate;
+    try {
+        let res;
+        if (_paEditId) {
+            res = await fetch(`${API}/organisations/${SESSION.org_id}/projects/${projectId}/activities/${_paEditId}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Basic ${SESSION.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } else {
+            res = await fetch(`${API}/organisations/${SESSION.org_id}/projects/${projectId}/activities`, {
+                method: 'POST',
+                headers: { 'Authorization': `Basic ${SESSION.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        }
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Save failed');
+        showToast(_paEditId ? 'Activity updated' : 'Activity created', 'success');
+        resetProjectActivityForm();
+        loadProjectActivities(projectId);
+    } catch (e) {
+        errEl.textContent = e.message || 'Save failed';
+        errEl.style.display = 'block';
+    }
+}
+
+function resetProjectActivityForm() {
+    _paEditId = null;
+    const form = document.getElementById('proj-act-form');
+    if (form) form.style.display = 'none';
+    const errEl = document.getElementById('proj-act-form-error');
+    if (errEl) errEl.style.display = 'none';
+    ['pa-name','pa-owner','pa-due-date'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const s = document.getElementById('pa-status'); if (s) s.value = 'not_started';
+    const p = document.getElementById('pa-pct'); if (p) p.value = 0;
 }
 
 // ── KEYBOARD / CLICK HANDLERS ──
