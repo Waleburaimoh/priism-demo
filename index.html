@@ -644,6 +644,9 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
             <option value="in_progress">In Progress</option>
             <option value="closed">Closed</option>
           </select>
+          <select id="ia-page-dept-filter" onchange="filterIaPage()">
+            <option value="">All Departments</option>
+          </select>
         </div>
         <div id="ia-page-table"></div>
       </div>
@@ -4656,6 +4659,11 @@ async function loadIaPage() {
     if (!tableEl) return;
     tableEl.innerHTML = '<div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
     statsEl.innerHTML = '';
+    const deptSel = document.getElementById('ia-page-dept-filter');
+    if (deptSel && deptSel.options.length <= 1) {
+        const opts = Object.entries(UNIT_LABELS).map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
+        deptSel.innerHTML = `<option value="">All Departments</option>${opts}`;
+    }
     const status = document.getElementById('ia-page-status-filter')?.value || '';
     const url = `${API}/organisations/${SESSION.org_id}/improvement-actions${status ? '?status=' + encodeURIComponent(status) : ''}`;
     try {
@@ -4663,10 +4671,18 @@ async function loadIaPage() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to load');
         _iaPageData = data.actions || [];
-        renderIaPage(data.summary || {}, _iaPageData);
+        filterIaPage();
     } catch(e) {
         tableEl.innerHTML = `<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load improvement actions: ${e.message}</p>`;
     }
+}
+
+function filterIaPage() {
+    const dept = document.getElementById('ia-page-dept-filter')?.value || '';
+    const filtered = dept
+        ? _iaPageData.filter(a => (a.dept_code || a.department_code || '').toUpperCase() === dept.toUpperCase())
+        : _iaPageData;
+    renderIaPage({}, filtered);
 }
 
 function renderIaPage(summary, actions) {
