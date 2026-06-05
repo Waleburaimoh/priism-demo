@@ -3570,15 +3570,6 @@ async function submitActivityVerification() {
   btn.innerHTML = 'Submit for Verification 🔍';
 }
 
-function toggleImprovementActions(activityId) {
-  const el = document.getElementById('improvement-actions-section');
-  if (el) { el.style.display = el.style.display === 'none' ? 'block' : 'block'; el.scrollIntoView({ behavior:'smooth', block:'start' }); }
-}
-
-function loadImprovementActions(activityId) {
-  showToast('Improvement Actions loaded for this activity', 'success');
-}
-
 async function generateReport(cardId, endpoint, btn) {
   const outEl = document.getElementById(`ir-out-${cardId}`);
   const origLabel = btn.textContent;
