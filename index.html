@@ -4373,7 +4373,7 @@ function editImprovementAction(activityId, action) {
     _iaEditId = action.action_id;
     document.getElementById('ia-root-cause').value = action.root_cause || '';
     document.getElementById('ia-corrective-action').value = action.corrective_action || '';
-    document.getElementById('ia-target-date').value = action.suggested_target_date ? action.suggested_target_date.slice(0,10) : '';
+    document.getElementById('ia-target-date').value = action.target_date ? action.target_date.slice(0,10) : '';
     document.getElementById('ia-owner-name').value = action.owner_name || '';
     document.getElementById('ia-status').value = action.status || 'open';
     const notice = document.getElementById('ia-ai-notice');
@@ -4426,7 +4426,7 @@ async function saveImprovementAction(activityId) {
     errEl.style.display = 'none';
 
     const payload = { root_cause: rootCause, corrective_action: correctiveAction, status };
-    if (targetDate) payload.suggested_target_date = targetDate;
+    if (targetDate) payload.target_date = targetDate;
     if (ownerName) payload.owner_name = ownerName;
 
     try {
@@ -4695,7 +4695,7 @@ function renderIaPage(summary, actions) {
     const inProg       = summary.in_progress_count ?? actions.filter(a => a.status === 'in_progress').length;
     const closedMonth  = summary.closed_this_month ?? 0;
     const overdue      = summary.overdue_count  ?? actions.filter(a =>
-        a.status !== 'closed' && a.suggested_target_date && new Date(a.suggested_target_date) < today
+        a.status !== 'closed' && a.target_date && new Date(a.target_date) < today
     ).length;
 
     statsEl.innerHTML = `
@@ -4745,7 +4745,7 @@ function renderIaPage(summary, actions) {
           <td style="font-size:12px;color:var(--muted)">${trunc(a.root_cause, 60)}</td>
           <td style="font-size:12px;color:var(--muted)">${trunc(a.corrective_action, 60)}</td>
           <td style="font-size:12px">${esc(a.owner_name||'—')}</td>
-          <td style="font-size:12px;white-space:nowrap">${fmtDate(a.suggested_target_date, a.status)}</td>
+          <td style="font-size:12px;white-space:nowrap">${fmtDate(a.target_date, a.status)}</td>
           <td>${statusBadge(a.status)}</td>
           <td>${progImpact(a)}</td>
         </tr>
