@@ -1154,7 +1154,7 @@ let SESSION = null;
 let currentModal = null;
 let _dpMap = {};
 let _kpisData = [], _risksData = [], _projectsData = [], _objectivesData = [], _objTab = 'institutional', _objectivesTotalCount = 0;
-let _activitiesData = [], _currentPlanId = null, _planYear = null;
+let _activitiesData = [], _currentPlanId = null, _planYear = null, _iaSummaryMap = {};
 let _kpiTrendsData = [], _riskTrendsData = [], _kpiTab = 'pc', _riskTab = 'register';
 let _currentRiskId = null;
 let _treatmentRiskId = null, _treatmentOptions = null, _treatmentValidationResult = null;
@@ -1939,9 +1939,18 @@ async function loadOpplans() {
     _currentPlanId = plan.aop_id;
     _planYear = plan.plan_year;
     document.getElementById('opplan-subtitle').textContent = `Annual Operating Plan ${plan.plan_year}`;
-    const aRes = await fetch(`${API}/organisations/${SESSION.org_id}/operating-plans/${_currentPlanId}/activities`);
+    const [aRes, iaRes] = await Promise.all([
+      fetch(`${API}/organisations/${SESSION.org_id}/operating-plans/${_currentPlanId}/activities`),
+      fetch(`${API}/organisations/${SESSION.org_id}/improvement-actions/summary`).catch(() => null)
+    ]);
     const aData = await aRes.json();
     _activitiesData = aData.activities || [];
+    _iaSummaryMap = {};
+    if (iaRes) {
+      const iaData = await iaRes.json().catch(() => ({}));
+      const arr = Array.isArray(iaData) ? iaData : (iaData.summary || iaData.data || []);
+      arr.forEach(s => { if (s.activity_id) _iaSummaryMap[s.activity_id] = s; });
+    }
     renderActivities();
   } catch(e) {
     tbl.innerHTML = '<p style="padding:1rem;color:#FCA5A5;font-size:13px">Failed to load operating plans</p>';
@@ -2000,7 +2009,18 @@ function renderActivities() {
   };
   const trunc = (s,n) => s&&s.length>n?s.slice(0,n)+'…':(s||'—');
 
-  const TH = `<tr><th style="width:38px">#</th><th>Department</th><th>Objective</th><th>Core Process</th><th>Activity</th><th>KPI</th><th style="width:86px">Start</th><th style="width:86px">End</th><th style="width:100px">Status</th><th style="width:72px">%</th><th style="width:34px"></th></tr>`;
+  const iaCell = a => {
+    const s = _iaSummaryMap[a.activity_id];
+    const total = s ? (s.total || 0) : 0;
+    if (total === 0) return `<td style="font-size:12px;color:var(--muted);text-align:center">—</td><td></td><td></td>`;
+    const open = s.open || 0;
+    const ip = s.in_progress || 0;
+    return `<td style="font-size:12px;text-align:center">${total}</td>` +
+      `<td style="font-size:12px;text-align:center${open>0?';color:var(--gold-light);font-weight:500':''}">${open}</td>` +
+      `<td style="font-size:12px;text-align:center${ip>0?';color:#7dd3e8;font-weight:500':''}">${ip}</td>`;
+  };
+
+  const TH = `<tr><th style="width:38px">#</th><th>Department</th><th>Objective</th><th>Core Process</th><th>Activity</th><th>KPI</th><th style="width:86px">Start</th><th style="width:86px">End</th><th style="width:100px">Status</th><th style="width:72px">%</th><th style="width:38px">IAs</th><th style="width:44px">Open</th><th style="width:80px">In Progress</th><th style="width:34px"></th></tr>`;
 
   if (currentUnitPrefix) {
     // Flat table for single-unit view
@@ -2015,6 +2035,7 @@ function renderActivities() {
       <td style="font-size:12px">${fmtDate(a.end_date)}</td>
       <td>${statusBadge(a.status)}</td>
       <td>${prog(a.completion_pct)}</td>
+      ${iaCell(a)}
       <td onclick="event.stopPropagation();openEditModal('activity','act_${a.activity_id}')" title="Update activity" style="text-align:center"><button class="btn-sm" style="padding:3px 7px;font-size:11px;min-width:0"><i class="ti ti-edit"></i></button></td>
     </tr>`).join('');
     el.innerHTML = `<div class="section-card" style="overflow-x:auto"><table class="data-table" style="min-width:960px">${TH}${rows}</table></div>`;
@@ -2040,6 +2061,7 @@ function renderActivities() {
         <td style="font-size:12px">${fmtDate(a.end_date)}</td>
         <td>${statusBadge(a.status)}</td>
         <td>${prog(a.completion_pct)}</td>
+        ${iaCell(a)}
         <td onclick="event.stopPropagation();openEditModal('activity','act_${a.activity_id}')" title="Update activity" style="text-align:center"><button class="btn-sm" style="padding:3px 7px;font-size:11px;min-width:0"><i class="ti ti-edit"></i></button></td>
       </tr>`).join('');
       return `<div class="section-card" style="margin-bottom:.75rem">
