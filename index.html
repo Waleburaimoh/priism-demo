@@ -2910,11 +2910,7 @@ function openDetailPanel(type, key, rowEl) {
             </div>
             <div class="dp-section">
               <div class="dp-label">Status</div>
-              <select id="ia-status" onchange="handleIaStatusChange()" style="width:100%;background:rgba(30,51,58,.8);border:1px solid var(--border2);border-radius:7px;padding:8px 11px;font-size:13px;font-family:var(--font-body);color:var(--cream);outline:none">
-                <option value="open">Open</option>
-                <option value="in_progress">In Progress</option>
-                <option value="closed">Closed</option>
-              </select>
+              <select id="ia-status" onchange="handleIaStatusChange()" style="width:100%;background:rgba(30,51,58,.8);border:1px solid var(--border2);border-radius:7px;padding:8px 11px;font-size:13px;font-family:var(--font-body);color:var(--cream);outline:none"></select>
             </div>
             <div id="ia-evidence-section" style="display:none;margin-bottom:1rem">
               <div class="dp-label" style="color:var(--gold-light)">Evidence Required <span style="color:#FCA5A5">*</span></div>
@@ -4366,7 +4362,7 @@ function editImprovementAction(activityId, action) {
     document.getElementById('ia-corrective-action').value = action.corrective_action || '';
     document.getElementById('ia-target-date').value = action.target_date ? action.target_date.slice(0,10) : '';
     document.getElementById('ia-owner-name').value = action.owner_name || '';
-    document.getElementById('ia-status').value = action.status || 'open';
+    populateIaStatusOptions(action.status || 'open');
     const notice = document.getElementById('ia-ai-notice');
     if (notice) notice.style.display = action.is_ai_suggested ? 'block' : 'none';
     const evSection = document.getElementById('ia-evidence-section');
@@ -4395,7 +4391,7 @@ async function requestAiSuggestion(activityId) {
         document.getElementById('ia-corrective-action').value = data.corrective_action || '';
         document.getElementById('ia-target-date').value = data.suggested_target_date ? data.suggested_target_date.slice(0,10) : '';
         document.getElementById('ia-owner-name').value = '';
-        document.getElementById('ia-status').value = 'open';
+        populateIaStatusOptions('open');
         const notice = document.getElementById('ia-ai-notice');
         if (notice) notice.style.display = 'block';
         document.getElementById('ia-form').style.display = 'block';
@@ -4496,8 +4492,7 @@ function resetImprovementForm() {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
-    const statusEl = document.getElementById('ia-status');
-    if (statusEl) statusEl.value = 'open';
+    populateIaStatusOptions('open');
     const notice = document.getElementById('ia-ai-notice');
     if (notice) notice.style.display = 'none';
     const evSection = document.getElementById('ia-evidence-section');
@@ -4508,6 +4503,18 @@ function resetImprovementForm() {
     if (form) form.style.display = 'none';
     const errEl = document.getElementById('ia-form-error');
     if (errEl) errEl.style.display = 'none';
+}
+
+function populateIaStatusOptions(currentStatus) {
+  const sel = document.getElementById('ia-status');
+  if (!sel) return;
+  const opts = currentStatus === 'open'
+    ? [['in_progress','In Progress'],['closed','Closed']]
+    : currentStatus === 'in_progress'
+      ? [['closed','Closed']]
+      : [];
+  sel.innerHTML = opts.map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
+  if (opts.length) sel.value = opts[0][0];
 }
 
 function handleIaStatusChange() {
