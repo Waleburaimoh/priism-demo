@@ -4760,6 +4760,16 @@ async function submitTransition(activityId, actionId) {
 
         loadEl.style.display = 'none';
 
+        // Re-opens don't go through AI verification — treat any 2xx as success
+        if (toStatus === 'open') {
+            resultEl.innerHTML = `<div style="background:rgba(77,114,128,.18);border:1px solid rgba(77,114,128,.4);border-radius:8px;padding:.85rem 1rem">
+              <div style="font-size:13px;font-weight:600;color:#7dd3e8;margin-bottom:.3rem">✓ Action Re-Opened</div>
+            </div>`;
+            _iaLoaded[activityId] = false;
+            setTimeout(() => loadImprovementActions(activityId), 1500);
+            return;
+        }
+
         if (data.verdict === 'VERIFIED') {
             const newStatus = data.new_status || toStatus;
             const confLine = data.confidence != null ? `<div style="font-size:11.5px;color:var(--muted);margin-top:.2rem">Confidence: ${data.confidence}%</div>` : '';
