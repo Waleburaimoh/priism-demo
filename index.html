@@ -4778,12 +4778,19 @@ async function submitTransition(activityId, actionId) {
                   <div style="font-size:13px;font-weight:600;color:#6EE7B7;margin-bottom:.3rem">✓ Improvement Action Closed</div>
                   ${ratLine}${confLine}
                 </div>`;
-                const sug = data.activity_progress_suggestion;
+                // Normalise both API shapes: nested object or flat top-level field
+                let sug = data.activity_progress_suggestion;
+                if (!sug && data.activity_progress_suggested_pct != null) {
+                    sug = { suggested_pct: data.activity_progress_suggested_pct };
+                }
                 if (sug) {
                     const sugPct = sug.suggested_pct;
+                    const progressLine = sug.current_pct != null
+                        ? `AI suggests updating <strong>${esc(sug.activity_name||'this activity')}</strong> from <strong>${sug.current_pct}%</strong> → <strong>${sugPct}%</strong>`
+                        : `AI suggests updating activity progress to <strong>${sugPct}%</strong>`;
                     progressEl.innerHTML = `<div style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.28);border-radius:8px;padding:.85rem 1rem">
                       <div style="font-size:13px;font-weight:600;color:var(--gold-light);margin-bottom:.4rem">📈 Activity Progress Impact</div>
-                      <div style="font-size:12.5px;color:var(--cream-dark);margin-bottom:.3rem">AI suggests updating <strong>${esc(sug.activity_name||'this activity')}</strong> from <strong>${sug.current_pct}%</strong> → <strong>${sugPct}%</strong></div>
+                      <div style="font-size:12.5px;color:var(--cream-dark);margin-bottom:.3rem">${progressLine}</div>
                       ${sug.reasoning ? `<div style="font-size:12px;color:var(--muted);margin-bottom:.65rem">${esc(sug.reasoning)}</div>` : ''}
                       <div id="ia-tf-prog-btns-${actionId}" style="display:flex;gap:.6rem">
                         <button onclick="applyActivityProgress('${activityId}','${actionId}',${sugPct})" style="flex:1;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.4);border-radius:6px;padding:7px 12px;font-size:12.5px;font-weight:500;font-family:var(--font-body);color:var(--gold-light);cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(201,168,76,.25)'" onmouseout="this.style.background='rgba(201,168,76,.15)'">Apply Progress Update</button>
