@@ -374,6 +374,8 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
 </div>
 <script>
 (function(){
+  // Evict any legacy localStorage gate keys left over from before the sessionStorage migration
+  ['priism_access','gate_access','gate_unlocked','priism_gate','access_granted','demo_access'].forEach(function(k){localStorage.removeItem(k);});
   if(sessionStorage.getItem('priism_access')==='granted'){
     document.getElementById('access-gate').classList.add('hidden');
   }
