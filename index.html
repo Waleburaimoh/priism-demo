@@ -4011,6 +4011,12 @@ async function generateCustomReport(btn) {
     if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `HTTP ${res.status}`); }
     const data = await res.json();
     const ts = new Date(data.generated_at).toLocaleString();
+    const reportText = data.report_text || '';
+    const hasMore = (reportText.match(/[.!?]/g) || []).length > 4;
+    const bodyDiv = `<div class="ir-output-body" id="ir-body-custom">${_reportEsc(reportText)}</div>`;
+    const fullSection = hasMore
+      ? `<button class="ir-toggle-btn" id="ir-tgl-btn-custom" onclick="_toggleFullReport('ir-tgl-custom','ir-tgl-btn-custom')">View Full Analysis &#x25bc;</button><div id="ir-tgl-custom" style="display:none">${bodyDiv}</div>`
+      : bodyDiv;
     outEl.innerHTML = `
       <div class="ir-output-header">
         <span class="ir-ts">Generated ${ts} · AI-enhanced · Review before sharing</span>
@@ -4020,7 +4026,7 @@ async function generateCustomReport(btn) {
           <button class="btn-sm" onclick="_closeReport('ir-out-custom')"><i class="ti ti-x"></i> Close</button>
         </div>
       </div>
-      <div class="ir-output-body" id="ir-body-custom">${_reportEsc(data.report_text || '')}</div>`;
+      ${fullSection}`;
   } catch(e) {
     outEl.innerHTML = `<p style="color:#FCA5A5;font-size:13px;padding:.5rem 0"><i class="ti ti-alert-circle"></i> Failed: ${_reportEsc(e.message)}</p>`;
   } finally {
