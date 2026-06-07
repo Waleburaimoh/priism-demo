@@ -1881,7 +1881,7 @@ function renderKpis() {
     : `<div class="pc-empty">No KPIs match current filter.</div>`;
 
   const objCard = (obj, kpis, expanded, pfx) => {
-    if (hasFilter && kpis.length === 0) return '';
+    if ((hasFilter || currentUnit !== 'INST') && kpis.length === 0) return '';
     const id = 'pco-' + (pfx||'inst') + '-' + obj.objective_id.replace(/-/g,'');
     const cnt = kpis.length;
     return `<div class="pc-obj-card">
