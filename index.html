@@ -1588,8 +1588,19 @@ function renderDashVisuals(filteredKpis, filteredRisks, filteredProjs, analysis)
 
   // ── 1. KPI RAG donut ──
   const rm = {};
-  ((analysis?.kpi_rag_distribution) || []).forEach(r => { rm[r.rag_status || 'No Data'] = r.count; });
-  const kpiG = rm['Green'] || 0, kpiA = rm['Amber'] || 0, kpiR = rm['Red'] || 0;
+  ((analysis?.kpi_rag_distribution) || []).forEach(r => {
+    if (!r.rag_status) return;
+    const key = r.rag_status.charAt(0).toUpperCase() + r.rag_status.slice(1).toLowerCase();
+    rm[key] = (rm[key] || 0) + (r.count || 0);
+  });
+  let kpiG = rm['Green'] || 0, kpiA = rm['Amber'] || 0, kpiR = rm['Red'] || 0;
+  if (!kpiG && !kpiA && !kpiR) {
+    filteredKpis.forEach(k => {
+      if (k.rag_status === 'Green') kpiG++;
+      else if (k.rag_status === 'Amber') kpiA++;
+      else if (k.rag_status === 'Red') kpiR++;
+    });
+  }
   const kpiTotal = filteredKpis.length;
   const kpiSegs = [{v: kpiR, c: '#e74c3c'}, {v: kpiA, c: '#f39c12'}, {v: kpiG, c: '#2ecc71'}];
   const kpiLegend = [
@@ -1603,6 +1614,7 @@ function renderDashVisuals(filteredKpis, filteredRisks, filteredProjs, analysis)
   const zc = {Critical: 0, High: 0, Medium: 0, Low: 0};
   filteredRisks.forEach(r => {
     let z = r.current_zone;
+    if (z) z = z.charAt(0).toUpperCase() + z.slice(1).toLowerCase();
     if (!z) {
       const s = (r.initial_likelihood || 0) * (r.initial_impact_overall || 0);
       if (!s) return;
