@@ -374,7 +374,7 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
 </div>
 <script>
 (function(){
-  if(localStorage.getItem('priism_access')==='granted'){
+  if(sessionStorage.getItem('priism_access')==='granted'){
     document.getElementById('access-gate').classList.add('hidden');
   }
   document.getElementById('gate-pw').addEventListener('keydown',function(e){
@@ -383,7 +383,7 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
   window.checkGate=function(){
     var pw=document.getElementById('gate-pw').value;
     if(pw==='Demo2026!'){
-      localStorage.setItem('priism_access','granted');
+      sessionStorage.setItem('priism_access','granted');
       document.getElementById('access-gate').classList.add('hidden');
     } else {
       document.getElementById('gate-error').textContent='Access denied';
