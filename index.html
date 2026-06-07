@@ -1604,11 +1604,13 @@ function renderDashVisuals(filteredKpis, filteredRisks, filteredProjs, analysis)
     });
   }
   const kpiTotal = filteredKpis.length;
-  const kpiSegs = [{v: kpiR, c: '#e74c3c'}, {v: kpiA, c: '#f39c12'}, {v: kpiG, c: '#2ecc71'}];
+  const kpiU = Math.max(0, kpiTotal - kpiG - kpiA - kpiR);
+  const kpiSegs = [{v: kpiR, c: '#e74c3c'}, {v: kpiA, c: '#f39c12'}, {v: kpiG, c: '#2ecc71'}, {v: kpiU, c: '#4a6a6a'}];
   const kpiLegend = [
     kpiG ? `<span style="font-size:11px;color:#2ecc71;letter-spacing:.2px">● ${kpiG} Green</span>` : '',
     kpiA ? `<span style="font-size:11px;color:#f39c12;letter-spacing:.2px">● ${kpiA} Amber</span>` : '',
     kpiR ? `<span style="font-size:11px;color:#e74c3c;letter-spacing:.2px">● ${kpiR} Red</span>` : '',
+    kpiU ? `<span style="font-size:11px;color:#4a6a6a;letter-spacing:.2px">● ${kpiU} Unclassified</span>` : '',
     `<span style="font-size:10px;color:var(--muted);margin-top:2px">${kpiTotal} total KPIs</span>`,
   ].filter(Boolean).join('');
 
@@ -1625,12 +1627,14 @@ function renderDashVisuals(filteredKpis, filteredRisks, filteredProjs, analysis)
     if (Object.prototype.hasOwnProperty.call(zc, z)) zc[z]++;
   });
   const riskTotal = filteredRisks.length;
-  const riskSegs = [{v: zc.Critical, c: '#e74c3c'}, {v: zc.High, c: '#ff6600'}, {v: zc.Medium, c: '#f1c40f'}, {v: zc.Low, c: '#2ecc71'}];
+  const riskU = Math.max(0, riskTotal - zc.Critical - zc.High - zc.Medium - zc.Low);
+  const riskSegs = [{v: zc.Critical, c: '#e74c3c'}, {v: zc.High, c: '#ff6600'}, {v: zc.Medium, c: '#f1c40f'}, {v: zc.Low, c: '#2ecc71'}, {v: riskU, c: '#4a6a6a'}];
   const riskLegend = [
     zc.Critical ? `<span style="font-size:11px;color:#e74c3c;letter-spacing:.2px">● ${zc.Critical} Critical</span>` : '',
     zc.High     ? `<span style="font-size:11px;color:#ff6600;letter-spacing:.2px">● ${zc.High} High</span>` : '',
     zc.Medium   ? `<span style="font-size:11px;color:#f1c40f;letter-spacing:.2px">● ${zc.Medium} Medium</span>` : '',
     zc.Low      ? `<span style="font-size:11px;color:#2ecc71;letter-spacing:.2px">● ${zc.Low} Low</span>` : '',
+    riskU       ? `<span style="font-size:11px;color:#4a6a6a;letter-spacing:.2px">● ${riskU} Unclassified</span>` : '',
     `<span style="font-size:10px;color:var(--muted);margin-top:2px">${riskTotal} total risks</span>`,
   ].filter(Boolean).join('');
 
@@ -1644,12 +1648,14 @@ function renderDashVisuals(filteredKpis, filteredRisks, filteredProjs, analysis)
     else if (s === 'on_hold' || s === 'on hold') sc.on_hold++;
   });
   const projTotal = filteredProjs.length;
-  const projSegs = [{v: sc.active, c: '#00d4aa'}, {v: sc.pipeline, c: '#3a9a8a'}, {v: sc.on_hold, c: '#557a73'}, {v: sc.completed, c: '#7de8d8'}];
+  const projU = Math.max(0, projTotal - sc.active - sc.pipeline - sc.on_hold - sc.completed);
+  const projSegs = [{v: sc.active, c: '#00d4aa'}, {v: sc.pipeline, c: '#3a9a8a'}, {v: sc.on_hold, c: '#557a73'}, {v: sc.completed, c: '#7de8d8'}, {v: projU, c: '#4a6a6a'}];
   const projLegend = [
     sc.active    ? `<span style="font-size:11px;color:#00d4aa;letter-spacing:.2px">● ${sc.active} Active</span>` : '',
     sc.pipeline  ? `<span style="font-size:11px;color:#3a9a8a;letter-spacing:.2px">● ${sc.pipeline} Pipeline</span>` : '',
     sc.on_hold   ? `<span style="font-size:11px;color:#557a73;letter-spacing:.2px">● ${sc.on_hold} On Hold</span>` : '',
     sc.completed ? `<span style="font-size:11px;color:#7de8d8;letter-spacing:.2px">● ${sc.completed} Completed</span>` : '',
+    projU        ? `<span style="font-size:11px;color:#4a6a6a;letter-spacing:.2px">● ${projU} Unclassified</span>` : '',
     `<span style="font-size:10px;color:var(--muted);margin-top:2px">${projTotal} total projects</span>`,
   ].filter(Boolean).join('');
 
