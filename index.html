@@ -334,6 +334,8 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
   #print-frame .pf-ts{font-size:9pt;color:#555;margin-bottom:14pt;border-bottom:1pt solid #ccc;padding-bottom:6pt}
   #print-frame .pf-body{font-size:11pt;line-height:1.75}
   #print-frame .pf-body br{display:block;margin-bottom:3pt}
+  #print-frame .ir-toggle-btn{display:none!important}
+  #print-frame div[id^="ir-tgl-"]{display:block!important}
 }
 
 /* ── ACCESS GATE ── */
@@ -3882,6 +3884,75 @@ function _toggleFullReport(fullId, btnId) {
   btn.textContent = open ? 'Hide Analysis ▲' : 'View Full Analysis ▼';
 }
 
+function _renderCustomChart(cd) {
+  if (!cd) return '';
+  const esc = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  switch (cd.primaryDomain) {
+    case 'kpi':
+      return _svgStackedBar(cd.kpi,
+        [{key:'green',col:'#10B981',lbl:'On Track'},
+         {key:'amber',col:'#F59E0B',lbl:'Amber'},
+         {key:'red',col:'#EF4444',lbl:'Off Track'},
+         {key:'unclassified',col:'rgba(255,255,255,.18)',lbl:'No Data'}],
+        'KPI Performance');
+    case 'risk': {
+      const tot = (cd.risk.critical||0)+(cd.risk.high||0)+(cd.risk.medium||0)+(cd.risk.low||0);
+      if (!tot) return '';
+      const segs = [
+        {value:cd.risk.critical,color:'#EF4444',label:'Critical'},
+        {value:cd.risk.high,color:'#F97316',label:'High'},
+        {value:cd.risk.medium,color:'#F59E0B',label:'Medium'},
+        {value:cd.risk.low,color:'#10B981',label:'Low'},
+      ];
+      const paths = _svgDonutPaths(segs, tot, 80, 80, 65, 42);
+      const legend = segs.filter(s=>s.value>0).map(s=>
+        `<div style="display:flex;align-items:center;gap:.3rem;font-size:11px;color:var(--cream-dark)">
+           <span style="width:9px;height:9px;border-radius:50%;background:${s.color};flex-shrink:0;display:inline-block"></span>
+           ${esc(s.label)} <span style="color:var(--muted);margin-left:.1rem">${s.value}</span>
+         </div>`).join('');
+      return `<div class="ir-chart-wrap">
+        <div class="ir-chart-label">Risk Exposure</div>
+        <div style="display:flex;align-items:center;gap:.9rem;flex-wrap:wrap">
+          <svg viewBox="0 0 160 160" style="width:110px;height:110px;flex-shrink:0;display:block">
+            ${paths}
+            <text x="80" y="76" text-anchor="middle" font-size="22" font-weight="700" fill="#e8dcc8" font-family="inherit">${tot}</text>
+            <text x="80" y="94" text-anchor="middle" font-size="9" fill="#9CA3AF" font-family="inherit">TOTAL</text>
+          </svg>
+          <div style="display:flex;flex-direction:column;gap:.38rem">${legend}</div>
+        </div>
+      </div>`;
+    }
+    case 'projects':
+      return _svgStackedBar(cd.projects,
+        [{key:'active',col:'#00d4aa',lbl:'Active'},
+         {key:'completed',col:'#10B981',lbl:'Completed'},
+         {key:'pipeline',col:'rgba(201,168,76,.45)',lbl:'Pipeline'}],
+        'Project Portfolio');
+    default: {
+      const kpiGreenPct = cd.kpi.total > 0 ? Math.round((cd.kpi.green / cd.kpi.total) * 100) : 0;
+      const highCrit    = (cd.risk.critical||0) + (cd.risk.high||0);
+      const kpiColor  = kpiGreenPct >= 70 ? 'green' : kpiGreenPct >= 50 ? 'amber' : 'red';
+      const riskColor = highCrit === 0 ? 'green' : highCrit <= 3 ? 'amber' : 'red';
+      const colMap = {green:'#10B981',amber:'#F59E0B',red:'#EF4444',teal:'#00d4aa',gold:'#C9A84C'};
+      const bgMap  = {green:'rgba(16,185,129,.1)',amber:'rgba(245,158,11,.1)',red:'rgba(239,68,68,.1)',teal:'rgba(0,212,170,.1)',gold:'rgba(201,168,76,.1)'};
+      const brMap  = {green:'rgba(16,185,129,.25)',amber:'rgba(245,158,11,.25)',red:'rgba(239,68,68,.25)',teal:'rgba(0,212,170,.25)',gold:'rgba(201,168,76,.25)'};
+      const cards = [
+        {value:`${kpiGreenPct}%`,    label:'KPIs On Track',      color:kpiColor},
+        {value:highCrit,             label:'High/Critical Risks', color:riskColor},
+        {value:cd.projects.active,   label:'Active Projects',     color:'teal'},
+        {value:cd.objectives.total,  label:'Objectives',          color:'gold'},
+      ];
+      return '<div class="ir-stat-cards">' + cards.map(c => {
+        const col=colMap[c.color], bg=bgMap[c.color], br=brMap[c.color];
+        return `<div class="ir-stat-card" style="background:${bg};border:1px solid ${br};border-top:3px solid ${col}">
+          <div class="ir-stat-val" style="color:${col}">${esc(String(c.value))}</div>
+          <div class="ir-stat-lbl">${esc(c.label)}</div>
+        </div>`;
+      }).join('') + '</div>';
+    }
+  }
+}
+
 function _renderReportData(rd) {
   const esc = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const colHex = { red:'#EF4444', amber:'#F59E0B', green:'#10B981', blue:'#6366F1' };
@@ -4014,6 +4085,7 @@ async function generateCustomReport(btn) {
     const data = await res.json();
     const ts = new Date(data.generated_at).toLocaleString();
     const reportText = data.report_text || '';
+    const chartHtml  = data.chart_data ? _renderCustomChart(data.chart_data) : '';
     const hasMore = (reportText.match(/[.!?]/g) || []).length > 4;
     const bodyDiv = `<div class="ir-output-body" id="ir-body-custom">${_reportEsc(reportText)}</div>`;
     const fullSection = hasMore
@@ -4024,11 +4096,14 @@ async function generateCustomReport(btn) {
         <span class="ir-ts">Generated ${ts} · AI-enhanced · Review before sharing</span>
         <div style="display:flex;gap:.4rem;flex-shrink:0">
           <button class="btn-sm" onclick="_copyText(document.getElementById('ir-body-custom').textContent, this)"><i class="ti ti-copy"></i> Copy</button>
-          <button class="btn-sm" onclick="_printReport('ir-body-custom','ir-card-custom','${ts}')"><i class="ti ti-printer"></i> Print</button>
+          <button class="btn-sm" onclick="_printReport('ir-custom-printzone','ir-card-custom','${ts}')"><i class="ti ti-printer"></i> Print</button>
           <button class="btn-sm" onclick="_closeReport('ir-out-custom')"><i class="ti ti-x"></i> Close</button>
         </div>
       </div>
-      ${fullSection}`;
+      <div id="ir-custom-printzone">
+        ${chartHtml}
+        ${fullSection}
+      </div>`;
   } catch(e) {
     outEl.innerHTML = `<p style="color:#FCA5A5;font-size:13px;padding:.5rem 0"><i class="ti ti-alert-circle"></i> Failed: ${_reportEsc(e.message)}</p>`;
   } finally {
