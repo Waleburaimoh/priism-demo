@@ -4017,7 +4017,7 @@ async function generateCustomReport(btn) {
     const hasMore = (reportText.match(/[.!?]/g) || []).length > 4;
     const bodyDiv = `<div class="ir-output-body" id="ir-body-custom">${_reportEsc(reportText)}</div>`;
     const fullSection = hasMore
-      ? `<button class="ir-toggle-btn" id="ir-tgl-btn-custom" onclick="_toggleFullReport('ir-tgl-custom','ir-tgl-btn-custom')">View Full Analysis &#x25bc;</button><div id="ir-tgl-custom" style="display:none">${bodyDiv}</div>`
+      ? `<button class="ir-toggle-btn" id="ir-tgl-btn-custom" onclick="_toggleFullReport('ir-tgl-custom','ir-tgl-btn-custom')">Hide Analysis &#x25b2;</button><div id="ir-tgl-custom" style="display:block">${bodyDiv}</div>`
       : bodyDiv;
     outEl.innerHTML = `
       <div class="ir-output-header">
