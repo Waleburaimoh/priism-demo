@@ -179,6 +179,30 @@ body{font-family:var(--font-body);background:var(--teal-dark);color:var(--cream)
 .dot:nth-child(3){animation-delay:.4s}
 @keyframes pulse{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
 
+/* ── STRATEGY ENGINE ── */
+.strat-stage-card{cursor:pointer;transition:border-color .15s,background .15s}
+.strat-stage-card:hover{background:var(--surface2)}
+.strat-stage-card.strat-locked{cursor:not-allowed;opacity:.65}
+.strat-stage-card.strat-active{border-color:var(--border2);box-shadow:0 0 0 1px var(--border2)}
+.strat-item-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem 1.2rem}
+.strat-item-card.confirmed{border-color:rgba(16,185,129,.38)}
+.strat-field{margin-bottom:.7rem}
+.strat-field label{font-size:10px;color:var(--gold);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;display:block;font-weight:500;opacity:.8}
+.strat-ta{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:7px;padding:8px 11px;font-size:12.5px;font-family:var(--font-body);color:var(--cream);outline:none;resize:vertical;min-height:64px;line-height:1.55;transition:border-color .2s}
+.strat-ta:focus{border-color:var(--gold)}
+.strat-ta:disabled{opacity:.72;border-color:var(--border);resize:none;cursor:default}
+.strat-in{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:7px;padding:8px 11px;font-size:13px;font-family:var(--font-body);color:var(--cream);outline:none}
+.strat-in:focus{border-color:var(--gold)}
+.strat-in:disabled{opacity:.72;cursor:default}
+.strat-in option{background:var(--teal-dark)}
+.strat-int{font-size:10.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;padding:3px 10px;border-radius:20px}
+.strat-int-High{background:rgba(239,68,68,.14);color:#FCA5A5;border:1px solid rgba(239,68,68,.3)}
+.strat-int-Medium{background:rgba(251,146,60,.13);color:#FDBA74;border:1px solid rgba(251,146,60,.3)}
+.strat-int-Low{background:rgba(16,185,129,.13);color:#6EE7B7;border:1px solid rgba(16,185,129,.3)}
+.strat-swot-grid{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+.strat-src-tag{display:inline-block;font-size:10px;font-weight:500;letter-spacing:.4px;color:var(--gold-light);background:rgba(201,168,76,.1);border:1px solid var(--border);border-radius:20px;padding:2px 9px;margin:0 4px 4px 0}
+.strat-err{background:rgba(239,68,68,.09);border:1px solid rgba(239,68,68,.28);border-radius:8px;padding:.8rem 1rem;font-size:12.5px;color:#FCA5A5;display:flex;align-items:center;gap:.8rem;justify-content:space-between}
+
 .dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
 
 /* ── DETAIL PANEL ── */
@@ -707,7 +731,7 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
           <div class="page-title">Strategy Development</div>
           <div class="page-subtitle">PRiiSM guided methodology — from environmental scan to operational execution</div>
         </div>
-        <span class="status-badge badge-gold" style="font-size:11px;padding:5px 13px;letter-spacing:.5px">Phase 2 — Coming Soon</span>
+        <span class="status-badge badge-green" style="font-size:11px;padding:5px 13px;letter-spacing:.5px">Stages 1–3 Live</span>
       </div>
       <div class="page-body">
 
@@ -734,37 +758,37 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
         <!-- Stages 1–5 -->
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.65rem;margin-bottom:1.1rem">
 
-          <!-- Stage 1 -->
-          <div class="section-card" style="padding:.9rem 1rem;border-top:2px solid var(--gold)">
+          <!-- Stage 1 — PESTLE (live) -->
+          <div id="strat-stage-card-1" class="section-card strat-stage-card" style="padding:.9rem 1rem;border-top:2px solid var(--gold)" onclick="stratOpenStage(1)">
             <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.6rem">
               <div style="width:28px;height:28px;border-radius:50%;background:rgba(201,168,76,.15);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--gold);font-family:var(--font-display);flex-shrink:0">1</div>
-              <i class="ti ti-eye" style="font-size:15px;color:var(--gold);opacity:.7"></i>
-            </div>
-            <div style="font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--cream);margin-bottom:.4rem;line-height:1.3">Mission, Vision &amp; Values</div>
-            <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:.75rem">Establish organisational purpose, define the vision for the strategic period, and conduct a values audit with stakeholder alignment.</div>
-            <span class="status-badge badge-gold" style="font-size:10px;padding:2px 8px">Phase 2 — Coming Soon</span>
-          </div>
-
-          <!-- Stage 2 -->
-          <div class="section-card" style="padding:.9rem 1rem;border-top:2px solid var(--gold)">
-            <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.6rem">
-              <div style="width:28px;height:28px;border-radius:50%;background:rgba(201,168,76,.15);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--gold);font-family:var(--font-display);flex-shrink:0">2</div>
               <i class="ti ti-world" style="font-size:15px;color:var(--gold);opacity:.7"></i>
             </div>
-            <div style="font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--cream);margin-bottom:.4rem;line-height:1.3">External Analysis</div>
-            <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:.75rem">PESTLE analysis, Porter's Five Forces, competitor benchmarking, and structured Opportunities &amp; Threats summary for the board.</div>
-            <span class="status-badge badge-gold" style="font-size:10px;padding:2px 8px">Phase 2 — Coming Soon</span>
+            <div style="font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--cream);margin-bottom:.4rem;line-height:1.3">PESTLE Analysis</div>
+            <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:.75rem">AI-assisted macro-environmental scan — global, regional and sector-level trends across six external factors.</div>
+            <span id="strat-stage-badge-1" class="status-badge badge-green" style="font-size:10px;padding:2px 8px">Live</span>
           </div>
 
-          <!-- Stage 3 -->
-          <div class="section-card" style="padding:.9rem 1rem;border-top:2px solid var(--gold)">
+          <!-- Stage 2 — Porter's Five Forces (live) -->
+          <div id="strat-stage-card-2" class="section-card strat-stage-card" style="padding:.9rem 1rem;border-top:2px solid var(--gold)" onclick="stratOpenStage(2)">
+            <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.6rem">
+              <div style="width:28px;height:28px;border-radius:50%;background:rgba(201,168,76,.15);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--gold);font-family:var(--font-display);flex-shrink:0">2</div>
+              <i class="ti ti-chart-radar" style="font-size:15px;color:var(--gold);opacity:.7"></i>
+            </div>
+            <div style="font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--cream);margin-bottom:.4rem;line-height:1.3">Porter's Five Forces</div>
+            <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:.75rem">Sector-level competitive dynamics assessment — five forces rated by intensity, grounded in the PESTLE scan.</div>
+            <span id="strat-stage-badge-2" class="status-badge badge-green" style="font-size:10px;padding:2px 8px">Live</span>
+          </div>
+
+          <!-- Stage 3 — SWOT (live) -->
+          <div id="strat-stage-card-3" class="section-card strat-stage-card" style="padding:.9rem 1rem;border-top:2px solid var(--gold)" onclick="stratOpenStage(3)">
             <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.6rem">
               <div style="width:28px;height:28px;border-radius:50%;background:rgba(201,168,76,.15);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--gold);font-family:var(--font-display);flex-shrink:0">3</div>
-              <i class="ti ti-building" style="font-size:15px;color:var(--gold);opacity:.7"></i>
+              <i class="ti ti-layout-grid" style="font-size:15px;color:var(--gold);opacity:.7"></i>
             </div>
-            <div style="font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--cream);margin-bottom:.4rem;line-height:1.3">Internal Analysis</div>
-            <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:.75rem">Document-driven, benchmark-based Strengths &amp; Weaknesses assessment per functional area with maturity scoring.</div>
-            <span class="status-badge badge-gold" style="font-size:10px;padding:2px 8px">Phase 2 — Coming Soon</span>
+            <div style="font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--cream);margin-bottom:.4rem;line-height:1.3">SWOT Synthesis</div>
+            <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:.75rem">Internal strengths and weaknesses, with opportunities and threats derived from the confirmed external analyses.</div>
+            <span id="strat-stage-badge-3" class="status-badge badge-green" style="font-size:10px;padding:2px 8px">Live</span>
           </div>
 
           <!-- Stage 4 -->
@@ -858,10 +882,13 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
 
         </div>
 
+        <!-- Strategy Engine workspace -->
+        <div id="strat-workspace" style="margin-bottom:1.4rem"></div>
+
         <!-- Footer note -->
         <div style="text-align:center;padding:.9rem 1rem;background:rgba(201,168,76,.04);border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--muted)">
           <i class="ti ti-info-circle" style="color:var(--gold);margin-right:.4rem"></i>
-          Stages 1–5 form the <strong style="color:var(--cream)">Strategy Design</strong> phase · Stages 6–10 form the <strong style="color:var(--cream)">Strategy Execution &amp; Governance</strong> phase · All stages available in PRiiSM Phase 2
+          Stages 1–5 form the <strong style="color:var(--cream)">Strategy Design</strong> phase · Stages 6–10 form the <strong style="color:var(--cream)">Strategy Execution &amp; Governance</strong> phase · Stages 1–3 are live now — remaining stages arrive in PRiiSM Phase 2
         </div>
 
       </div>
@@ -1524,6 +1551,7 @@ function showPage(page) {
   if (page==='projects')  loadProjects();
   if (page==='opplans')   loadOpplans();
   if (page==='analysis')  loadAnalysis();
+  if (page==='strategy')  loadStrategyEngine();
 }
 
 function setUnit(unit) {
@@ -5767,6 +5795,437 @@ function closeObefKpiDetail() {
   document.getElementById('obef-detail-overlay').classList.remove('open');
   document.getElementById('obef-detail-body').innerHTML = '';
   document.getElementById('obef-detail-banner').innerHTML = '';
+}
+
+// ── STRATEGY DEVELOPMENT ENGINE (Stages 1–3: PESTLE → Porter's → SWOT) ──
+const STRAT_FACTORS   = ['Political','Economic','Social','Technological','Legal','Environmental'];
+const STRAT_FORCES    = ['Competitive Rivalry','Threat of New Entrants','Threat of Substitutes','Bargaining Power of Suppliers','Bargaining Power of Buyers'];
+const STRAT_QUADRANTS = ['Strength','Weakness','Opportunity','Threat'];
+const STRAT_FACTOR_ICONS = {Political:'building-bank',Economic:'coin',Social:'users-group',Technological:'cpu',Legal:'scale',Environmental:'leaf'};
+const STRAT_QUAD_STYLE = {Strength:['#10B981','ti-arrow-up-right'],Weakness:['#EF4444','ti-arrow-down-right'],Opportunity:['#C9A84C','ti-sparkles'],Threat:['#FB923C','ti-alert-triangle']};
+const STRAT_PESTLE_FIELDS = [['global_trends','Global Trends'],['regional_national_trends','Regional / National Trends'],['sector_implications','Sector Implications'],['institutional_implications','Institutional Implications']];
+
+let _stratOrg = null;
+let _stratSession = null;
+let _stratPestle = [];
+let _stratPorters = [];
+let _stratSwot = [];
+let _stratStage = 1;
+let _stratEditing = {};
+let _stratPendingCtx = null;
+
+function stratEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function stratVal(id){ const el=document.getElementById(id); return el?el.value.trim():''; }
+function stratParse(row){ try { return JSON.parse(row.user_edited_content || row.ai_generated_content || '{}') || {}; } catch { return {}; } }
+
+async function stratFetch(path, opts){
+  const res = await fetch(`${API}/organisations/${SESSION.org_id}/strategy${path}`, opts);
+  let d = {}; try { d = await res.json(); } catch {}
+  if (!res.ok) throw new Error(d.error || `Request failed (${res.status})`);
+  return d;
+}
+
+function stratCounts(){ return { p:_stratPestle.filter(r=>r.confirmed).length, f:_stratPorters.filter(r=>r.confirmed).length, q:_stratSwot.filter(r=>r.confirmed).length }; }
+function stratStageComplete(n){ const c=stratCounts(); return n===1 ? c.p>=6 : n===2 ? c.f>=5 : c.q>=4; }
+function stratStageUnlocked(n){ return n===1 || stratStageComplete(n-1); }
+function stratDefaultStage(){ return !stratStageComplete(1) ? 1 : !stratStageComplete(2) ? 2 : 3; }
+
+async function loadStrategyEngine(){
+  const ws = document.getElementById('strat-workspace');
+  ws.innerHTML = '<div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  try {
+    if (!_stratOrg) {
+      const od = await (await fetch(`${API}/organisations/${SESSION.org_id}`)).json();
+      _stratOrg = od.organisation || od;
+    }
+    const list = await stratFetch('/sessions');
+    const latest = (list.sessions || [])[0];
+    if (latest) {
+      const d = await stratFetch(`/sessions/${latest.session_id}`);
+      _stratSession = d.session; _stratPestle = d.pestle || []; _stratPorters = d.porters || []; _stratSwot = d.swot || [];
+    } else {
+      _stratSession = null; _stratPestle = []; _stratPorters = []; _stratSwot = [];
+    }
+    _stratStage = stratDefaultStage();
+    renderStratAll();
+  } catch (err) {
+    ws.innerHTML = `<div class="strat-err"><span><i class="ti ti-alert-circle"></i> Failed to load Strategy Development data: ${stratEsc(err.message)}</span><button class="btn-sm" onclick="loadStrategyEngine()"><i class="ti ti-refresh"></i> Retry</button></div>`;
+  }
+}
+
+function renderStratAll(){ refreshStratStageCards(); renderStratWorkspace(); }
+
+function refreshStratStageCards(){
+  for (let n=1; n<=3; n++){
+    const card = document.getElementById('strat-stage-card-'+n);
+    const badge = document.getElementById('strat-stage-badge-'+n);
+    if (!card || !badge) continue;
+    const unlocked = stratStageUnlocked(n);
+    card.classList.toggle('strat-locked', !unlocked);
+    card.classList.toggle('strat-active', _stratStage===n);
+    const rows = n===1?_stratPestle : n===2?_stratPorters : _stratSwot;
+    const total = n===1?6 : n===2?5 : 4;
+    const done = rows.filter(r=>r.confirmed).length;
+    badge.style.cssText = 'font-size:10px;padding:2px 8px';
+    if (!unlocked)                    { badge.className='status-badge badge-grey';  badge.innerHTML='<i class="ti ti-lock"></i> Locked'; }
+    else if (stratStageComplete(n))   { badge.className='status-badge badge-green'; badge.innerHTML='<i class="ti ti-circle-check"></i> Complete'; }
+    else if (rows.length)             { badge.className='status-badge badge-amber'; badge.textContent=`In Progress — ${done}/${total} confirmed`; }
+    else                              { badge.className='status-badge badge-gold';  badge.textContent='Not Started'; }
+  }
+}
+
+function stratOpenStage(n){
+  if (!stratStageUnlocked(n)){
+    showToast(n===2 ? 'Complete and confirm all six PESTLE factors in Stage 1 first' : "Complete and confirm all five forces in Stage 2 first", 'error');
+    return;
+  }
+  _stratStage = n;
+  renderStratAll();
+  document.getElementById('strat-workspace').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function stratHeaderStrip(){
+  if (!_stratSession) return '';
+  const s = _stratSession;
+  const allDone = stratStageComplete(1) && stratStageComplete(2) && stratStageComplete(3);
+  const statusBadge = allDone
+    ? '<span class="status-badge badge-green" style="font-size:10.5px;padding:3px 10px"><i class="ti ti-circle-check"></i> Analysis Complete</span>'
+    : '<span class="status-badge badge-amber" style="font-size:10.5px;padding:3px 10px">In Progress</span>';
+  return `<div class="section-card" style="padding:.8rem 1.2rem;margin-bottom:.9rem;display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap">
+    <div style="font-family:var(--font-display);font-size:16.5px;font-weight:500;color:var(--cream)">${stratEsc(s.session_name || 'Strategy Session')}</div>
+    <div style="font-size:11.5px;color:var(--muted)"><i class="ti ti-category" style="color:var(--gold);margin-right:4px"></i>${stratEsc(s.sector || '—')}</div>
+    <div style="font-size:11.5px;color:var(--muted)"><i class="ti ti-map-pin" style="color:var(--gold);margin-right:4px"></i>${stratEsc(s.country || 'UAE')} · ${stratEsc(s.region || 'Middle East')}</div>
+    <div style="margin-left:auto">${statusBadge}</div>
+  </div>`;
+}
+
+function renderStratWorkspace(){
+  const ws = document.getElementById('strat-workspace');
+  const titles = {
+    1:['Stage 1 — PESTLE Analysis','Macro-environmental scan: global trends, regional and national trends, sector and institutional implications'],
+    2:["Stage 2 — Porter's Five Forces",'Sector-level competitive dynamics, each force rated by intensity'],
+    3:['Stage 3 — SWOT Synthesis','Internal strengths and weaknesses; opportunities and threats derived from the external analyses']
+  };
+  const tabs = [1,2,3].map(n=>{
+    const unlocked = stratStageUnlocked(n);
+    const label = n===1 ? '1 · PESTLE' : n===2 ? "2 · Porter's" : '3 · SWOT';
+    const tick = stratStageComplete(n) ? ' <i class="ti ti-circle-check" style="color:#6EE7B7"></i>' : '';
+    return `<button class="btn-sm" style="${_stratStage===n?'background:rgba(201,168,76,.25);':''}${unlocked?'':'opacity:.45;'}" onclick="stratOpenStage(${n})">${label}${tick}</button>`;
+  }).join('');
+  const [title, sub] = titles[_stratStage];
+  ws.innerHTML = stratHeaderStrip()
+    + `<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.9rem;gap:1rem;flex-wrap:wrap">
+        <div>
+          <div style="font-family:var(--font-display);font-size:18px;font-weight:500;color:var(--cream)">${title}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${sub}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">${tabs}</div>
+      </div>`
+    + '<div id="strat-ws-stage">' + (_stratStage===1 ? renderStratStage1() : _stratStage===2 ? renderStratStage2() : renderStratStage3()) + '</div>';
+}
+
+function stratStageLoading(msg){
+  const el = document.getElementById('strat-ws-stage');
+  if (el) el.innerHTML = `<div class="section-card" style="padding:2.4rem 1rem;text-align:center">
+    <div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    <div style="font-size:13px;color:var(--muted);font-style:italic">${stratEsc(msg)}</div>
+  </div>`;
+}
+
+function stratStageError(msg, retryCall){
+  const el = document.getElementById('strat-ws-stage');
+  if (el) el.innerHTML = `<div class="strat-err">
+    <span><i class="ti ti-alert-circle"></i> ${stratEsc(msg)}</span>
+    <span style="display:flex;gap:8px;flex-shrink:0">
+      <button class="btn-sm" onclick="${retryCall}"><i class="ti ti-refresh"></i> Retry</button>
+      <button class="btn-cancel" style="padding:6px 13px;font-size:12px" onclick="renderStratAll()">Back</button>
+    </span>
+  </div>`;
+}
+
+function stratLockedNotice(msg){
+  return `<div class="locked-notice"><i class="ti ti-lock" style="margin-right:.4rem"></i>${stratEsc(msg)}</div>`;
+}
+
+function stratRegenBar(label, fn){
+  return `<div style="display:flex;justify-content:flex-end;margin-bottom:.8rem">
+    <button class="btn-sm" onclick="${fn}"><i class="ti ti-refresh"></i> ${label}</button>
+  </div>`;
+}
+
+// ── Stage 1: PESTLE ──
+function renderStratStage1(){
+  if (!_stratPestle.length) return stratContextPanel();
+  const cards = STRAT_FACTORS.map(f => stratPestleCard(f)).join('');
+  return stratRegenBar('Regenerate PESTLE', 'stratGeneratePestle(true)')
+    + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:.9rem">${cards}</div>`;
+}
+
+function stratContextPanel(){
+  const org = _stratOrg || {};
+  const s = _stratSession;
+  const defName = s ? (s.session_name || '') : `${org.org_name || 'Organisation'} Strategic Analysis ${new Date().getFullYear()}`;
+  return `<div class="section-card" style="padding:1.2rem 1.4rem;max-width:680px">
+    <div style="font-family:var(--font-display);font-size:16px;color:var(--cream);margin-bottom:.3rem">Analysis Context</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:1.1rem">Set the context for the environmental scan. The AI will analyse global, regional and sector-level trends for your institution.</div>
+    <div class="strat-field"><label>Session Name</label><input class="strat-in" id="strat-ctx-name" value="${stratEsc(defName)}"></div>
+    <div class="strat-field"><label>Institution</label><input class="strat-in" value="${stratEsc(org.org_name || '')}" disabled></div>
+    <div class="form-row" style="margin-bottom:.7rem">
+      <div class="strat-field" style="margin-bottom:0"><label>Sector</label><input class="strat-in" id="strat-ctx-sector" value="${stratEsc(s ? (s.sector||'') : (org.sector || ''))}"></div>
+      <div class="strat-field" style="margin-bottom:0"><label>Country</label><input class="strat-in" id="strat-ctx-country" value="${stratEsc(s ? (s.country||'UAE') : 'UAE')}"></div>
+    </div>
+    <div class="strat-field"><label>Region</label><input class="strat-in" id="strat-ctx-region" value="${stratEsc(s ? (s.region||'Middle East') : 'Middle East')}"></div>
+    <div class="strat-field"><label>Additional Context (optional)</label><textarea class="strat-ta" id="strat-ctx-extra" placeholder="Mission focus, strategic priorities, any context the AI should consider…">${stratEsc(s ? (s.additional_context||'') : '')}</textarea></div>
+    <button class="btn-submit" style="display:flex;align-items:center;gap:7px" onclick="stratGeneratePestle(false)"><i class="ti ti-sparkles"></i> Generate PESTLE Analysis</button>
+  </div>`;
+}
+
+function stratPestleCard(factor){
+  const row = _stratPestle.find(r => r.factor === factor);
+  if (!row) return '';
+  const c = stratParse(row);
+  const editing = !!_stratEditing['p:'+factor];
+  const locked = row.confirmed && !editing;
+  const fields = STRAT_PESTLE_FIELDS.map(([k,label]) =>
+    `<div class="strat-field"><label>${label}</label><textarea class="strat-ta" id="strat-p-${factor}-${k}" ${locked?'disabled':''}>${stratEsc(c[k]||'')}</textarea></div>`).join('');
+  const status = row.confirmed
+    ? '<span class="status-badge badge-green" style="font-size:10px;padding:2px 8px"><i class="ti ti-circle-check"></i> Confirmed</span>'
+    : '<span class="status-badge badge-amber" style="font-size:10px;padding:2px 8px">Pending</span>';
+  const btn = locked
+    ? `<button class="btn-sm" onclick="stratToggleEdit('p:${factor}')"><i class="ti ti-pencil"></i> Edit</button>`
+    : `<button class="btn-submit" style="font-size:12px;padding:7px 15px;display:flex;align-items:center;gap:6px" onclick="stratConfirmPestle('${factor}')"><i class="ti ti-check"></i> Confirm Factor</button>`;
+  return `<div class="strat-item-card ${row.confirmed?'confirmed':''}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem">
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <i class="ti ti-${STRAT_FACTOR_ICONS[factor]}" style="color:var(--gold);font-size:16px"></i>
+        <span style="font-family:var(--font-display);font-size:15.5px;font-weight:500;color:var(--cream)">${factor}</span>
+      </div>${status}
+    </div>
+    ${fields}
+    <div style="display:flex;justify-content:flex-end;margin-top:.4rem">${btn}</div>
+  </div>`;
+}
+
+async function stratGeneratePestle(regen){
+  if (regen && !confirm('Regenerate the PESTLE analysis? Existing confirmations and edits for all six factors will be reset.')) return;
+  try {
+    if (!_stratSession){
+      const hasForm = !!document.getElementById('strat-ctx-name');
+      const payload = hasForm ? {
+        session_name: stratVal('strat-ctx-name') || null,
+        sector: stratVal('strat-ctx-sector') || null,
+        country: stratVal('strat-ctx-country') || 'UAE',
+        region: stratVal('strat-ctx-region') || 'Middle East',
+        additional_context: stratVal('strat-ctx-extra') || null
+      } : (_stratPendingCtx || {});
+      _stratPendingCtx = payload;
+      stratStageLoading('Analysing global and regional trends…');
+      _stratSession = await stratFetch('/sessions', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    } else {
+      stratStageLoading('Analysing global and regional trends…');
+    }
+    const d = await stratFetch(`/sessions/${_stratSession.session_id}/pestle/generate`, {method:'POST'});
+    _stratPestle = d.factors || [];
+    _stratEditing = {};
+    renderStratAll();
+    showToast('PESTLE analysis generated', 'success');
+  } catch (err) {
+    stratStageError('PESTLE generation failed: ' + err.message, `stratGeneratePestle(${regen?'true':'false'})`);
+  }
+}
+
+async function stratConfirmPestle(factor){
+  const row = _stratPestle.find(r => r.factor === factor);
+  if (!row) return;
+  const content = {};
+  for (const [k] of STRAT_PESTLE_FIELDS) content[k] = stratVal(`strat-p-${factor}-${k}`);
+  let orig = null; try { orig = JSON.parse(row.ai_generated_content || '{}'); } catch {}
+  const unchanged = orig && STRAT_PESTLE_FIELDS.every(([k]) => content[k] === String(orig[k]||''));
+  try {
+    const updated = await stratFetch(`/sessions/${_stratSession.session_id}/pestle/${encodeURIComponent(factor)}/confirm`,
+      {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(unchanged ? {} : {edited_content: JSON.stringify(content)})});
+    _stratPestle = _stratPestle.map(r => r.factor === factor ? updated : r);
+    delete _stratEditing['p:'+factor];
+    renderStratAll();
+    showToast(`${factor} factor confirmed`, 'success');
+  } catch (err) {
+    showToast(`Failed to confirm ${factor}: ${err.message}`, 'error');
+  }
+}
+
+function stratToggleEdit(key){ _stratEditing[key] = true; renderStratAll(); }
+
+// ── Stage 2: Porter's Five Forces ──
+function renderStratStage2(){
+  if (!stratStageUnlocked(2)) return stratLockedNotice("Complete and confirm all six PESTLE factors in Stage 1 before beginning Porter's Five Forces.");
+  if (!_stratPorters.length) return stratBeginPanel(2);
+  const cards = STRAT_FORCES.map(f => stratPorterCard(f)).join('');
+  return stratRegenBar("Regenerate Porter's Five Forces", 'stratGeneratePorters(true)')
+    + `<div style="display:grid;grid-template-columns:1fr;gap:.9rem">${cards}</div>`;
+}
+
+function stratBeginPanel(n){
+  const sector = (_stratSession && _stratSession.sector) || 'your sector';
+  const cfg = n===2
+    ? ['ti-chart-radar', "PESTLE analysis confirmed. The engine is ready to assess competitive dynamics across the five forces for " + sector + ".", "Generate Porter's Five Forces", 'stratGeneratePorters(false)']
+    : ['ti-layout-grid', "External analyses confirmed. The engine will now synthesise your strategic position — internal strengths and weaknesses, with opportunities and threats drawn from PESTLE and Porter's.", 'Generate SWOT Analysis', 'stratGenerateSwot(false)'];
+  return `<div class="section-card" style="padding:2.2rem 1.4rem;text-align:center;max-width:680px;margin:0 auto">
+    <i class="ti ${cfg[0]}" style="font-size:34px;color:var(--gold);opacity:.7;display:block;margin-bottom:.8rem"></i>
+    <div style="font-size:13px;color:var(--muted);line-height:1.65;max-width:480px;margin:0 auto 1.2rem">${stratEsc(cfg[1])}</div>
+    <button class="btn-submit" style="display:inline-flex;align-items:center;gap:7px" onclick="${cfg[3]}"><i class="ti ti-sparkles"></i> ${cfg[2]}</button>
+  </div>`;
+}
+
+function stratPorterCard(force){
+  const row = _stratPorters.find(r => r.force === force);
+  if (!row) return '';
+  const c = stratParse(row);
+  const editing = !!_stratEditing['f:'+force];
+  const locked = row.confirmed && !editing;
+  const intensity = ['High','Medium','Low'].includes(c.intensity) ? c.intensity : (row.intensity || 'Medium');
+  const fid = force.replace(/\W+/g,'-');
+  const kf = Array.isArray(c.key_factors) ? c.key_factors.join('\n') : String(c.key_factors||'');
+  const status = row.confirmed
+    ? '<span class="status-badge badge-green" style="font-size:10px;padding:2px 8px"><i class="ti ti-circle-check"></i> Confirmed</span>'
+    : '<span class="status-badge badge-amber" style="font-size:10px;padding:2px 8px">Pending</span>';
+  const intensityCtl = locked
+    ? `<span class="strat-int strat-int-${intensity}">${intensity}</span>`
+    : `<select class="strat-in" id="strat-f-${fid}-intensity" style="width:auto;padding:5px 28px 5px 11px;font-size:12px">
+        ${['High','Medium','Low'].map(v=>`<option ${v===intensity?'selected':''}>${v}</option>`).join('')}
+      </select> <span class="strat-int strat-int-${intensity}">${intensity}</span>`;
+  const btn = locked
+    ? `<button class="btn-sm" onclick="stratToggleEdit('f:${force}')"><i class="ti ti-pencil"></i> Edit</button>`
+    : `<button class="btn-submit" style="font-size:12px;padding:7px 15px;display:flex;align-items:center;gap:6px" onclick="stratConfirmPorter('${force}')"><i class="ti ti-check"></i> Confirm Force</button>`;
+  return `<div class="strat-item-card ${row.confirmed?'confirmed':''}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem;gap:.8rem;flex-wrap:wrap">
+      <span style="font-family:var(--font-display);font-size:15.5px;font-weight:500;color:var(--cream)">${force}</span>
+      <div style="display:flex;align-items:center;gap:.7rem">${intensityCtl}${status}</div>
+    </div>
+    <div class="strat-field"><label>Assessment</label><textarea class="strat-ta" id="strat-f-${fid}-assessment" ${locked?'disabled':''}>${stratEsc(c.assessment||'')}</textarea></div>
+    <div class="strat-field"><label>Key Factors (one per line)</label><textarea class="strat-ta" id="strat-f-${fid}-factors" ${locked?'disabled':''}>${stratEsc(kf)}</textarea></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:.4rem">${btn}</div>
+  </div>`;
+}
+
+async function stratGeneratePorters(regen){
+  if (regen && !confirm("Regenerate Porter's Five Forces? Existing confirmations and edits for all five forces will be reset.")) return;
+  stratStageLoading(`Assessing competitive dynamics in ${(_stratSession && _stratSession.sector) || 'your sector'}…`);
+  try {
+    const d = await stratFetch(`/sessions/${_stratSession.session_id}/porters/generate`, {method:'POST'});
+    _stratPorters = d.forces || [];
+    _stratEditing = {};
+    renderStratAll();
+    showToast("Porter's Five Forces generated", 'success');
+  } catch (err) {
+    stratStageError("Porter's Five Forces generation failed: " + err.message, `stratGeneratePorters(${regen?'true':'false'})`);
+  }
+}
+
+async function stratConfirmPorter(force){
+  const row = _stratPorters.find(r => r.force === force);
+  if (!row) return;
+  const fid = force.replace(/\W+/g,'-');
+  const content = {
+    intensity: stratVal(`strat-f-${fid}-intensity`) || (stratParse(row).intensity || row.intensity || 'Medium'),
+    assessment: stratVal(`strat-f-${fid}-assessment`),
+    key_factors: stratVal(`strat-f-${fid}-factors`).split('\n').map(s=>s.trim()).filter(Boolean)
+  };
+  let orig = null; try { orig = JSON.parse(row.ai_generated_content || '{}'); } catch {}
+  const unchanged = orig
+    && content.intensity === String(orig.intensity||'')
+    && content.assessment === String(orig.assessment||'')
+    && content.key_factors.join('\n') === (Array.isArray(orig.key_factors) ? orig.key_factors.join('\n') : '');
+  try {
+    const updated = await stratFetch(`/sessions/${_stratSession.session_id}/porters/${encodeURIComponent(force)}/confirm`,
+      {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(unchanged ? {} : {edited_content: JSON.stringify(content)})});
+    _stratPorters = _stratPorters.map(r => r.force === force ? updated : r);
+    delete _stratEditing['f:'+force];
+    renderStratAll();
+    showToast(`${force} confirmed`, 'success');
+  } catch (err) {
+    showToast(`Failed to confirm ${force}: ${err.message}`, 'error');
+  }
+}
+
+// ── Stage 3: SWOT ──
+function renderStratStage3(){
+  if (!stratStageUnlocked(3)) return stratLockedNotice("Complete and confirm all five forces in Stage 2 before beginning the SWOT synthesis.");
+  if (!_stratSwot.length) return stratBeginPanel(3);
+  const cards = STRAT_QUADRANTS.map(q => stratSwotCard(q)).join('');
+  return stratRegenBar('Regenerate SWOT', 'stratGenerateSwot(true)')
+    + `<div class="strat-swot-grid">${cards}</div>`;
+}
+
+function stratSwotCard(quadrant){
+  const row = _stratSwot.find(r => r.quadrant === quadrant);
+  if (!row) return '';
+  const c = stratParse(row);
+  const editing = !!_stratEditing['q:'+quadrant];
+  const locked = row.confirmed && !editing;
+  const [colour, icon] = STRAT_QUAD_STYLE[quadrant];
+  const points = Array.isArray(c.points) ? c.points.join('\n') : String(c.points||'');
+  const isExternal = quadrant === 'Opportunity' || quadrant === 'Threat';
+  const srcTags = isExternal && Array.isArray(c.pestle_sources) && c.pestle_sources.length
+    ? `<div style="margin-bottom:.7rem"><span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-right:6px">Source:</span>${c.pestle_sources.map(s=>`<span class="strat-src-tag">${stratEsc(s)}</span>`).join('')}</div>`
+    : '';
+  const status = row.confirmed
+    ? '<span class="status-badge badge-green" style="font-size:10px;padding:2px 8px"><i class="ti ti-circle-check"></i> Confirmed</span>'
+    : '<span class="status-badge badge-amber" style="font-size:10px;padding:2px 8px">Pending</span>';
+  const btn = locked
+    ? `<button class="btn-sm" onclick="stratToggleEdit('q:${quadrant}')"><i class="ti ti-pencil"></i> Edit</button>`
+    : `<button class="btn-submit" style="font-size:12px;padding:7px 15px;display:flex;align-items:center;gap:6px" onclick="stratConfirmSwot('${quadrant}')"><i class="ti ti-check"></i> Confirm Quadrant</button>`;
+  return `<div class="strat-item-card ${row.confirmed?'confirmed':''}" style="border-top:2px solid ${colour}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem">
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <i class="ti ${icon}" style="color:${colour};font-size:16px"></i>
+        <span style="font-family:var(--font-display);font-size:15.5px;font-weight:500;color:var(--cream)">${quadrant === 'Strength' ? 'Strengths' : quadrant === 'Weakness' ? 'Weaknesses' : quadrant === 'Opportunity' ? 'Opportunities' : 'Threats'}</span>
+        <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">${isExternal?'External':'Internal'}</span>
+      </div>${status}
+    </div>
+    ${srcTags}
+    <div class="strat-field"><label>Key Points (one per line)</label><textarea class="strat-ta" id="strat-q-${quadrant}-points" style="min-height:96px" ${locked?'disabled':''}>${stratEsc(points)}</textarea></div>
+    <div class="strat-field"><label>Narrative</label><textarea class="strat-ta" id="strat-q-${quadrant}-narrative" ${locked?'disabled':''}>${stratEsc(c.narrative||'')}</textarea></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:.4rem">${btn}</div>
+  </div>`;
+}
+
+async function stratGenerateSwot(regen){
+  if (regen && !confirm('Regenerate the SWOT analysis? Existing confirmations and edits for all four quadrants will be reset.')) return;
+  stratStageLoading('Synthesising strategic position…');
+  try {
+    const d = await stratFetch(`/sessions/${_stratSession.session_id}/swot/generate`, {method:'POST'});
+    _stratSwot = d.quadrants || [];
+    _stratEditing = {};
+    renderStratAll();
+    showToast('SWOT analysis generated', 'success');
+  } catch (err) {
+    stratStageError('SWOT generation failed: ' + err.message, `stratGenerateSwot(${regen?'true':'false'})`);
+  }
+}
+
+async function stratConfirmSwot(quadrant){
+  const row = _stratSwot.find(r => r.quadrant === quadrant);
+  if (!row) return;
+  const c = stratParse(row);
+  const content = {
+    points: stratVal(`strat-q-${quadrant}-points`).split('\n').map(s=>s.trim()).filter(Boolean),
+    narrative: stratVal(`strat-q-${quadrant}-narrative`)
+  };
+  if (Array.isArray(c.pestle_sources)) content.pestle_sources = c.pestle_sources;
+  let orig = null; try { orig = JSON.parse(row.ai_generated_content || '{}'); } catch {}
+  const unchanged = orig
+    && content.points.join('\n') === (Array.isArray(orig.points) ? orig.points.join('\n') : '')
+    && content.narrative === String(orig.narrative||'');
+  try {
+    const updated = await stratFetch(`/sessions/${_stratSession.session_id}/swot/${encodeURIComponent(quadrant)}/confirm`,
+      {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(unchanged ? {} : {edited_content: JSON.stringify(content)})});
+    _stratSwot = _stratSwot.map(r => r.quadrant === quadrant ? updated : r);
+    delete _stratEditing['q:'+quadrant];
+    renderStratAll();
+    showToast(`${quadrant} quadrant confirmed`, 'success');
+  } catch (err) {
+    showToast(`Failed to confirm ${quadrant}: ${err.message}`, 'error');
+  }
 }
 
 // ── KEYBOARD / CLICK HANDLERS ──
