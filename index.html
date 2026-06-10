@@ -1292,6 +1292,7 @@ let _treatmentRiskId = null, _treatmentOptions = null, _treatmentValidationResul
 let _editKey = null, _editType = null;
 let _pendingDetail = null;
 let _activityVerifyFile = null;
+let _kpiVerifyFile = null;
 let currentUnit = 'INST';
 let currentUnitPrefix = null; // null = Institutional (show all); otherwise the prefix code, e.g. 'CA'
 const UNIT_LABELS = {INST:'Institutional',CA:'College of Agriculture',CVM:'College of Veterinary Medicine',BA:'College of Business Administration',CL:'College of Law',CI:'College of Computing & Intelligent Systems',CS:'College of Arts Humanities & Social Sciences',COE:'Centre of Excellence',SA:'Student Affairs',AD:'Admissions & Registration',RI:'Research & Innovation',LB:'Library',FN:'Finance',PC:'Procurement',IT:'Information Technology',HR:'Human Resources',GS:'Facilities',CD:'Corporate Communications',IEA:'Institutional Effectiveness',IA:'Internal Audit',SP:'Strategy & Development',LA:'Legal Affairs',VCA:'Vice Chancellor Academic',IN:'International Relations',VCCA:'Vice Chancellor Community',VCAF:'Vice Chancellor Admin & Finance'};
@@ -3237,6 +3238,7 @@ function openEditModal(type, dpKey) {
   const btns   = { 'objective':'Save', 'kpi-actual':'Save Actual', 'risk':'Save Notes', 'project':'Update Project Health', 'activity':'Update Activity' };
   document.getElementById('edit-modal-title').textContent = titles[type] || 'Update';
   _activityVerifyFile = null;
+  _kpiVerifyFile = null;
   document.getElementById('edit-modal-body').innerHTML = getEditForm(type, item);
   const sb = document.getElementById('edit-modal-submit-btn');
   sb.disabled = false;
@@ -3246,6 +3248,13 @@ function openEditModal(type, dpKey) {
     sb.style.color = '#fff';
     sb.style.border = 'none';
     sb.onclick = submitActivityVerification;
+  } else if (type === 'kpi-actual') {
+    sb.textContent = 'Verify & Save';
+    sb.disabled = true;
+    sb.style.background = '';
+    sb.style.color = '';
+    sb.style.border = '';
+    sb.onclick = submitKpiVerification;
   } else {
     sb.textContent = btns[type] || 'Save';
     sb.style.background = '';
@@ -3299,17 +3308,18 @@ function getEditForm(type, item) {
         </div>
         <div id="ef-rag-preview" style="display:none;border-radius:6px;padding:.5rem .9rem;margin-bottom:.75rem;font-size:13px;font-weight:500"></div>
         <div class="form-group">
-          <label>Upload Evidence</label>
+          <label>Supporting Evidence <span style="font-size:11px;color:#FCA5A5;font-weight:400">(required)</span></label>
           <label for="ef-evidence-file" style="display:block;border:1.5px dashed rgba(125,211,232,.35);border-radius:8px;padding:.65rem 1rem;cursor:pointer;text-align:center;color:var(--muted);font-size:12.5px" onmouseover="this.style.borderColor='rgba(125,211,232,.65)'" onmouseout="this.style.borderColor='rgba(125,211,232,.35)'">
             <i class="ti ti-upload" style="font-size:16px;display:block;margin-bottom:.3rem;color:var(--gold)"></i>
             Click to browse &nbsp;·&nbsp; PDF, Word, Excel, Image
           </label>
-          <input type="file" id="ef-evidence-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" style="display:none" onchange="handleEvidenceFile(this)">
+          <input type="file" id="ef-evidence-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" style="display:none" onchange="handleKpiEvidenceFile(this)">
           <div id="ef-evidence-name" style="display:none;margin-top:.45rem;font-size:12.5px;color:var(--cream-dark);padding:.35rem .65rem;background:rgba(125,211,232,.08);border-radius:5px">
             <i class="ti ti-paperclip" style="color:var(--gold);margin-right:.3rem"></i><span id="ef-evidence-name-text"></span>
           </div>
-          <p style="font-size:11px;color:var(--muted);margin-top:.4rem;margin-bottom:0">File referenced for audit purposes. Full SharePoint/OneDrive integration in Phase 2.</p>
+          <p style="font-size:11px;color:var(--muted);margin-top:.4rem;margin-bottom:0">AI will verify the document supports the claimed value before saving.</p>
         </div>
+        <div id="ef-verify-result" style="display:none"></div>
       </div>`;
   }
   if (type === 'risk') {
@@ -3440,6 +3450,121 @@ function handleActivityVerifyFile(input) {
     if (nameEl && txtEl) { nameEl.style.display = 'block'; txtEl.textContent = file.name; }
   };
   reader.readAsDataURL(file);
+}
+
+function handleKpiEvidenceFile(input) {
+  const file   = input.files[0];
+  const nameEl = document.getElementById('ef-evidence-name');
+  const txtEl  = document.getElementById('ef-evidence-name-text');
+  const sb     = document.getElementById('edit-modal-submit-btn');
+  const resEl  = document.getElementById('ef-verify-result');
+  if (!file) {
+    _kpiVerifyFile = null;
+    if (nameEl) nameEl.style.display = 'none';
+    if (sb) sb.disabled = true;
+    return;
+  }
+  if (nameEl && txtEl) { nameEl.style.display = 'block'; txtEl.textContent = file.name; }
+  if (resEl) resEl.style.display = 'none';
+  const reader = new FileReader();
+  reader.onload = e => {
+    _kpiVerifyFile = { name: file.name, type: file.type || 'application/octet-stream', base64: e.target.result.split(',')[1] };
+    if (sb) sb.disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitKpiVerification() {
+  const esc   = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const btn   = document.getElementById('edit-modal-submit-btn');
+  const errEl = document.getElementById('edit-msg-error');
+  const resEl = document.getElementById('ef-verify-result');
+  if (errEl) errEl.textContent = '';
+
+  const item         = _dpMap[_editKey] || {};
+  const refreshKey   = _editKey;
+  const actualValStr = (document.getElementById('ef-actual_value')?.value || '').trim();
+  const [py, pq]     = (document.getElementById('ef-period')?.value || '2026_2').split('_').map(Number);
+
+  if (!actualValStr) { if (errEl) errEl.textContent = 'Please enter the actual value.'; return; }
+  if (!_kpiVerifyFile) { if (errEl) errEl.textContent = 'Please upload a supporting evidence file.'; return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-dots" style="padding:0;display:inline-flex;gap:3px"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> Verifying evidence…';
+  if (resEl) resEl.style.display = 'none';
+
+  try {
+    const vRes = await fetch(`${API}/organisations/${SESSION.org_id}/kpis/${item.kpi_id}/verify-actual`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        actual_value: actualValStr,
+        kpi_title:    item.title || item.kpi_name || '',
+        kpi_target:   item.target_value != null ? item.target_value : null,
+        kpi_unit:     item.unit || '',
+        period:       `Q${pq} ${py}`,
+        file_type:    _kpiVerifyFile.type,
+        file_data:    _kpiVerifyFile.base64
+      })
+    });
+    const vData = await vRes.json();
+    if (!vRes.ok) throw new Error(vData.error || `HTTP ${vRes.status}`);
+
+    const { verdict, confidence, reason } = vData;
+
+    if (verdict === 'VERIFIED') {
+      const conf = confidence != null ? Math.round(confidence) : null;
+      if (resEl) {
+        resEl.innerHTML = `<div style="border:1px solid rgba(16,185,129,.3);background:rgba(16,185,129,.08);border-radius:8px;padding:.9rem 1.1rem;margin-top:.75rem">
+          <div style="font-size:13px;font-weight:700;color:#6EE7B7;margin-bottom:.35rem">✓ Evidence Verified</div>
+          ${conf!=null?`<div style="font-size:12px;color:#6EE7B7;margin-bottom:.3rem">AI Confidence: ${conf}%</div>`:''}
+          <div style="font-size:12.5px;color:var(--cream-dark)">${esc(reason||'')}</div>
+        </div>`;
+        resEl.style.display = 'block';
+      }
+      // Save actual value with evidence fields
+      const sRes = await fetch(`${API}/organisations/${SESSION.org_id}/kpis/${item.kpi_id}/actuals`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          period_year:       py,
+          period_quarter:    pq,
+          actual_value:      actualValStr,
+          evidence_reference: _kpiVerifyFile.name,
+          evidence_verified:  true,
+          evidence_verdict:   'VERIFIED',
+          evidence_file_url:  `evidence/kpi/${item.kpi_id}/${_kpiVerifyFile.name}`
+        })
+      });
+      const sData = await sRes.json();
+      if (!sRes.ok) throw new Error(sData.error || `HTTP ${sRes.status}`);
+      if (sData.locked) throw new Error(sData.message || 'Period is locked');
+      if (sData.rag_status) {
+        item.rag_status = sData.rag_status;
+        const savedVal = parseFloat(actualValStr);
+        if (!isNaN(savedVal)) item.current_value = savedVal;
+        item.evidence_reference = _kpiVerifyFile.name;
+      }
+      await new Promise(r => setTimeout(r, 1800));
+      closeEditModal();
+      openDetailPanel('kpi', refreshKey);
+      showToast(`KPI actual saved & verified — RAG: ${sData.rag_status || 'calculated'}`, 'success');
+    } else {
+      if (resEl) {
+        resEl.innerHTML = `<div style="border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.08);border-radius:8px;padding:.9rem 1.1rem;margin-top:.75rem">
+          <div style="font-size:13px;font-weight:700;color:#FCA5A5;margin-bottom:.35rem">✗ Verification Failed</div>
+          <div style="font-size:12.5px;color:var(--cream-dark)">${esc(reason||'')}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:.5rem">Upload a different file and try again.</div>
+        </div>`;
+        resEl.style.display = 'block';
+        resEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      btn.disabled = false;
+      btn.textContent = 'Verify & Save';
+    }
+  } catch(e) {
+    if (errEl) errEl.textContent = e.message;
+    btn.disabled = false;
+    btn.textContent = 'Verify & Save';
+  }
 }
 
 async function saveRiskStrategy(el) {
