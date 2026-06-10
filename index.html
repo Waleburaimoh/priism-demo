@@ -356,6 +356,38 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
 .gate-btn:hover{opacity:.88}
 .gate-btn:active{opacity:.75}
 .gate-error{font-size:12.5px;color:#FCA5A5;margin-top:.75rem;min-height:1.2em}
+
+/* ── OBEF COMPLIANCE ── */
+.obef-pillars-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem;margin-bottom:1.4rem}
+.obef-pillar-card{background:rgba(30,51,58,.55);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;cursor:pointer;transition:border-color .2s,background .2s}
+.obef-pillar-card:hover{background:rgba(30,51,58,.75);border-color:rgba(201,168,76,.3)}
+.obef-pillar-number{font-size:10px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;opacity:.7;margin-bottom:.3rem}
+.obef-pillar-name{font-family:var(--font-display);font-size:14.5px;font-weight:600;color:var(--cream);margin-bottom:.5rem;line-height:1.3}
+.obef-pillar-meta{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);margin-bottom:.55rem}
+.obef-prog-track{width:100%;height:4px;background:rgba(255,255,255,.09);border-radius:2px;overflow:hidden;margin-top:.3rem}
+.obef-prog-fill{height:100%;border-radius:2px;transition:width .4s}
+.obef-section-hdr{display:flex;align-items:center;justify-content:space-between;padding:.7rem 1.1rem;background:rgba(30,51,58,.45);border:1px solid var(--border);border-radius:8px 8px 0 0;cursor:pointer;margin-top:.5rem}
+.obef-section-hdr-title{font-family:var(--font-display);font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+.obef-section-hdr-meta{font-size:11px;color:var(--muted);white-space:nowrap}
+.obef-section-body{border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;overflow:hidden;margin-bottom:.75rem}
+.obef-kpi-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.obef-kpi-table th{text-align:left;padding:7px 1rem;font-size:9px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--gold);border-bottom:1px solid var(--border);background:rgba(30,51,58,.28);opacity:.8}
+.obef-kpi-table td{padding:8px 1rem;border-bottom:1px solid var(--border);color:var(--cream);vertical-align:middle}
+.obef-kpi-table tr:last-child td{border-bottom:none}
+.obef-kpi-table tr:hover td{background:rgba(201,168,76,.03)}
+.obef-ref-badge{display:inline-block;font-size:10.5px;font-family:monospace;font-weight:600;padding:2px 7px;border-radius:4px;letter-spacing:.3px}
+.obef-source-badge{display:inline-flex;align-items:center;font-size:10.5px;font-weight:500;padding:2px 7px;border-radius:12px;white-space:nowrap}
+.obef-rag-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.obef-rag-green{background:#6EE7B7}
+.obef-rag-amber{background:var(--gold-light)}
+.obef-rag-red{background:#FCA5A5}
+.obef-rag-grey{background:rgba(245,240,232,.3)}
+.obef-cb-table{width:100%;border-collapse:collapse;font-size:11.5px}
+.obef-cb-table th{padding:5px 1rem;font-size:9px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--gold);background:rgba(20,40,50,.6);border-bottom:1px solid var(--border);text-align:left;opacity:.8}
+.obef-cb-table td{padding:5px 1rem;border-bottom:1px solid var(--border);color:var(--cream-dark);vertical-align:middle}
+.obef-cb-table tr:last-child td{border-bottom:none}
+.obef-header-actions{display:flex;align-items:center;gap:.65rem}
+.obef-badge-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(44,74,82,.6);border:1px solid var(--border2);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -477,6 +509,7 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
       <div class="nav-section-label">Strategy Execution</div>
       <button class="nav-item" onclick="showPage('objectives')"><i class="ti ti-target"></i> Objectives</button>
       <button class="nav-item" onclick="showPage('kpis')"><i class="ti ti-chart-line"></i> KPIs</button>
+      <button class="nav-item" onclick="showPage('obef')"><i class="ti ti-certificate"></i> OBEF Compliance</button>
       <button class="nav-item" onclick="showPage('risks')"><i class="ti ti-shield-exclamation"></i> Risks</button>
       <button class="nav-item" onclick="showPage('projects')"><i class="ti ti-clipboard-list"></i> Projects</button>
       <button class="nav-item" onclick="showPage('opplans')"><i class="ti ti-sitemap"></i> Operating Plans</button>
@@ -1241,6 +1274,28 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
       </div>
     </div>
 
+    <!-- OBEF COMPLIANCE -->
+    <div id="page-obef" class="page" style="display:none">
+      <div class="page-header">
+        <div>
+          <div class="page-title">MoHESR OBEF Compliance</div>
+          <div class="page-subtitle">Outcome-Based Evaluation Framework — 24 KPIs across 6 pillars</div>
+        </div>
+        <div class="obef-header-actions">
+          <span class="obef-badge-pill"><i class="ti ti-shield-check"></i> MoHESR OBEF v11.5</span>
+          <button class="btn-sm" onclick="openObefImportModal()"><i class="ti ti-upload"></i> Import Data</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div id="obef-loading" style="display:none"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+        <div id="obef-error" class="msg-error" style="display:none"></div>
+        <div id="obef-content" style="display:none">
+          <div id="obef-pillars-grid" class="obef-pillars-grid"></div>
+          <div id="obef-pillar-sections"></div>
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -1255,6 +1310,47 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
       <button class="btn-submit" id="modal-submit-btn" onclick="submitModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- OBEF IMPORT MODAL -->
+<div class="modal-overlay" id="obef-import-overlay">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title">Import OBEF Data</div>
+      <button class="modal-close" onclick="closeObefImportModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div id="obef-import-success" class="msg-success"></div>
+      <div id="obef-import-error" class="msg-error"></div>
+      <div class="form-group">
+        <label>Source System *</label>
+        <select id="obef-import-source" onchange="obefImportValidate()">
+          <option value="">Select source…</option>
+          <option value="banner">Banner</option>
+          <option value="canvas">Canvas</option>
+          <option value="oracle">Oracle</option>
+          <option value="mohesr">MoHESR Direct</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Academic Year * (YYYY-YYYY)</label>
+        <input type="text" id="obef-import-year" placeholder="e.g. 2024-2025" oninput="obefImportValidate()" maxlength="9">
+      </div>
+      <div class="form-group">
+        <label>Data File * (CSV)</label>
+        <input type="file" id="obef-import-file" accept=".csv,.xlsx,.xls" onchange="handleObefFile(this)" style="background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:7px;padding:7px 11px;font-size:13px;font-family:var(--font-body);color:var(--cream);width:100%">
+        <div style="font-size:10.5px;color:var(--muted);margin-top:4px">CSV format required: kpi_code, metric_name, metric_value, dept_code (optional)</div>
+      </div>
+      <div id="obef-import-preview" style="display:none;margin-top:.75rem">
+        <div style="font-size:10px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--gold);opacity:.8;margin-bottom:.4rem">Preview (first 5 rows)</div>
+        <div id="obef-import-preview-table" style="overflow-x:auto;font-size:12px"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeObefImportModal()">Cancel</button>
+      <button class="btn-submit" id="obef-import-submit" onclick="submitObefImport()" disabled>Import</button>
     </div>
   </div>
 </div>
@@ -1385,11 +1481,12 @@ function showPage(page) {
   document.querySelectorAll('.page').forEach(p => p.style.display='none');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-'+page).style.display = 'block';
-  const idx = {dashboard:0,objectives:1,kpis:2,risks:3,projects:4,opplans:5,strategy:6,stakeholder:7,roadmap:8,analysis:9};
+  const idx = {dashboard:0,objectives:1,kpis:2,obef:3,risks:4,projects:5,opplans:6,strategy:7,stakeholder:8,roadmap:9,analysis:10};
   document.querySelectorAll('.nav-item')[idx[page]]?.classList.add('active');
   if (page==='dashboard') loadDashboard();
   if (page==='objectives') loadObjectives();
   if (page==='kpis')      loadKpis();
+  if (page==='obef')      loadObefDashboard();
   if (page==='risks')     loadRisks();
   if (page==='projects')  loadProjects();
   if (page==='opplans')   loadOpplans();
@@ -5228,6 +5325,256 @@ function resetProjectActivityForm() {
     ['pa-name','pa-owner','pa-due-date'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     const s = document.getElementById('pa-status'); if (s) s.value = 'not_started';
     const p = document.getElementById('pa-pct'); if (p) p.value = 0;
+}
+
+// ── OBEF COMPLIANCE ──
+const OBEF_PILLAR_COLORS  = {1:'#2C4A52',2:'#4A7C59',3:'#C9A84C',4:'#7B5EA7',5:'#C05C3A',6:'#3A7DC0'};
+const OBEF_PILLAR_NAMES   = {1:'Employment Outcomes',2:'Learning Outcomes',3:'Industry Collaboration',4:'Research Outcomes',5:'Reputation',6:'Community Engagement'};
+const OBEF_PILLAR_WEIGHTS = {1:25,2:25,3:20,4:15,5:10,6:5};
+let obefData = null;
+let obefImportCsvRows = null;
+
+function loadObefDashboard() {
+  if (!currentOrg) return;
+  document.getElementById('obef-loading').style.display = '';
+  document.getElementById('obef-content').style.display = 'none';
+  document.getElementById('obef-error').style.display = 'none';
+  fetch(`${API}/organisations/${currentOrg}/obef/dashboard`)
+    .then(r => r.ok ? r.json() : r.json().then(e => { throw new Error(e.error || 'Failed to load'); }))
+    .then(data => {
+      obefData = data;
+      document.getElementById('obef-loading').style.display = 'none';
+      document.getElementById('obef-content').style.display = '';
+      renderObefDashboard(data);
+    })
+    .catch(err => {
+      document.getElementById('obef-loading').style.display = 'none';
+      const el = document.getElementById('obef-error');
+      el.textContent = 'Failed to load OBEF dashboard: ' + err.message;
+      el.style.display = '';
+    });
+}
+
+function obefRagDot(actual, target) {
+  if (actual == null) return `<span class="obef-rag-dot obef-rag-grey" title="Not reported"></span>`;
+  if (target == null) return `<span class="obef-rag-dot obef-rag-grey" title="No target"></span>`;
+  const pct = (actual / target) * 100;
+  if (pct >= 90) return `<span class="obef-rag-dot obef-rag-green" title="On track"></span>`;
+  if (pct >= 70) return `<span class="obef-rag-dot obef-rag-amber" title="At risk"></span>`;
+  return `<span class="obef-rag-dot obef-rag-red" title="Behind"></span>`;
+}
+
+function obefSourceBadge(source) {
+  if (!source) return `<span class="obef-source-badge" style="background:rgba(245,240,232,.07);color:var(--muted)">—</span>`;
+  const s = source.toLowerCase();
+  if (s.includes('priism') && s.includes('oracle')) {
+    return `<span class="obef-source-badge" style="background:rgba(44,74,82,.35);color:#7dd3e8;border-radius:12px 0 0 12px;padding-right:4px">PRiiSM</span><span class="obef-source-badge" style="background:rgba(251,146,60,.12);color:#fdba74;border-radius:0 12px 12px 0;padding-left:4px">Oracle</span>`;
+  }
+  if (s.includes('priism') && s.includes('banner')) {
+    return `<span class="obef-source-badge" style="background:rgba(44,74,82,.35);color:#7dd3e8;border-radius:12px 0 0 12px;padding-right:4px">PRiiSM</span><span class="obef-source-badge" style="background:rgba(59,130,246,.12);color:#93c5fd;border-radius:0 12px 12px 0;padding-left:4px">Banner</span>`;
+  }
+  const map = {
+    mohesr: ['rgba(245,240,232,.08)', 'var(--muted)',   'MoHESR'],
+    banner: ['rgba(59,130,246,.12)',   '#93c5fd',        'Banner'],
+    canvas: ['rgba(16,185,129,.12)',   '#6EE7B7',        'Canvas'],
+    oracle: ['rgba(251,146,60,.12)',   '#fdba74',        'Oracle'],
+    priism: ['rgba(44,74,82,.35)',     '#7dd3e8',        'PRiiSM'],
+  };
+  const [bg, color, label] = map[s] || ['rgba(245,240,232,.07)', 'var(--muted)', source];
+  return `<span class="obef-source-badge" style="background:${bg};color:${color}">${label}</span>`;
+}
+
+function renderObefDashboard(data) {
+  const pillars = data.pillars || [];
+  const grid     = document.getElementById('obef-pillars-grid');
+  const sections = document.getElementById('obef-pillar-sections');
+
+  grid.innerHTML = pillars.map(p => {
+    const color    = OBEF_PILLAR_COLORS[p.pillar_number] || '#4d7280';
+    const kpis     = p.kpis || [];
+    const reported = kpis.filter(k => k.inst_actual != null).length;
+    const pct      = kpis.length > 0 ? Math.round((reported / kpis.length) * 100) : 0;
+    return `<div class="obef-pillar-card" style="border-left:3px solid ${color}" onclick="scrollToPillar(${p.pillar_number})">
+      <div class="obef-pillar-number" style="color:${color}">Pillar ${p.pillar_number} &middot; ${OBEF_PILLAR_WEIGHTS[p.pillar_number]||0}%</div>
+      <div class="obef-pillar-name">${OBEF_PILLAR_NAMES[p.pillar_number]||p.pillar_name||''}</div>
+      <div class="obef-pillar-meta"><span>${kpis.length} KPI${kpis.length!==1?'s':''}</span><span>${reported} / ${kpis.length} reported</span></div>
+      <div class="obef-prog-track"><div class="obef-prog-fill" style="width:${pct}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+
+  sections.innerHTML = pillars.map(p => {
+    const color = OBEF_PILLAR_COLORS[p.pillar_number] || '#4d7280';
+    const kpis  = p.kpis || [];
+    const rows  = kpis.map(k => {
+      const hasCollege = k.college_breakdown && k.college_breakdown.length > 0;
+      const cbRows = hasCollege ? k.college_breakdown.map(c =>
+        `<tr><td>${c.dept_name||c.college||'—'}</td>
+        <td style="text-align:right">${c.target!=null?Number(c.target).toLocaleString():'—'}</td>
+        <td style="text-align:right">${c.actual!=null?Number(c.actual).toLocaleString():'<span style="color:var(--muted);font-style:italic">—</span>'}</td>
+        <td style="text-align:center">${obefRagDot(c.actual,c.target)}</td></tr>`).join('') : '';
+      return `<tr>
+        <td><span class="obef-ref-badge" style="background:${color}22;color:${color};border:1px solid ${color}44">${k.kpi_number||k.kpi_code||'—'}</span></td>
+        <td style="max-width:320px;line-height:1.4">${k.title||'—'}</td>
+        <td>${obefSourceBadge(k.source_system)}</td>
+        <td style="text-align:right;white-space:nowrap">${k.inst_target!=null?Number(k.inst_target).toLocaleString():'—'}</td>
+        <td style="text-align:right;white-space:nowrap">${k.inst_actual!=null?Number(k.inst_actual).toLocaleString():'<span style="color:var(--muted);font-style:italic;font-size:11px">Not yet reported</span>'}</td>
+        <td style="text-align:center">${obefRagDot(k.inst_actual,k.inst_target)}</td>
+        <td style="text-align:center">${hasCollege?`<button class="btn-cancel" style="font-size:11px;padding:3px 9px" onclick="toggleObefCollege('${k.kpi_id}',this)">&#9660; ${k.college_breakdown.length}</button>`:'<span style="color:var(--muted);font-size:11px">—</span>'}</td>
+      </tr>${hasCollege?`<tr id="obef-college-${k.kpi_id}" style="display:none"><td colspan="7" style="padding:0;background:rgba(20,40,50,.5)">
+        <table class="obef-cb-table"><thead><tr><th>College</th><th style="text-align:right">Target</th><th style="text-align:right">Actual</th><th style="text-align:center">RAG</th></tr></thead>
+        <tbody>${cbRows}</tbody></table></td></tr>`:''}`;
+    }).join('');
+    return `<div id="obef-pillar-${p.pillar_number}">
+      <div class="obef-section-hdr" style="border-left:3px solid ${color}" onclick="togglePillar(${p.pillar_number})">
+        <div class="obef-section-hdr-title" style="color:${color}">
+          <span>Pillar ${p.pillar_number}</span>
+          <span style="color:var(--cream);font-weight:500">${OBEF_PILLAR_NAMES[p.pillar_number]||p.pillar_name||''}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <span class="obef-section-hdr-meta">${kpis.length} KPIs &middot; ${OBEF_PILLAR_WEIGHTS[p.pillar_number]||0}% weight</span>
+          <i class="ti ti-chevron-up" id="obef-chevron-${p.pillar_number}" style="color:var(--muted);font-size:13px"></i>
+        </div>
+      </div>
+      <div id="obef-body-${p.pillar_number}" class="obef-section-body">
+        <table class="obef-kpi-table"><thead><tr>
+          <th>OBEF Ref</th><th>KPI Title</th><th>Source</th>
+          <th style="text-align:right">Inst. Target</th><th style="text-align:right">Inst. Actual</th>
+          <th style="text-align:center">RAG</th><th style="text-align:center">Colleges</th>
+        </tr></thead><tbody>${rows}</tbody></table>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function scrollToPillar(num) {
+  const el = document.getElementById('obef-pillar-' + num);
+  if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function togglePillar(num) {
+  const body    = document.getElementById('obef-body-' + num);
+  const chevron = document.getElementById('obef-chevron-' + num);
+  if (!body) return;
+  const collapsed = body.style.display === 'none';
+  body.style.display = collapsed ? '' : 'none';
+  if (chevron) chevron.className = collapsed ? 'ti ti-chevron-up' : 'ti ti-chevron-down';
+}
+
+function toggleObefCollege(kpiId, btn) {
+  const row = document.getElementById('obef-college-' + kpiId);
+  if (!row) return;
+  const hidden = row.style.display === 'none';
+  row.style.display = hidden ? '' : 'none';
+  const count = btn.textContent.trim().replace(/^[^\d]*/, '');
+  btn.innerHTML = hidden ? `&#9650; ${count}` : `&#9660; ${count}`;
+}
+
+function openObefImportModal() {
+  document.getElementById('obef-import-overlay').classList.add('open');
+  document.getElementById('obef-import-success').style.display = 'none';
+  document.getElementById('obef-import-error').style.display = 'none';
+  document.getElementById('obef-import-preview').style.display = 'none';
+  document.getElementById('obef-import-source').value = '';
+  document.getElementById('obef-import-year').value = '';
+  document.getElementById('obef-import-file').value = '';
+  document.getElementById('obef-import-submit').disabled = true;
+  obefImportCsvRows = null;
+}
+
+function closeObefImportModal() {
+  document.getElementById('obef-import-overlay').classList.remove('open');
+}
+
+function obefImportValidate() {
+  const source = document.getElementById('obef-import-source').value;
+  const year   = document.getElementById('obef-import-year').value.trim();
+  const yearOk = /^\d{4}-\d{4}$/.test(year);
+  const fileOk = obefImportCsvRows && obefImportCsvRows.length > 0;
+  document.getElementById('obef-import-submit').disabled = !(source && yearOk && fileOk);
+}
+
+function handleObefFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (/\.xlsx?$/i.test(file.name)) {
+    const el = document.getElementById('obef-import-error');
+    el.textContent = 'Please convert to CSV format';
+    el.style.display = '';
+    document.getElementById('obef-import-preview').style.display = 'none';
+    obefImportCsvRows = null;
+    obefImportValidate();
+    return;
+  }
+  document.getElementById('obef-import-error').style.display = 'none';
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.trim().split(/\r?\n/);
+    if (lines.length < 2) {
+      const el = document.getElementById('obef-import-error');
+      el.textContent = 'CSV file appears to be empty or has no data rows';
+      el.style.display = '';
+      obefImportCsvRows = null;
+      obefImportValidate();
+      return;
+    }
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''));
+    obefImportCsvRows = lines.slice(1).map(line => {
+      const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g,''));
+      const obj = {};
+      headers.forEach((h,i) => { obj[h] = vals[i] || ''; });
+      return obj;
+    });
+    const preview = obefImportCsvRows.slice(0,5);
+    const cols = headers.slice(0,6);
+    const table = `<table class="obef-cb-table" style="min-width:100%"><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${preview.map(r=>`<tr>${cols.map(c=>`<td>${r[c]||''}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    document.getElementById('obef-import-preview-table').innerHTML = table;
+    document.getElementById('obef-import-preview').style.display = '';
+    obefImportValidate();
+  };
+  reader.readAsText(file);
+}
+
+function submitObefImport() {
+  if (!obefImportCsvRows || !obefImportCsvRows.length) return;
+  const source = document.getElementById('obef-import-source').value;
+  const year   = document.getElementById('obef-import-year').value.trim();
+  const btn    = document.getElementById('obef-import-submit');
+  btn.disabled = true;
+  btn.textContent = 'Importing…';
+  const records = obefImportCsvRows.map(r => ({
+    kpi_code:    r.kpi_code    || r.KPI_Code || r['KPI Code'] || '',
+    metric_name: r.metric_name || r.metric   || r.Metric      || '',
+    metric_value: parseFloat(r.metric_value  || r.value       || r.Value || '0') || 0,
+    dept_code:   r.dept_code   || r.Dept     || r.department_code || null
+  })).filter(r => r.kpi_code);
+  fetch(`${API}/organisations/${currentOrg}/obef/import`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({source_system: source, academic_year: year, records})
+  })
+    .then(r => r.json().then(d => ({ok:r.ok, data:d})))
+    .then(({ok, data}) => {
+      btn.disabled = false;
+      btn.textContent = 'Import';
+      if (ok) {
+        const el = document.getElementById('obef-import-success');
+        el.textContent = `Successfully imported ${data.imported} records for ${data.academic_year} from ${data.source_system}`;
+        el.style.display = '';
+        document.getElementById('obef-import-error').style.display = 'none';
+        loadObefDashboard();
+      } else {
+        const el = document.getElementById('obef-import-error');
+        el.textContent = data.error || 'Import failed';
+        el.style.display = '';
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.textContent = 'Import';
+      const el = document.getElementById('obef-import-error');
+      el.textContent = 'Import failed: ' + err.message;
+      el.style.display = '';
+    });
 }
 
 // ── KEYBOARD / CLICK HANDLERS ──
