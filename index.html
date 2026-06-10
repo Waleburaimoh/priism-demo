@@ -5335,11 +5335,11 @@ let obefData = null;
 let obefImportCsvRows = null;
 
 function loadObefDashboard() {
-  if (!currentOrg) return;
+  if (!SESSION || !SESSION.org_id) return;
   document.getElementById('obef-loading').style.display = '';
   document.getElementById('obef-content').style.display = 'none';
   document.getElementById('obef-error').style.display = 'none';
-  fetch(`${API}/organisations/${currentOrg}/obef/dashboard`)
+  fetch(`${API}/organisations/${SESSION.org_id}/obef/dashboard`)
     .then(r => r.ok ? r.json() : r.json().then(e => { throw new Error(e.error || 'Failed to load'); }))
     .then(data => {
       obefData = data;
@@ -5547,7 +5547,7 @@ function submitObefImport() {
     metric_value: parseFloat(r.metric_value  || r.value       || r.Value || '0') || 0,
     dept_code:   r.dept_code   || r.Dept     || r.department_code || null
   })).filter(r => r.kpi_code);
-  fetch(`${API}/organisations/${currentOrg}/obef/import`, {
+  fetch(`${API}/organisations/${SESSION.org_id}/obef/import`, {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({source_system: source, academic_year: year, records})
