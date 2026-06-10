@@ -3503,6 +3503,7 @@ async function submitKpiVerification() {
         kpi_unit:     item.unit || '',
         period:       `Q${pq} ${py}`,
         file_type:    _kpiVerifyFile.type,
+        file_name:    _kpiVerifyFile.name,
         file_data:    _kpiVerifyFile.base64
       })
     });
