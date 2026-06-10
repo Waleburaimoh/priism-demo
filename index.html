@@ -5356,9 +5356,11 @@ function loadObefDashboard() {
 }
 
 function obefRagDot(actual, target) {
-  if (actual == null) return `<span class="obef-rag-dot obef-rag-grey" title="Not reported"></span>`;
-  if (target == null) return `<span class="obef-rag-dot obef-rag-grey" title="No target"></span>`;
-  const pct = (actual / target) * 100;
+  const a = parseFloat(actual);
+  const t = parseFloat(target);
+  if (actual == null || isNaN(a)) return `<span class="obef-rag-dot obef-rag-grey" title="Not reported"></span>`;
+  if (target == null || isNaN(t) || t === 0) return `<span class="obef-rag-dot obef-rag-grey" title="No target"></span>`;
+  const pct = (a / t) * 100;
   if (pct >= 90) return `<span class="obef-rag-dot obef-rag-green" title="On track"></span>`;
   if (pct >= 70) return `<span class="obef-rag-dot obef-rag-amber" title="At risk"></span>`;
   return `<span class="obef-rag-dot obef-rag-red" title="Behind"></span>`;
@@ -5385,57 +5387,89 @@ function obefSourceBadge(source) {
 }
 
 function renderObefDashboard(data) {
-  const pillars = data.pillars || [];
+  const OBEF_PILLARS = {
+    1: { name: 'Employment Outcomes',    weight: 25 },
+    2: { name: 'Learning Outcomes',      weight: 25 },
+    3: { name: 'Industry Collaboration', weight: 20 },
+    4: { name: 'Research Outcomes',      weight: 15 },
+    5: { name: 'Reputation',             weight: 10 },
+    6: { name: 'Community Engagement',   weight: 5  },
+  };
+
+  // Flatten all KPIs regardless of how the API pre-grouped them
+  // (obef_pillar_number may be null in DB — derive from obef_kpi_number instead)
+  let allKpis = [];
+  (data.pillars || []).forEach(p => { allKpis = allKpis.concat(p.kpis || []); });
+
+  const pillarMap = {};
+  allKpis.forEach(kpi => {
+    const pillarNum = Math.floor(parseFloat(kpi.obef_kpi_number));
+    if (!pillarNum || !OBEF_PILLARS[pillarNum]) return;
+    if (!pillarMap[pillarNum]) {
+      pillarMap[pillarNum] = {
+        number:        pillarNum,
+        name:          OBEF_PILLARS[pillarNum].name,
+        pillar_weight: OBEF_PILLARS[pillarNum].weight,
+        kpis:          []
+      };
+    }
+    pillarMap[pillarNum].kpis.push(kpi);
+  });
+  Object.values(pillarMap).forEach(p => {
+    p.kpis.sort((a,b) => parseFloat(a.obef_kpi_number) - parseFloat(b.obef_kpi_number));
+  });
+  const pillars = Object.values(pillarMap).sort((a,b) => a.number - b.number);
+
   const grid     = document.getElementById('obef-pillars-grid');
   const sections = document.getElementById('obef-pillar-sections');
 
   grid.innerHTML = pillars.map(p => {
-    const color    = OBEF_PILLAR_COLORS[p.pillar_number] || '#4d7280';
-    const kpis     = p.kpis || [];
-    const reported = kpis.filter(k => k.inst_actual != null).length;
+    const color    = OBEF_PILLAR_COLORS[p.number] || '#4d7280';
+    const kpis     = p.kpis;
+    const reported = kpis.filter(k => k.institutional_actual != null).length;
     const pct      = kpis.length > 0 ? Math.round((reported / kpis.length) * 100) : 0;
-    return `<div class="obef-pillar-card" style="border-left:3px solid ${color}" onclick="scrollToPillar(${p.pillar_number})">
-      <div class="obef-pillar-number" style="color:${color}">Pillar ${p.pillar_number} &middot; ${OBEF_PILLAR_WEIGHTS[p.pillar_number]||0}%</div>
-      <div class="obef-pillar-name">${OBEF_PILLAR_NAMES[p.pillar_number]||p.pillar_name||''}</div>
+    return `<div class="obef-pillar-card" style="border-left:3px solid ${color}" onclick="scrollToPillar(${p.number})">
+      <div class="obef-pillar-number" style="color:${color}">Pillar ${p.number} &middot; ${p.pillar_weight}%</div>
+      <div class="obef-pillar-name">${p.name}</div>
       <div class="obef-pillar-meta"><span>${kpis.length} KPI${kpis.length!==1?'s':''}</span><span>${reported} / ${kpis.length} reported</span></div>
       <div class="obef-prog-track"><div class="obef-prog-fill" style="width:${pct}%;background:${color}"></div></div>
     </div>`;
   }).join('');
 
   sections.innerHTML = pillars.map(p => {
-    const color = OBEF_PILLAR_COLORS[p.pillar_number] || '#4d7280';
-    const kpis  = p.kpis || [];
+    const color = OBEF_PILLAR_COLORS[p.number] || '#4d7280';
+    const kpis  = p.kpis;
     const rows  = kpis.map(k => {
       const hasCollege = k.college_breakdown && k.college_breakdown.length > 0;
       const cbRows = hasCollege ? k.college_breakdown.map(c =>
-        `<tr><td>${c.dept_name||c.college||'—'}</td>
-        <td style="text-align:right">${c.target!=null?Number(c.target).toLocaleString():'—'}</td>
-        <td style="text-align:right">${c.actual!=null?Number(c.actual).toLocaleString():'<span style="color:var(--muted);font-style:italic">—</span>'}</td>
-        <td style="text-align:center">${obefRagDot(c.actual,c.target)}</td></tr>`).join('') : '';
+        `<tr><td>${c.college_name||'—'}</td>
+        <td style="text-align:right">${c.target_value!=null?Number(c.target_value).toLocaleString():'—'}</td>
+        <td style="text-align:right">${c.actual_value!=null?Number(c.actual_value).toLocaleString():'<span style="color:var(--muted);font-style:italic">—</span>'}</td>
+        <td style="text-align:center">${obefRagDot(c.actual_value,c.target_value)}</td></tr>`).join('') : '';
       return `<tr>
-        <td><span class="obef-ref-badge" style="background:${color}22;color:${color};border:1px solid ${color}44">${k.kpi_number||k.kpi_code||'—'}</span></td>
+        <td><span class="obef-ref-badge" style="background:${color}22;color:${color};border:1px solid ${color}44">${k.obef_kpi_number||k.kpi_code||'—'}</span></td>
         <td style="max-width:320px;line-height:1.4">${k.title||'—'}</td>
         <td>${obefSourceBadge(k.source_system)}</td>
-        <td style="text-align:right;white-space:nowrap">${k.inst_target!=null?Number(k.inst_target).toLocaleString():'—'}</td>
-        <td style="text-align:right;white-space:nowrap">${k.inst_actual!=null?Number(k.inst_actual).toLocaleString():'<span style="color:var(--muted);font-style:italic;font-size:11px">Not yet reported</span>'}</td>
-        <td style="text-align:center">${obefRagDot(k.inst_actual,k.inst_target)}</td>
+        <td style="text-align:right;white-space:nowrap">${k.institutional_target!=null?Number(k.institutional_target).toLocaleString():'—'}</td>
+        <td style="text-align:right;white-space:nowrap">${k.institutional_actual!=null?Number(k.institutional_actual).toLocaleString():'<span style="color:var(--muted);font-style:italic;font-size:11px">Not yet reported</span>'}</td>
+        <td style="text-align:center">${obefRagDot(k.institutional_actual,k.institutional_target)}</td>
         <td style="text-align:center">${hasCollege?`<button class="btn-cancel" style="font-size:11px;padding:3px 9px" onclick="toggleObefCollege('${k.kpi_id}',this)">&#9660; ${k.college_breakdown.length}</button>`:'<span style="color:var(--muted);font-size:11px">—</span>'}</td>
       </tr>${hasCollege?`<tr id="obef-college-${k.kpi_id}" style="display:none"><td colspan="7" style="padding:0;background:rgba(20,40,50,.5)">
         <table class="obef-cb-table"><thead><tr><th>College</th><th style="text-align:right">Target</th><th style="text-align:right">Actual</th><th style="text-align:center">RAG</th></tr></thead>
         <tbody>${cbRows}</tbody></table></td></tr>`:''}`;
     }).join('');
-    return `<div id="obef-pillar-${p.pillar_number}">
-      <div class="obef-section-hdr" style="border-left:3px solid ${color}" onclick="togglePillar(${p.pillar_number})">
+    return `<div id="obef-pillar-${p.number}">
+      <div class="obef-section-hdr" style="border-left:3px solid ${color}" onclick="togglePillar(${p.number})">
         <div class="obef-section-hdr-title" style="color:${color}">
-          <span>Pillar ${p.pillar_number}</span>
-          <span style="color:var(--cream);font-weight:500">${OBEF_PILLAR_NAMES[p.pillar_number]||p.pillar_name||''}</span>
+          <span>Pillar ${p.number}</span>
+          <span style="color:var(--cream);font-weight:500">${p.name}</span>
         </div>
         <div style="display:flex;align-items:center;gap:.75rem">
-          <span class="obef-section-hdr-meta">${kpis.length} KPIs &middot; ${OBEF_PILLAR_WEIGHTS[p.pillar_number]||0}% weight</span>
-          <i class="ti ti-chevron-up" id="obef-chevron-${p.pillar_number}" style="color:var(--muted);font-size:13px"></i>
+          <span class="obef-section-hdr-meta">${kpis.length} KPIs &middot; ${p.pillar_weight}% weight</span>
+          <i class="ti ti-chevron-up" id="obef-chevron-${p.number}" style="color:var(--muted);font-size:13px"></i>
         </div>
       </div>
-      <div id="obef-body-${p.pillar_number}" class="obef-section-body">
+      <div id="obef-body-${p.number}" class="obef-section-body">
         <table class="obef-kpi-table"><thead><tr>
           <th>OBEF Ref</th><th>KPI Title</th><th>Source</th>
           <th style="text-align:right">Inst. Target</th><th style="text-align:right">Inst. Actual</th>
