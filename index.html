@@ -6152,19 +6152,28 @@ function stratSyncHeader(){
   if (loc) loc.innerHTML = '<i class="ti ti-map-pin" style="color:var(--gold);margin-right:4px"></i>' + stratEsc(stratVal('strat-ctx-country') || 'UAE') + ' · ' + stratEsc(stratVal('strat-ctx-region') || 'Middle East');
 }
 
-// Persist the current Analysis Context to the session before any AI generation, so the
-// engine always uses the latest sector/country/region. Throws if the PATCH fails.
-async function stratPatchSession(){
-  if (!_stratSession) return;
-  const s = _stratSession;
-  const hasForm = !!document.getElementById('strat-ctx-name');
-  const payload = hasForm ? {
+// Snapshot the Analysis Context form values. MUST be read before any stratStageLoading()
+// call, which replaces the stage DOM and destroys the form inputs. Returns null when the
+// form is not on screen (stages 2–5), so callers fall back to the saved session context.
+function stratCtxFromForm(){
+  if (!document.getElementById('strat-ctx-name')) return null;
+  const s = _stratSession || {};
+  return {
     session_name:       stratVal('strat-ctx-name')    || s.session_name || null,
     sector:             stratVal('strat-ctx-sector')  || null,
     country:            stratVal('strat-ctx-country') || 'UAE',
     region:             stratVal('strat-ctx-region')  || 'Middle East',
     additional_context: stratVal('strat-ctx-extra')   || null
-  } : {
+  };
+}
+
+// Persist the Analysis Context to the session before any AI generation, so the engine
+// always uses the latest sector/country/region. Pass a ctx snapshot from stratCtxFromForm();
+// when null (no form on screen), the saved session values are re-sent. Throws if PATCH fails.
+async function stratPatchSession(ctx){
+  if (!_stratSession) return;
+  const s = _stratSession;
+  const payload = ctx || {
     session_name:       s.session_name || null,
     sector:             s.sector || null,
     country:            s.country || 'UAE',
@@ -6178,22 +6187,16 @@ async function stratPatchSession(){
 
 async function stratGeneratePestle(regen){
   if (regen && !confirm('Regenerate the PESTLE analysis? Existing confirmations and edits for all six factors will be reset.')) return;
+  const ctx = stratCtxFromForm();
   try {
     if (!_stratSession){
-      const hasForm = !!document.getElementById('strat-ctx-name');
-      const payload = hasForm ? {
-        session_name: stratVal('strat-ctx-name') || null,
-        sector: stratVal('strat-ctx-sector') || null,
-        country: stratVal('strat-ctx-country') || 'UAE',
-        region: stratVal('strat-ctx-region') || 'Middle East',
-        additional_context: stratVal('strat-ctx-extra') || null
-      } : (_stratPendingCtx || {});
+      const payload = ctx || (_stratPendingCtx || {});
       _stratPendingCtx = payload;
       stratStageLoading('Saving analysis context…');
       _stratSession = await stratFetch('/sessions', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
     } else {
       stratStageLoading('Saving analysis context…');
-      await stratPatchSession();
+      await stratPatchSession(ctx);
     }
   } catch (err) {
     stratStageError('Failed to save analysis context: ' + err.message, `stratGeneratePestle(${regen?'true':'false'})`);
