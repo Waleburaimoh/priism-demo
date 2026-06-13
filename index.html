@@ -732,7 +732,7 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
         </div>
         <div style="display:flex;align-items:center;gap:.75rem">
           <button class="btn-sm" onclick="openNewSessionModal()"><i class="ti ti-plus"></i> New Session</button>
-          <span class="status-badge badge-green" style="font-size:11px;padding:5px 13px;letter-spacing:.5px">Stages 1–3 Live</span>
+          <span class="status-badge badge-green" style="font-size:11px;padding:5px 13px;letter-spacing:.5px">Stages 1–5 Live</span>
         </div>
       </div>
       <div class="page-body">
@@ -782,37 +782,37 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
             <span id="strat-stage-badge-2" class="status-badge badge-green" style="font-size:10px;padding:2px 8px">Live</span>
           </div>
 
-          <!-- Stage 3 — SWOT (live) -->
+          <!-- Stage 3 — Competitor Analysis (live) -->
           <div id="strat-stage-card-3" class="section-card strat-stage-card" style="padding:.9rem 1rem;border-top:2px solid var(--gold)" onclick="stratOpenStage(3)">
             <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.6rem">
               <div style="width:28px;height:28px;border-radius:50%;background:rgba(201,168,76,.15);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--gold);font-family:var(--font-display);flex-shrink:0">3</div>
+              <i class="ti ti-binoculars" style="font-size:15px;color:var(--gold);opacity:.7"></i>
+            </div>
+            <div style="font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--cream);margin-bottom:.4rem;line-height:1.3">Competitor Analysis</div>
+            <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:.75rem">Benchmarking against direct, indirect, aspirational and peer organisations — positioning, strengths and threat level per competitor.</div>
+            <span id="strat-stage-badge-3" class="status-badge badge-green" style="font-size:10px;padding:2px 8px">Live</span>
+          </div>
+
+          <!-- Stage 4 — SWOT (live) -->
+          <div id="strat-stage-card-4" class="section-card strat-stage-card" style="padding:.9rem 1rem;border-top:2px solid var(--gold)" onclick="stratOpenStage(4)">
+            <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.6rem">
+              <div style="width:28px;height:28px;border-radius:50%;background:rgba(201,168,76,.15);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--gold);font-family:var(--font-display);flex-shrink:0">4</div>
               <i class="ti ti-layout-grid" style="font-size:15px;color:var(--gold);opacity:.7"></i>
             </div>
             <div style="font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--cream);margin-bottom:.4rem;line-height:1.3">SWOT Synthesis</div>
             <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:.75rem">Internal strengths and weaknesses, with opportunities and threats derived from the confirmed external analyses.</div>
-            <span id="strat-stage-badge-3" class="status-badge badge-green" style="font-size:10px;padding:2px 8px">Live</span>
+            <span id="strat-stage-badge-4" class="status-badge badge-green" style="font-size:10px;padding:2px 8px">Live</span>
           </div>
 
-          <!-- Stage 4 -->
-          <div class="section-card" style="padding:.9rem 1rem;border-top:2px solid var(--gold)">
-            <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.6rem">
-              <div style="width:28px;height:28px;border-radius:50%;background:rgba(201,168,76,.15);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--gold);font-family:var(--font-display);flex-shrink:0">4</div>
-              <i class="ti ti-git-compare" style="font-size:15px;color:var(--gold);opacity:.7"></i>
-            </div>
-            <div style="font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--cream);margin-bottom:.4rem;line-height:1.3">Gap Analysis</div>
-            <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:.75rem">Scoring matrix overlaying O&amp;T vs S&amp;W, ambition gap register, AI-assisted grouping of gaps into strategic objective candidates.</div>
-            <span class="status-badge badge-gold" style="font-size:10px;padding:2px 8px">Phase 2 — Coming Soon</span>
-          </div>
-
-          <!-- Stage 5 -->
-          <div class="section-card" style="padding:.9rem 1rem;border-top:2px solid var(--gold)">
+          <!-- Stage 5 — Stakeholder Mapping (live) -->
+          <div id="strat-stage-card-5" class="section-card strat-stage-card" style="padding:.9rem 1rem;border-top:2px solid var(--gold)" onclick="stratOpenStage(5)">
             <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.6rem">
               <div style="width:28px;height:28px;border-radius:50%;background:rgba(201,168,76,.15);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--gold);font-family:var(--font-display);flex-shrink:0">5</div>
-              <i class="ti ti-target" style="font-size:15px;color:var(--gold);opacity:.7"></i>
+              <i class="ti ti-users-group" style="font-size:15px;color:var(--gold);opacity:.7"></i>
             </div>
-            <div style="font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--cream);margin-bottom:.4rem;line-height:1.3">Strategic Objectives</div>
-            <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:.75rem">BSC framework configuration, define &amp; validate objectives, strategy map visualisation, and board approval workflow.</div>
-            <span class="status-badge badge-gold" style="font-size:10px;padding:2px 8px">Phase 2 — Coming Soon</span>
+            <div style="font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--cream);margin-bottom:.4rem;line-height:1.3">Stakeholder Mapping</div>
+            <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:.75rem">Mendelow power/interest grid — influence and interest per stakeholder, quadrant placement and tailored engagement strategy.</div>
+            <span id="strat-stage-badge-5" class="status-badge badge-green" style="font-size:10px;padding:2px 8px">Live</span>
           </div>
 
         </div>
@@ -831,10 +831,10 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
           <div class="section-card" style="padding:.9rem 1rem;border-top:2px solid rgba(201,168,76,.5)">
             <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.6rem">
               <div style="width:28px;height:28px;border-radius:50%;background:rgba(201,168,76,.1);border:1.5px solid rgba(201,168,76,.5);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--gold-light);font-family:var(--font-display);flex-shrink:0">6</div>
-              <i class="ti ti-adjustments" style="font-size:15px;color:var(--gold-light);opacity:.7"></i>
+              <i class="ti ti-git-compare" style="font-size:15px;color:var(--gold-light);opacity:.7"></i>
             </div>
-            <div style="font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--cream);margin-bottom:.4rem;line-height:1.3">Strategy Enablers</div>
-            <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:.75rem">AI-assigned KPIs, initiatives, and risks per objective — feeds directly into the KPI Scorecard, Projects, and Risk Register.</div>
+            <div style="font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--cream);margin-bottom:.4rem;line-height:1.3">Strategic Direction</div>
+            <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:.75rem">Scoring matrix overlaying O&amp;T vs S&amp;W, ambition gap register, AI-assisted grouping of gaps into strategic objective candidates.</div>
             <span class="status-badge badge-gold" style="font-size:10px;padding:2px 8px">Phase 2 — Coming Soon</span>
           </div>
 
@@ -842,10 +842,10 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
           <div class="section-card" style="padding:.9rem 1rem;border-top:2px solid rgba(201,168,76,.5)">
             <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.6rem">
               <div style="width:28px;height:28px;border-radius:50%;background:rgba(201,168,76,.1);border:1.5px solid rgba(201,168,76,.5);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--gold-light);font-family:var(--font-display);flex-shrink:0">7</div>
-              <i class="ti ti-arrows-left-right" style="font-size:15px;color:var(--gold-light);opacity:.7"></i>
+              <i class="ti ti-target" style="font-size:15px;color:var(--gold-light);opacity:.7"></i>
             </div>
-            <div style="font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--cream);margin-bottom:.4rem;line-height:1.3">Strategic Alignment</div>
-            <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:.75rem">Process inventory with Sustain/Transform/Stop/Create scoring per area, moderation workflow, and Change Agenda generation.</div>
+            <div style="font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--cream);margin-bottom:.4rem;line-height:1.3">Strategic Objectives</div>
+            <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:.75rem">BSC framework configuration, define &amp; validate objectives, strategy map visualisation, and board approval workflow.</div>
             <span class="status-badge badge-gold" style="font-size:10px;padding:2px 8px">Phase 2 — Coming Soon</span>
           </div>
 
@@ -853,10 +853,10 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
           <div class="section-card" style="padding:.9rem 1rem;border-top:2px solid rgba(201,168,76,.5)">
             <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.6rem">
               <div style="width:28px;height:28px;border-radius:50%;background:rgba(201,168,76,.1);border:1.5px solid rgba(201,168,76,.5);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--gold-light);font-family:var(--font-display);flex-shrink:0">8</div>
-              <i class="ti ti-users" style="font-size:15px;color:var(--gold-light);opacity:.7"></i>
+              <i class="ti ti-adjustments" style="font-size:15px;color:var(--gold-light);opacity:.7"></i>
             </div>
-            <div style="font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--cream);margin-bottom:.4rem;line-height:1.3">Value Proposition</div>
-            <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:.75rem">Stakeholder group definition, value proposition per group, strategic validation, and stakeholder alignment matrix.</div>
+            <div style="font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--cream);margin-bottom:.4rem;line-height:1.3">Strategy Enablers</div>
+            <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:.75rem">AI-assigned KPIs, initiatives, and risks per objective — feeds directly into the KPI Scorecard, Projects, and Risk Register.</div>
             <span class="status-badge badge-gold" style="font-size:10px;padding:2px 8px">Phase 2 — Coming Soon</span>
           </div>
 
@@ -890,7 +890,7 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
         <!-- Footer note -->
         <div style="text-align:center;padding:.9rem 1rem;background:rgba(201,168,76,.04);border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--muted)">
           <i class="ti ti-info-circle" style="color:var(--gold);margin-right:.4rem"></i>
-          Stages 1–5 form the <strong style="color:var(--cream)">Strategy Design</strong> phase · Stages 6–10 form the <strong style="color:var(--cream)">Strategy Execution &amp; Governance</strong> phase · Stages 1–3 are live now — remaining stages arrive in PRiiSM Phase 2
+          Stages 1–5 form the <strong style="color:var(--cream)">Strategy Design</strong> phase · Stages 6–10 form the <strong style="color:var(--cream)">Strategy Execution &amp; Governance</strong> phase · Stages 1–5 are live now — remaining stages arrive in PRiiSM Phase 2
         </div>
 
       </div>
@@ -5855,19 +5855,27 @@ function closeObefKpiDetail() {
   document.getElementById('obef-detail-banner').innerHTML = '';
 }
 
-// ── STRATEGY DEVELOPMENT ENGINE (Stages 1–3: PESTLE → Porter's → SWOT) ──
+// ── STRATEGY DEVELOPMENT ENGINE ──
+//   S1 PESTLE → S2 Porter's → S3 Competitor Analysis → S4 SWOT → S5 Stakeholder Mapping
+//   (S6–S10: Phase 2, coming soon). Each stage gates the next.
 const STRAT_FACTORS   = ['Political','Economic','Social','Technological','Legal','Environmental'];
 const STRAT_FORCES    = ['Competitive Rivalry','Threat of New Entrants','Threat of Substitutes','Bargaining Power of Suppliers','Bargaining Power of Buyers'];
 const STRAT_QUADRANTS = ['Strength','Weakness','Opportunity','Threat'];
 const STRAT_FACTOR_ICONS = {Political:'building-bank',Economic:'coin',Social:'users-group',Technological:'cpu',Legal:'scale',Environmental:'leaf'};
 const STRAT_QUAD_STYLE = {Strength:['#10B981','ti-arrow-up-right'],Weakness:['#EF4444','ti-arrow-down-right'],Opportunity:['#C9A84C','ti-sparkles'],Threat:['#FB923C','ti-alert-triangle']};
 const STRAT_PESTLE_FIELDS = [['global_trends','Global Trends'],['regional_national_trends','Regional / National Trends'],['sector_implications','Sector Implications'],['institutional_implications','Institutional Implications']];
+const STRAT_COMPETITOR_TYPES = ['Direct','Indirect','Aspirational','Peer/Benchmark'];
+const STRAT_STAKE_LEVELS     = ['High','Medium','Low'];
+const STRAT_STAKE_QUADRANTS  = ['Manage Closely','Keep Satisfied','Keep Informed','Monitor'];
+const STRAT_QUAD_COLOUR = {'Manage Closely':'#EF4444','Keep Satisfied':'#FB923C','Keep Informed':'#C9A84C','Monitor':'#6B8A95'};
 
 let _stratOrg = null;
 let _stratSession = null;
 let _stratPestle = [];
 let _stratPorters = [];
+let _stratCompetitors = [];
 let _stratSwot = [];
+let _stratStakeholders = [];
 let _stratStage = 1;
 let _stratEditing = {};
 let _stratPendingCtx = null;
@@ -5883,10 +5891,19 @@ async function stratFetch(path, opts){
   return d;
 }
 
-function stratCounts(){ return { p:_stratPestle.filter(r=>r.confirmed).length, f:_stratPorters.filter(r=>r.confirmed).length, q:_stratSwot.filter(r=>r.confirmed).length }; }
-function stratStageComplete(n){ const c=stratCounts(); return n===1 ? c.p>=6 : n===2 ? c.f>=5 : c.q>=4; }
-function stratStageUnlocked(n){ return n===1 || stratStageComplete(n-1); }
-function stratDefaultStage(){ return !stratStageComplete(1) ? 1 : !stratStageComplete(2) ? 2 : 3; }
+function stratListComplete(rows){ return rows.length > 0 && rows.every(r => r.confirmed); }
+function stratStageComplete(n){
+  switch (n) {
+    case 1: return _stratPestle.filter(r => r.confirmed).length >= 6;
+    case 2: return _stratPorters.filter(r => r.confirmed).length >= 5;
+    case 3: return stratListComplete(_stratCompetitors);
+    case 4: return _stratSwot.filter(r => r.confirmed).length >= 4;
+    case 5: return stratListComplete(_stratStakeholders);
+    default: return false;
+  }
+}
+function stratStageUnlocked(n){ return n === 1 || stratStageComplete(n - 1); }
+function stratDefaultStage(){ for (let n = 1; n <= 5; n++){ if (!stratStageComplete(n)) return n; } return 5; }
 
 async function loadStrategyEngine(){
   const ws = document.getElementById('strat-workspace');
@@ -5900,9 +5917,10 @@ async function loadStrategyEngine(){
     const latest = (list.sessions || [])[0];
     if (latest) {
       const d = await stratFetch(`/sessions/${latest.session_id}`);
-      _stratSession = d.session; _stratPestle = d.pestle || []; _stratPorters = d.porters || []; _stratSwot = d.swot || [];
+      _stratSession = d.session; _stratPestle = d.pestle || []; _stratPorters = d.porters || [];
+      _stratCompetitors = d.competitors || []; _stratSwot = d.swot || []; _stratStakeholders = d.stakeholders || [];
     } else {
-      _stratSession = null; _stratPestle = []; _stratPorters = []; _stratSwot = [];
+      _stratSession = null; _stratPestle = []; _stratPorters = []; _stratCompetitors = []; _stratSwot = []; _stratStakeholders = [];
     }
     _stratStage = stratDefaultStage();
     renderStratAll();
@@ -5963,16 +5981,19 @@ async function submitNewSession(){
 
 function renderStratAll(){ refreshStratStageCards(); renderStratWorkspace(); }
 
+function stratStageRows(n){ return n===1?_stratPestle : n===2?_stratPorters : n===3?_stratCompetitors : n===4?_stratSwot : _stratStakeholders; }
+function stratStageTotal(n, rows){ return n===1?6 : n===2?5 : n===4?4 : rows.length; }
+
 function refreshStratStageCards(){
-  for (let n=1; n<=3; n++){
+  for (let n=1; n<=5; n++){
     const card = document.getElementById('strat-stage-card-'+n);
     const badge = document.getElementById('strat-stage-badge-'+n);
     if (!card || !badge) continue;
     const unlocked = stratStageUnlocked(n);
     card.classList.toggle('strat-locked', !unlocked);
     card.classList.toggle('strat-active', _stratStage===n);
-    const rows = n===1?_stratPestle : n===2?_stratPorters : _stratSwot;
-    const total = n===1?6 : n===2?5 : 4;
+    const rows = stratStageRows(n);
+    const total = stratStageTotal(n, rows);
     const done = rows.filter(r=>r.confirmed).length;
     badge.style.cssText = 'font-size:10px;padding:2px 8px';
     if (!unlocked)                    { badge.className='status-badge badge-grey';  badge.innerHTML='<i class="ti ti-lock"></i> Locked'; }
@@ -5982,9 +6003,15 @@ function refreshStratStageCards(){
   }
 }
 
+const STRAT_GATE_MSG = {
+  2: 'Complete and confirm all six PESTLE factors in Stage 1 first',
+  3: 'Complete and confirm all five forces in Stage 2 first',
+  4: 'Complete and confirm the Competitor Analysis in Stage 3 first',
+  5: 'Complete and confirm the SWOT synthesis in Stage 4 first'
+};
 function stratOpenStage(n){
   if (!stratStageUnlocked(n)){
-    showToast(n===2 ? 'Complete and confirm all six PESTLE factors in Stage 1 first' : "Complete and confirm all five forces in Stage 2 first", 'error');
+    showToast(STRAT_GATE_MSG[n] || 'Complete the previous stage first', 'error');
     return;
   }
   _stratStage = n;
@@ -5995,7 +6022,7 @@ function stratOpenStage(n){
 function stratHeaderStrip(){
   if (!_stratSession) return '';
   const s = _stratSession;
-  const allDone = stratStageComplete(1) && stratStageComplete(2) && stratStageComplete(3);
+  const allDone = [1,2,3,4,5].every(stratStageComplete);
   const statusBadge = allDone
     ? '<span class="status-badge badge-green" style="font-size:10.5px;padding:3px 10px"><i class="ti ti-circle-check"></i> Analysis Complete</span>'
     : '<span class="status-badge badge-amber" style="font-size:10.5px;padding:3px 10px">In Progress</span>';
@@ -6012,14 +6039,17 @@ function renderStratWorkspace(){
   const titles = {
     1:['Stage 1 — PESTLE Analysis','Macro-environmental scan: global trends, regional and national trends, sector and institutional implications'],
     2:["Stage 2 — Porter's Five Forces",'Sector-level competitive dynamics, each force rated by intensity'],
-    3:['Stage 3 — SWOT Synthesis','Internal strengths and weaknesses; opportunities and threats derived from the external analyses']
+    3:['Stage 3 — Competitor Analysis','Benchmarking against direct, indirect, aspirational and peer organisations'],
+    4:['Stage 4 — SWOT Synthesis','Internal strengths and weaknesses; opportunities and threats derived from the external analyses'],
+    5:['Stage 5 — Stakeholder Mapping','Mendelow power/interest grid — influence, interest and tailored engagement per stakeholder']
   };
-  const tabs = [1,2,3].map(n=>{
+  const tabLabels = {1:'1 · PESTLE',2:"2 · Porter's",3:'3 · Competitors',4:'4 · SWOT',5:'5 · Stakeholders'};
+  const tabs = [1,2,3,4,5].map(n=>{
     const unlocked = stratStageUnlocked(n);
-    const label = n===1 ? '1 · PESTLE' : n===2 ? "2 · Porter's" : '3 · SWOT';
     const tick = stratStageComplete(n) ? ' <i class="ti ti-circle-check" style="color:#6EE7B7"></i>' : '';
-    return `<button class="btn-sm" style="${_stratStage===n?'background:rgba(201,168,76,.25);':''}${unlocked?'':'opacity:.45;'}" onclick="stratOpenStage(${n})">${label}${tick}</button>`;
+    return `<button class="btn-sm" style="${_stratStage===n?'background:rgba(201,168,76,.25);':''}${unlocked?'':'opacity:.45;'}" onclick="stratOpenStage(${n})">${tabLabels[n]}${tick}</button>`;
   }).join('');
+  const stageRender = {1:renderStratStage1,2:renderStratStage2,3:renderStratStage3,4:renderStratStage4,5:renderStratStage5};
   const [title, sub] = titles[_stratStage];
   ws.innerHTML = stratHeaderStrip()
     + `<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.9rem;gap:1rem;flex-wrap:wrap">
@@ -6027,9 +6057,9 @@ function renderStratWorkspace(){
           <div style="font-family:var(--font-display);font-size:18px;font-weight:500;color:var(--cream)">${title}</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px">${sub}</div>
         </div>
-        <div style="display:flex;gap:6px;flex-shrink:0">${tabs}</div>
+        <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">${tabs}</div>
       </div>`
-    + '<div id="strat-ws-stage">' + (_stratStage===1 ? renderStratStage1() : _stratStage===2 ? renderStratStage2() : renderStratStage3()) + '</div>';
+    + '<div id="strat-ws-stage">' + (stageRender[_stratStage] || renderStratStage1)() + '</div>';
 }
 
 function stratStageLoading(msg){
@@ -6174,9 +6204,13 @@ function renderStratStage2(){
 
 function stratBeginPanel(n){
   const sector = (_stratSession && _stratSession.sector) || 'your sector';
-  const cfg = n===2
-    ? ['ti-chart-radar', "PESTLE analysis confirmed. The engine is ready to assess competitive dynamics across the five forces for " + sector + ".", "Generate Porter's Five Forces", 'stratGeneratePorters(false)']
-    : ['ti-layout-grid', "External analyses confirmed. The engine will now synthesise your strategic position — internal strengths and weaknesses, with opportunities and threats drawn from PESTLE and Porter's.", 'Generate SWOT Analysis', 'stratGenerateSwot(false)'];
+  const CFG = {
+    2:['ti-chart-radar', "PESTLE analysis confirmed. The engine is ready to assess competitive dynamics across the five forces for " + sector + ".", "Generate Porter's Five Forces", 'stratGeneratePorters(false)'],
+    3:['ti-binoculars', "Porter's Five Forces confirmed. The engine will now identify and benchmark the most relevant competitors and peers in the " + sector + " sector.", 'Generate Competitor Analysis', 'stratGenerateCompetitors(false)'],
+    4:['ti-layout-grid', "Competitor Analysis confirmed. The engine will now synthesise your strategic position — internal strengths and weaknesses, with opportunities and threats drawn from the external analyses.", 'Generate SWOT Analysis', 'stratGenerateSwot(false)'],
+    5:['ti-users-group', "SWOT synthesis confirmed. The engine will now map your key stakeholders on the Mendelow power/interest grid and recommend tailored engagement strategies.", 'Generate Stakeholder Mapping', 'stratGenerateStakeholders(false)']
+  };
+  const cfg = CFG[n] || CFG[2];
   return `<div class="section-card" style="padding:2.2rem 1.4rem;text-align:center;max-width:680px;margin:0 auto">
     <i class="ti ${cfg[0]}" style="font-size:34px;color:var(--gold);opacity:.7;display:block;margin-bottom:.8rem"></i>
     <div style="font-size:13px;color:var(--muted);line-height:1.65;max-width:480px;margin:0 auto 1.2rem">${stratEsc(cfg[1])}</div>
@@ -6255,10 +6289,103 @@ async function stratConfirmPorter(force){
   }
 }
 
-// ── Stage 3: SWOT ──
+// ── Stage 3: Competitor Analysis ──
+const STRAT_THREAT_STYLE = {High:'strat-int-High',Medium:'strat-int-Medium',Low:'strat-int-Low'};
+
 function renderStratStage3(){
-  if (!stratStageUnlocked(3)) return stratLockedNotice("Complete and confirm all five forces in Stage 2 before beginning the SWOT synthesis.");
-  if (!_stratSwot.length) return stratBeginPanel(3);
+  if (!stratStageUnlocked(3)) return stratLockedNotice("Complete and confirm all five forces in Stage 2 before beginning the Competitor Analysis.");
+  if (!_stratCompetitors.length) return stratBeginPanel(3);
+  const cards = _stratCompetitors.map((row,i)=>stratCompetitorCard(row,i)).join('');
+  return stratRegenBar('Regenerate Competitors', 'stratGenerateCompetitors(true)')
+    + `<div style="display:grid;grid-template-columns:1fr;gap:.9rem">${cards}</div>`;
+}
+
+function stratCompetitorCard(row, i){
+  const name = row.competitor_name;
+  const c = stratParse(row);
+  const key = 'c:'+i;
+  const editing = !!_stratEditing[key];
+  const locked = row.confirmed && !editing;
+  const type = STRAT_COMPETITOR_TYPES.includes(row.competitor_type) ? row.competitor_type : '';
+  const threat = STRAT_STAKE_LEVELS.includes(c.threat_level) ? c.threat_level : '';
+  const strengths  = Array.isArray(c.strengths)  ? c.strengths.join('\n')  : String(c.strengths||'');
+  const weaknesses = Array.isArray(c.weaknesses) ? c.weaknesses.join('\n') : String(c.weaknesses||'');
+  const dims = (c.benchmark_dimensions && typeof c.benchmark_dimensions==='object') ? c.benchmark_dimensions : {};
+  const dimTags = Object.keys(dims).length
+    ? `<div class="strat-field"><label>Benchmark Dimensions</label><div>${Object.entries(dims).map(([k,v])=>`<span class="strat-src-tag">${stratEsc(k.replace(/_/g,' '))}: ${stratEsc(String(v))}</span>`).join('')}</div></div>`
+    : '';
+  const typeCtl = locked
+    ? (type ? `<span class="strat-src-tag" style="margin:0">${stratEsc(type)}</span>` : '')
+    : `<select class="strat-in" id="strat-c-${i}-type" style="width:auto;padding:5px 28px 5px 11px;font-size:12px">${STRAT_COMPETITOR_TYPES.map(v=>`<option ${v===type?'selected':''}>${v}</option>`).join('')}</select>`;
+  const threatCtl = locked
+    ? (threat ? `<span class="strat-int ${STRAT_THREAT_STYLE[threat]}">${threat} threat</span>` : '')
+    : `<select class="strat-in" id="strat-c-${i}-threat" style="width:auto;padding:5px 28px 5px 11px;font-size:12px">${STRAT_STAKE_LEVELS.map(v=>`<option ${v===threat?'selected':''}>${v}</option>`).join('')}</select>`;
+  const status = row.confirmed
+    ? '<span class="status-badge badge-green" style="font-size:10px;padding:2px 8px"><i class="ti ti-circle-check"></i> Confirmed</span>'
+    : '<span class="status-badge badge-amber" style="font-size:10px;padding:2px 8px">Pending</span>';
+  const btn = locked
+    ? `<button class="btn-sm" onclick="stratToggleEdit('${key}')"><i class="ti ti-pencil"></i> Edit</button>`
+    : `<button class="btn-submit" style="font-size:12px;padding:7px 15px;display:flex;align-items:center;gap:6px" onclick="stratConfirmCompetitor(${i})"><i class="ti ti-check"></i> Confirm Competitor</button>`;
+  return `<div class="strat-item-card ${row.confirmed?'confirmed':''}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem;gap:.8rem;flex-wrap:wrap">
+      <span style="font-family:var(--font-display);font-size:15.5px;font-weight:500;color:var(--cream)">${stratEsc(name)}</span>
+      <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">${typeCtl}${threatCtl}${status}</div>
+    </div>
+    <div class="strat-field"><label>Positioning</label><textarea class="strat-ta" id="strat-c-${i}-positioning" ${locked?'disabled':''}>${stratEsc(c.positioning||'')}</textarea></div>
+    <div class="form-row">
+      <div class="strat-field" style="margin-bottom:.7rem"><label>Strengths (one per line)</label><textarea class="strat-ta" id="strat-c-${i}-strengths" ${locked?'disabled':''}>${stratEsc(strengths)}</textarea></div>
+      <div class="strat-field" style="margin-bottom:.7rem"><label>Weaknesses (one per line)</label><textarea class="strat-ta" id="strat-c-${i}-weaknesses" ${locked?'disabled':''}>${stratEsc(weaknesses)}</textarea></div>
+    </div>
+    ${dimTags}
+    <div style="display:flex;justify-content:flex-end;margin-top:.4rem">${btn}</div>
+  </div>`;
+}
+
+async function stratGenerateCompetitors(regen){
+  if (regen && !confirm('Regenerate the Competitor Analysis? Unconfirmed competitors will be replaced; confirmed ones are kept.')) return;
+  stratStageLoading(`Benchmarking competitors in ${(_stratSession && _stratSession.sector) || 'your sector'}…`);
+  try {
+    const d = await stratFetch(`/sessions/${_stratSession.session_id}/competitors/generate`, {method:'POST'});
+    _stratCompetitors = d.competitors || [];
+    _stratEditing = {};
+    renderStratAll();
+    showToast('Competitor Analysis generated', 'success');
+  } catch (err) {
+    stratStageError('Competitor Analysis generation failed: ' + err.message, `stratGenerateCompetitors(${regen?'true':'false'})`);
+  }
+}
+
+async function stratConfirmCompetitor(i){
+  const row = _stratCompetitors[i];
+  if (!row) return;
+  const name = row.competitor_name;
+  const c = stratParse(row);
+  const content = {
+    positioning: stratVal(`strat-c-${i}-positioning`),
+    strengths:  stratVal(`strat-c-${i}-strengths`).split('\n').map(s=>s.trim()).filter(Boolean),
+    weaknesses: stratVal(`strat-c-${i}-weaknesses`).split('\n').map(s=>s.trim()).filter(Boolean),
+    threat_level: stratVal(`strat-c-${i}-threat`) || c.threat_level || null
+  };
+  if (c.benchmark_dimensions && typeof c.benchmark_dimensions==='object') content.benchmark_dimensions = c.benchmark_dimensions;
+  const body = { edited_content: JSON.stringify(content) };
+  const typeSel = document.getElementById(`strat-c-${i}-type`);
+  if (typeSel && STRAT_COMPETITOR_TYPES.includes(typeSel.value)) body.competitor_type = typeSel.value;
+  try {
+    const updated = await stratFetch(`/sessions/${_stratSession.session_id}/competitors/${encodeURIComponent(name)}/confirm`,
+      {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+    _stratCompetitors = _stratCompetitors.map((r,idx) => idx===i ? updated : r);
+    delete _stratEditing['c:'+i];
+    renderStratAll();
+    showToast(`${name} confirmed`, 'success');
+  } catch (err) {
+    showToast(`Failed to confirm ${name}: ${err.message}`, 'error');
+  }
+}
+
+// ── Stage 4: SWOT ──
+function renderStratStage4(){
+  if (!stratStageUnlocked(4)) return stratLockedNotice('Complete and confirm the Competitor Analysis in Stage 3 before beginning the SWOT synthesis.');
+  if (!_stratSwot.length) return stratBeginPanel(4);
   const cards = STRAT_QUADRANTS.map(q => stratSwotCard(q)).join('');
   return stratRegenBar('Regenerate SWOT', 'stratGenerateSwot(true)')
     + `<div class="strat-swot-grid">${cards}</div>`;
@@ -6333,6 +6460,110 @@ async function stratConfirmSwot(quadrant){
     showToast(`${quadrant} quadrant confirmed`, 'success');
   } catch (err) {
     showToast(`Failed to confirm ${quadrant}: ${err.message}`, 'error');
+  }
+}
+
+// ── Stage 5: Stakeholder Mapping ──
+function renderStratStage5(){
+  if (!stratStageUnlocked(5)) return stratLockedNotice('Complete and confirm the SWOT synthesis in Stage 4 before beginning Stakeholder Mapping.');
+  if (!_stratStakeholders.length) return stratBeginPanel(5);
+  const cards = _stratStakeholders.map((row,i)=>stratStakeholderCard(row,i)).join('');
+  return stratRegenBar('Regenerate Stakeholders', 'stratGenerateStakeholders(true)')
+    + stratMendelowGrid()
+    + `<div style="display:grid;grid-template-columns:1fr;gap:.9rem">${cards}</div>`;
+}
+
+function stratMendelowGrid(){
+  const byQuad = {};
+  STRAT_STAKE_QUADRANTS.forEach(q => byQuad[q] = []);
+  _stratStakeholders.forEach(r => { if (STRAT_STAKE_QUADRANTS.includes(r.quadrant)) byQuad[r.quadrant].push(r.stakeholder_name); });
+  const cell = (q, sub) => `<div style="border:1px solid var(--border2);border-radius:8px;padding:.7rem .8rem;background:rgba(255,255,255,.02);border-top:2px solid ${STRAT_QUAD_COLOUR[q]}">
+      <div style="font-size:11.5px;font-weight:600;color:var(--cream);margin-bottom:2px">${q}</div>
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem">${sub}</div>
+      ${byQuad[q].length ? byQuad[q].map(n=>`<span class="strat-src-tag" style="margin:0 4px 4px 0">${stratEsc(n)}</span>`).join('') : '<span style="font-size:11px;color:var(--muted);font-style:italic">—</span>'}
+    </div>`;
+  return `<div class="section-card" style="padding:1rem 1.2rem;margin-bottom:.9rem">
+    <div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:.7rem">Mendelow Power / Interest Grid</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem">
+      ${cell('Manage Closely','High influence · High interest')}
+      ${cell('Keep Satisfied','High influence · Low/Med interest')}
+      ${cell('Keep Informed','Low/Med influence · High interest')}
+      ${cell('Monitor','Low/Med influence · Low/Med interest')}
+    </div>
+  </div>`;
+}
+
+function stratStakeholderCard(row, i){
+  const name = row.stakeholder_name;
+  const c = stratParse(row);
+  const key = 's:'+i;
+  const editing = !!_stratEditing[key];
+  const locked = row.confirmed && !editing;
+  const influence = STRAT_STAKE_LEVELS.includes(row.influence) ? row.influence : '';
+  const interest  = STRAT_STAKE_LEVELS.includes(row.interest)  ? row.interest  : '';
+  const quadrant  = STRAT_STAKE_QUADRANTS.includes(row.quadrant) ? row.quadrant : '';
+  const levelSel = (kind, val) => `<select class="strat-in" id="strat-s-${i}-${kind}" style="width:auto;padding:5px 28px 5px 11px;font-size:12px">${STRAT_STAKE_LEVELS.map(v=>`<option ${v===val?'selected':''}>${v}</option>`).join('')}</select>`;
+  const gridCtl = locked
+    ? `${influence?`<span class="strat-int ${STRAT_THREAT_STYLE[influence]}">Influence: ${influence}</span>`:''}${interest?`<span class="strat-int ${STRAT_THREAT_STYLE[interest]}">Interest: ${interest}</span>`:''}`
+    : `<span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Influence</span>${levelSel('influence',influence||'Medium')}<span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-left:.4rem">Interest</span>${levelSel('interest',interest||'Medium')}`;
+  const quadBadge = quadrant ? `<span class="strat-src-tag" style="margin:0;border-color:${STRAT_QUAD_COLOUR[quadrant]};color:var(--cream)">${quadrant}</span>` : '';
+  const status = row.confirmed
+    ? '<span class="status-badge badge-green" style="font-size:10px;padding:2px 8px"><i class="ti ti-circle-check"></i> Confirmed</span>'
+    : '<span class="status-badge badge-amber" style="font-size:10px;padding:2px 8px">Pending</span>';
+  const btn = locked
+    ? `<button class="btn-sm" onclick="stratToggleEdit('${key}')"><i class="ti ti-pencil"></i> Edit</button>`
+    : `<button class="btn-submit" style="font-size:12px;padding:7px 15px;display:flex;align-items:center;gap:6px" onclick="stratConfirmStakeholder(${i})"><i class="ti ti-check"></i> Confirm Stakeholder</button>`;
+  return `<div class="strat-item-card ${row.confirmed?'confirmed':''}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;gap:.8rem;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
+        <span style="font-family:var(--font-display);font-size:15.5px;font-weight:500;color:var(--cream)">${stratEsc(name)}</span>${quadBadge}
+      </div>${status}
+    </div>
+    <div style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;margin-bottom:.7rem">${gridCtl}</div>
+    <div class="strat-field"><label>Role / Relationship</label><textarea class="strat-ta" id="strat-s-${i}-role" style="min-height:50px" ${locked?'disabled':''}>${stratEsc(c.role||'')}</textarea></div>
+    <div class="strat-field"><label>Engagement Strategy</label><textarea class="strat-ta" id="strat-s-${i}-engagement" ${locked?'disabled':''}>${stratEsc(c.engagement_strategy||'')}</textarea></div>
+    <div class="strat-field"><label>Rationale</label><textarea class="strat-ta" id="strat-s-${i}-narrative" ${locked?'disabled':''}>${stratEsc(c.narrative||'')}</textarea></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:.4rem">${btn}</div>
+  </div>`;
+}
+
+async function stratGenerateStakeholders(regen){
+  if (regen && !confirm('Regenerate the Stakeholder Mapping? Unconfirmed stakeholders will be replaced; confirmed ones are kept.')) return;
+  stratStageLoading('Mapping stakeholders on the power/interest grid…');
+  try {
+    const d = await stratFetch(`/sessions/${_stratSession.session_id}/stakeholders/generate`, {method:'POST'});
+    _stratStakeholders = d.stakeholders || [];
+    _stratEditing = {};
+    renderStratAll();
+    showToast('Stakeholder Mapping generated', 'success');
+  } catch (err) {
+    stratStageError('Stakeholder Mapping generation failed: ' + err.message, `stratGenerateStakeholders(${regen?'true':'false'})`);
+  }
+}
+
+async function stratConfirmStakeholder(i){
+  const row = _stratStakeholders[i];
+  if (!row) return;
+  const name = row.stakeholder_name;
+  const content = {
+    role: stratVal(`strat-s-${i}-role`),
+    engagement_strategy: stratVal(`strat-s-${i}-engagement`),
+    narrative: stratVal(`strat-s-${i}-narrative`)
+  };
+  const body = { edited_content: JSON.stringify(content) };
+  const inf  = document.getElementById(`strat-s-${i}-influence`);
+  const intr = document.getElementById(`strat-s-${i}-interest`);
+  if (inf  && STRAT_STAKE_LEVELS.includes(inf.value))  body.influence = inf.value;
+  if (intr && STRAT_STAKE_LEVELS.includes(intr.value)) body.interest  = intr.value;
+  try {
+    const updated = await stratFetch(`/sessions/${_stratSession.session_id}/stakeholders/${encodeURIComponent(name)}/confirm`,
+      {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+    _stratStakeholders = _stratStakeholders.map((r,idx) => idx===i ? updated : r);
+    delete _stratEditing['s:'+i];
+    renderStratAll();
+    showToast(`${name} confirmed`, 'success');
+  } catch (err) {
+    showToast(`Failed to confirm ${name}: ${err.message}`, 'error');
   }
 }
 
