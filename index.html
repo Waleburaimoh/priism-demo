@@ -6028,8 +6028,8 @@ function stratHeaderStrip(){
     : '<span class="status-badge badge-amber" style="font-size:10.5px;padding:3px 10px">In Progress</span>';
   return `<div class="section-card" style="padding:.8rem 1.2rem;margin-bottom:.9rem;display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap">
     <div style="font-family:var(--font-display);font-size:16.5px;font-weight:500;color:var(--cream)">${stratEsc(s.session_name || 'Strategy Session')}</div>
-    <div style="font-size:11.5px;color:var(--muted)"><i class="ti ti-category" style="color:var(--gold);margin-right:4px"></i>${stratEsc(s.sector || '—')}</div>
-    <div style="font-size:11.5px;color:var(--muted)"><i class="ti ti-map-pin" style="color:var(--gold);margin-right:4px"></i>${stratEsc(s.country || 'UAE')} · ${stratEsc(s.region || 'Middle East')}</div>
+    <div id="strat-hdr-sector" style="font-size:11.5px;color:var(--muted)"><i class="ti ti-category" style="color:var(--gold);margin-right:4px"></i>${stratEsc(s.sector || '—')}</div>
+    <div id="strat-hdr-loc" style="font-size:11.5px;color:var(--muted)"><i class="ti ti-map-pin" style="color:var(--gold);margin-right:4px"></i>${stratEsc(s.country || 'UAE')} · ${stratEsc(s.region || 'Middle East')}</div>
     <div style="margin-left:auto">${statusBadge}</div>
   </div>`;
 }
@@ -6109,10 +6109,10 @@ function stratContextPanel(){
     <div class="strat-field"><label>Session Name</label><input class="strat-in" id="strat-ctx-name" value="${stratEsc(defName)}"></div>
     <div class="strat-field"><label>Institution</label><input class="strat-in" value="${stratEsc(org.org_name || '')}" disabled></div>
     <div class="form-row" style="margin-bottom:.7rem">
-      <div class="strat-field" style="margin-bottom:0"><label>Sector</label><input class="strat-in" id="strat-ctx-sector" value="${stratEsc(s ? (s.sector||'') : (org.sector || ''))}"></div>
-      <div class="strat-field" style="margin-bottom:0"><label>Country</label><input class="strat-in" id="strat-ctx-country" value="${stratEsc(s ? (s.country||'UAE') : 'UAE')}"></div>
+      <div class="strat-field" style="margin-bottom:0"><label>Sector</label><input class="strat-in" id="strat-ctx-sector" oninput="stratSyncHeader()" value="${stratEsc(s ? (s.sector||'') : (org.sector || ''))}"></div>
+      <div class="strat-field" style="margin-bottom:0"><label>Country</label><input class="strat-in" id="strat-ctx-country" oninput="stratSyncHeader()" value="${stratEsc(s ? (s.country||'UAE') : 'UAE')}"></div>
     </div>
-    <div class="strat-field"><label>Region</label><input class="strat-in" id="strat-ctx-region" value="${stratEsc(s ? (s.region||'Middle East') : 'Middle East')}"></div>
+    <div class="strat-field"><label>Region</label><input class="strat-in" id="strat-ctx-region" oninput="stratSyncHeader()" value="${stratEsc(s ? (s.region||'Middle East') : 'Middle East')}"></div>
     <div class="strat-field"><label>Additional Context (optional)</label><textarea class="strat-ta" id="strat-ctx-extra" placeholder="Mission focus, strategic priorities, any context the AI should consider…">${stratEsc(s ? (s.additional_context||'') : '')}</textarea></div>
     <button class="btn-submit" style="display:flex;align-items:center;gap:7px" onclick="stratGeneratePestle(false)"><i class="ti ti-sparkles"></i> Generate PESTLE Analysis</button>
   </div>`;
@@ -6144,6 +6144,38 @@ function stratPestleCard(factor){
   </div>`;
 }
 
+// Live-update the workspace header chips as the user edits the Analysis Context form.
+function stratSyncHeader(){
+  const sec = document.getElementById('strat-hdr-sector');
+  const loc = document.getElementById('strat-hdr-loc');
+  if (sec) sec.innerHTML = '<i class="ti ti-category" style="color:var(--gold);margin-right:4px"></i>' + stratEsc(stratVal('strat-ctx-sector') || '—');
+  if (loc) loc.innerHTML = '<i class="ti ti-map-pin" style="color:var(--gold);margin-right:4px"></i>' + stratEsc(stratVal('strat-ctx-country') || 'UAE') + ' · ' + stratEsc(stratVal('strat-ctx-region') || 'Middle East');
+}
+
+// Persist the current Analysis Context to the session before any AI generation, so the
+// engine always uses the latest sector/country/region. Throws if the PATCH fails.
+async function stratPatchSession(){
+  if (!_stratSession) return;
+  const s = _stratSession;
+  const hasForm = !!document.getElementById('strat-ctx-name');
+  const payload = hasForm ? {
+    session_name:       stratVal('strat-ctx-name')    || s.session_name || null,
+    sector:             stratVal('strat-ctx-sector')  || null,
+    country:            stratVal('strat-ctx-country') || 'UAE',
+    region:             stratVal('strat-ctx-region')  || 'Middle East',
+    additional_context: stratVal('strat-ctx-extra')   || null
+  } : {
+    session_name:       s.session_name || null,
+    sector:             s.sector || null,
+    country:            s.country || 'UAE',
+    region:             s.region || 'Middle East',
+    additional_context: s.additional_context || null
+  };
+  const updated = await stratFetch(`/sessions/${s.session_id}`,
+    {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+  _stratSession = Object.assign({}, s, updated);
+}
+
 async function stratGeneratePestle(regen){
   if (regen && !confirm('Regenerate the PESTLE analysis? Existing confirmations and edits for all six factors will be reset.')) return;
   try {
@@ -6157,11 +6189,18 @@ async function stratGeneratePestle(regen){
         additional_context: stratVal('strat-ctx-extra') || null
       } : (_stratPendingCtx || {});
       _stratPendingCtx = payload;
-      stratStageLoading('Analysing global and regional trends…');
+      stratStageLoading('Saving analysis context…');
       _stratSession = await stratFetch('/sessions', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
     } else {
-      stratStageLoading('Analysing global and regional trends…');
+      stratStageLoading('Saving analysis context…');
+      await stratPatchSession();
     }
+  } catch (err) {
+    stratStageError('Failed to save analysis context: ' + err.message, `stratGeneratePestle(${regen?'true':'false'})`);
+    return;
+  }
+  try {
+    stratStageLoading('Analysing global and regional trends…');
     const d = await stratFetch(`/sessions/${_stratSession.session_id}/pestle/generate`, {method:'POST'});
     _stratPestle = d.factors || [];
     _stratEditing = {};
@@ -6251,6 +6290,13 @@ function stratPorterCard(force){
 
 async function stratGeneratePorters(regen){
   if (regen && !confirm("Regenerate Porter's Five Forces? Existing confirmations and edits for all five forces will be reset.")) return;
+  try {
+    stratStageLoading('Saving analysis context…');
+    await stratPatchSession();
+  } catch (err) {
+    stratStageError('Failed to save analysis context: ' + err.message, `stratGeneratePorters(${regen?'true':'false'})`);
+    return;
+  }
   stratStageLoading(`Assessing competitive dynamics in ${(_stratSession && _stratSession.sector) || 'your sector'}…`);
   try {
     const d = await stratFetch(`/sessions/${_stratSession.session_id}/porters/generate`, {method:'POST'});
@@ -6343,6 +6389,13 @@ function stratCompetitorCard(row, i){
 
 async function stratGenerateCompetitors(regen){
   if (regen && !confirm('Regenerate the Competitor Analysis? Unconfirmed competitors will be replaced; confirmed ones are kept.')) return;
+  try {
+    stratStageLoading('Saving analysis context…');
+    await stratPatchSession();
+  } catch (err) {
+    stratStageError('Failed to save analysis context: ' + err.message, `stratGenerateCompetitors(${regen?'true':'false'})`);
+    return;
+  }
   stratStageLoading(`Benchmarking competitors in ${(_stratSession && _stratSession.sector) || 'your sector'}…`);
   try {
     const d = await stratFetch(`/sessions/${_stratSession.session_id}/competitors/generate`, {method:'POST'});
@@ -6426,6 +6479,13 @@ function stratSwotCard(quadrant){
 
 async function stratGenerateSwot(regen){
   if (regen && !confirm('Regenerate the SWOT analysis? Existing confirmations and edits for all four quadrants will be reset.')) return;
+  try {
+    stratStageLoading('Saving analysis context…');
+    await stratPatchSession();
+  } catch (err) {
+    stratStageError('Failed to save analysis context: ' + err.message, `stratGenerateSwot(${regen?'true':'false'})`);
+    return;
+  }
   stratStageLoading('Synthesising strategic position…');
   try {
     const d = await stratFetch(`/sessions/${_stratSession.session_id}/swot/generate`, {method:'POST'});
@@ -6529,6 +6589,13 @@ function stratStakeholderCard(row, i){
 
 async function stratGenerateStakeholders(regen){
   if (regen && !confirm('Regenerate the Stakeholder Mapping? Unconfirmed stakeholders will be replaced; confirmed ones are kept.')) return;
+  try {
+    stratStageLoading('Saving analysis context…');
+    await stratPatchSession();
+  } catch (err) {
+    stratStageError('Failed to save analysis context: ' + err.message, `stratGenerateStakeholders(${regen?'true':'false'})`);
+    return;
+  }
   stratStageLoading('Mapping stakeholders on the power/interest grid…');
   try {
     const d = await stratFetch(`/sessions/${_stratSession.session_id}/stakeholders/generate`, {method:'POST'});
