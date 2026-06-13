@@ -1535,9 +1535,27 @@ async function doLogin() {
   errEl.style.display = 'none';
   if (!email || !org_id) { showLoginError('Please enter email and organisation ID'); return; }
   btn.disabled = true; btn.textContent = 'Signing in…';
-  try {
+
+  const attempt = async () => {
     const res  = await fetch(`${API}/auth/login`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,org_id})});
-    const data = await res.json();
+    let data = {}; try { data = await res.json(); } catch {}
+    return { res, data };
+  };
+
+  // One automatic retry handles Azure SQL serverless auto-pause: the first
+  // request can 500 or time out while the DB resumes (~15-30s). Only surface
+  // an error to the user if the retry also fails. 4xx (bad credentials) never retries.
+  try {
+    let result;
+    try {
+      result = await attempt();
+      if (result.res.status >= 500) throw new Error('server');
+    } catch (firstErr) {
+      showLoginInfo('Connecting — please wait…');
+      await new Promise(r => setTimeout(r, 3000));
+      result = await attempt();
+    }
+    const { res, data } = result;
     if (!res.ok) { showLoginError(data.error || 'Login failed'); btn.disabled=false; btn.textContent='Sign in'; return; }
     SESSION = data;
     enterApp();
@@ -1546,7 +1564,12 @@ async function doLogin() {
 
 function showLoginError(msg) {
   const el = document.getElementById('login-error');
-  el.textContent = msg; el.style.display = 'block';
+  el.textContent = msg; el.style.color = ''; el.style.display = 'block';
+}
+
+function showLoginInfo(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg; el.style.color = '#8fa6b0'; el.style.display = 'block';
 }
 
 function enterApp() {
