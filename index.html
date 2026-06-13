@@ -549,7 +549,6 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
       <button class="nav-item" onclick="showPage('opplans')"><i class="ti ti-sitemap"></i> Operating Plans</button>
       <div class="nav-section-label">Strategy Design</div>
       <button class="nav-item" onclick="showPage('strategy')"><i class="ti ti-route"></i> Strategy Development</button>
-      <button class="nav-item" onclick="showPage('stakeholder')"><i class="ti ti-users"></i> Stakeholder Management</button>
       <button class="nav-item" onclick="showPage('roadmap')"><i class="ti ti-map-2"></i> Product Roadmap</button>
       <div class="nav-section-label">Insights</div>
       <button class="nav-item" onclick="showPage('analysis')"><i class="ti ti-brain"></i> Analysis</button>
@@ -1541,7 +1540,7 @@ function showPage(page) {
   document.querySelectorAll('.page').forEach(p => p.style.display='none');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-'+page).style.display = 'block';
-  const idx = {dashboard:0,objectives:1,kpis:2,obef:3,risks:4,projects:5,opplans:6,strategy:7,stakeholder:8,roadmap:9,analysis:10};
+  const idx = {dashboard:0,objectives:1,kpis:2,obef:3,risks:4,projects:5,opplans:6,strategy:7,roadmap:8,analysis:9};
   document.querySelectorAll('.nav-item')[idx[page]]?.classList.add('active');
   if (page==='dashboard') loadDashboard();
   if (page==='objectives') loadObjectives();
