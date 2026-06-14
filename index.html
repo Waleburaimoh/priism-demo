@@ -3359,12 +3359,12 @@ function closeDetailPanel(e) {
 // ════════════════════════════════════════════════════════════════════
 // P5 — PROFILE PANELS + KRI DRAWER
 // ════════════════════════════════════════════════════════════════════
-let _profileType = null, _profileItem = null, _profileEditMode = false;
+let _profileType = null, _profileItem = null, _profileEditMode = false, _cgFile = null;
 let _kriRiskId = null, _kriRiskCode = '', _kriList = [], _kriExpanded = {}, _kriEditId = null, _kriActualKriId = null;
 
 function _profileCanEdit() {
   const roles = (SESSION && SESSION.roles) || [];
-  return roles.some(r => ['strategy_admin', 'risk_admin'].includes((r.role_name || '').toLowerCase()));
+  return roles.some(r => ['system administrator', 'strategy_admin', 'risk_admin'].includes((r.role_name || '').toLowerCase()));
 }
 
 // ── shared field helpers ──
@@ -3440,8 +3440,6 @@ const _PROFILE_DEFS = {
     label: 'Risk Profile', codeKey: 'risk_code',
     fields: [
       { k: 'risk_source', l: 'Risk Source', t: 'select', o: [['internal', 'Internal'], ['external', 'External'], ['mixed', 'Mixed']] },
-      { k: 'control_rating', l: 'Control Rating', t: 'select', o: [['strong', 'Strong'], ['adequate', 'Adequate'], ['weak', 'Weak'], ['none', 'None']] },
-      { k: 'control_description', l: 'Control Description', t: 'textarea' },
       { k: 'residual_risk_title', l: 'Residual Risk Title', t: 'text' },
       { k: 'causes', l: 'Causes', t: 'textarea', ro: true },
       { k: 'consequences', l: 'Consequences', t: 'textarea', ro: true },
@@ -3501,13 +3499,164 @@ function _renderProfileBody() {
   const def = _PROFILE_DEFS[_profileType];
   const item = _profileItem;
   const edit = _profileEditMode && _profileCanEdit();
-  document.getElementById('pf-body').innerHTML = def.fields.map(f => {
+  let html = def.fields.map(f => {
     const val = item[f.k];
     const editable = edit && !f.ro;
     const roTag = (edit && f.ro) ? ' <span class="pf-ro">read-only</span>' : '';
     const inner = editable ? _fieldInput(f, val, 'pf-') : `<div class="pf-view">${_fieldDisplay(f, val)}</div>`;
     return `<div class="pf-field"><div class="pf-label">${f.l}${roTag}</div>${inner}</div>`;
   }).join('');
+  if (_profileType === 'risk') html += _renderControlGov(item, edit);
+  document.getElementById('pf-body').innerHTML = html;
+  if (_profileType === 'risk' && edit) _cgRatingChange();
+}
+
+// ── Control Rating governance (risk profile drawer) ──
+function _renderControlGov(item, edit) {
+  const rating = item.control_rating || '';
+  const just = item.control_ai_justification || '';
+  const delta = item.control_ai_delta;
+  const verifiedAt = item.control_evidence_verified_at;
+  let h = '<div class="pf-field" style="border-top:1px solid rgba(201,168,76,.18);margin-top:.7rem;padding-top:.9rem">';
+  h += '<div class="pf-label" style="color:var(--gold-light)">Control Rating Governance</div>';
+  if (!edit) {
+    h += `<div class="pf-view">${rating ? _pfEsc(rating) : '<span class="pf-empty">—</span>'}</div>`;
+    if (item.control_description) {
+      h += `<div class="pf-label" style="margin-top:.6rem">Control Description</div><div class="pf-view">${_pfEsc(item.control_description).replace(/\n/g, '<br>')}</div>`;
+    }
+  } else {
+    h += `<select class="pf-in" id="cg-rating" onchange="_cgRatingChange()">
+      <option value="">— select —</option>
+      <option value="Insufficient"${rating === 'Insufficient' ? ' selected' : ''}>Insufficient</option>
+      <option value="Fair"${rating === 'Fair' ? ' selected' : ''}>Fair</option>
+      <option value="Good"${rating === 'Good' ? ' selected' : ''}>Good</option>
+    </select>
+    <div id="cg-conditional" style="margin-top:.7rem"></div>
+    <div id="cg-result"></div>`;
+  }
+  if (just) {
+    const dl = (delta != null) ? `${delta > 0 ? '+' : ''}${delta}` : '';
+    h += `<div style="border:1px solid rgba(125,211,232,.3);background:rgba(125,211,232,.07);border-radius:8px;padding:.7rem .9rem;margin-top:.7rem">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold-light);margin-bottom:.3rem">AI Verification${dl ? ` · score Δ ${dl}` : ''}${verifiedAt ? ` · ${_fmtDate(verifiedAt)}` : ''}</div>
+      <div style="font-size:12.5px;color:var(--cream-dark)">${_pfEsc(just).replace(/\n/g, '<br>')}</div>
+    </div>`;
+  }
+  h += '</div>';
+  return h;
+}
+
+function _cgRatingChange() {
+  const sel = document.getElementById('cg-rating');
+  const cond = document.getElementById('cg-conditional');
+  const res = document.getElementById('cg-result');
+  if (res) res.innerHTML = '';
+  _cgFile = null;
+  if (!sel || !cond) return;
+  const v = sel.value;
+  if (v === 'Fair' || v === 'Good') {
+    cond.innerHTML = `
+      <div class="pf-field"><div class="pf-label">Control Description <span style="color:#FCA5A5">*</span></div>
+        <textarea class="pf-ta" id="cg-desc">${_pfEsc(_profileItem.control_description || '')}</textarea></div>
+      <div class="pf-field"><div class="pf-label">Supporting Evidence <span style="color:#FCA5A5">*</span></div>
+        <input type="file" id="cg-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" style="width:100%;color:var(--cream-dark);font-size:12.5px" onchange="_cgFileChange(this)">
+        <div id="cg-file-name" style="display:none;margin-top:.35rem;font-size:12px;color:var(--cream-dark)"><i class="ti ti-paperclip" style="color:var(--gold)"></i> <span></span></div>
+      </div>
+      <button class="btn-submit" id="cg-submit" onclick="submitControlRating()" style="width:100%;margin-top:.3rem"><i class="ti ti-shield-check"></i> Verify &amp; Save Control Rating</button>`;
+  } else if (v === 'Insufficient') {
+    cond.innerHTML = `
+      <div style="border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.1);border-radius:8px;padding:.6rem .8rem;margin:.3rem 0 .5rem;font-size:12.5px;color:#FCD34D">
+        <i class="ti ti-alert-triangle"></i> Rating Insufficient will increase the risk score by +1.</div>
+      <button class="btn-submit" id="cg-submit" onclick="submitControlRating()" style="width:100%">Save Control Rating</button>`;
+  } else {
+    cond.innerHTML = '';
+  }
+}
+
+function _cgFileChange(input) {
+  const file = input.files[0];
+  const nameEl = document.getElementById('cg-file-name');
+  if (!file) { _cgFile = null; if (nameEl) nameEl.style.display = 'none'; return; }
+  if (nameEl) { nameEl.style.display = 'block'; nameEl.querySelector('span').textContent = file.name; }
+  const reader = new FileReader();
+  reader.onload = e => { _cgFile = { name: file.name, type: file.type || 'application/octet-stream', base64: e.target.result.split(',')[1] }; };
+  reader.readAsDataURL(file);
+}
+
+async function submitControlRating() {
+  const item = _profileItem;
+  const sel = document.getElementById('cg-rating');
+  const res = document.getElementById('cg-result');
+  const btn = document.getElementById('cg-submit');
+  if (!sel || !item) return;
+  const rating = sel.value;
+  if (!rating) { showToast('Select a control rating', 'error'); return; }
+  if (res) res.innerHTML = '';
+
+  let payload = { control_rating: rating };
+  if (rating === 'Fair' || rating === 'Good') {
+    const desc = (document.getElementById('cg-desc')?.value || '').trim();
+    if (!desc) { showToast('Control description is required', 'error'); return; }
+    if (!_cgFile) { showToast('Please upload supporting evidence', 'error'); return; }
+    payload.control_description = desc;
+    payload.evidence_url = `evidence/risk/${item.risk_id}/${_cgFile.name}`;
+    payload.file_data = _cgFile.base64;
+    payload.file_type = _cgFile.type;
+  }
+
+  const origLabel = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = (rating === 'Insufficient') ? 'Saving…' : '<span class="loading-dots" style="padding:0;display:inline-flex;gap:3px"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> Verifying evidence…'; }
+
+  try {
+    const r = await fetch(`${API}/organisations/${SESSION.org_id}/risks/${item.risk_id}/control-rating`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+
+    if (rating === 'Insufficient') {
+      if (data.risk) { Object.assign(_profileItem, data.risk); _refreshRiskScore(data.risk); }
+      showToast('Control rated Insufficient. Risk score increased by 1.', 'success');
+      _renderProfileBody();
+      return;
+    }
+
+    if (data.verified === true) {
+      if (data.risk) { Object.assign(_profileItem, data.risk); _refreshRiskScore(data.risk); }
+      showToast(`Control verified. Risk score adjusted by ${data.score_delta} points.`, 'success');
+      _renderProfileBody();
+    } else {
+      if (res) {
+        res.innerHTML = `<div style="border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.09);border-radius:8px;padding:.85rem 1rem;margin-top:.7rem">
+          <div style="font-size:13px;font-weight:700;color:#FCA5A5;margin-bottom:.35rem">✗ Evidence Not Verified</div>
+          <div style="font-size:12.5px;color:var(--cream-dark);margin-bottom:.6rem">${_pfEsc(data.justification || data.message || '')}</div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <button class="pf-mini" onclick="_cgResetEvidence()"><i class="ti ti-refresh"></i> Upload Different Evidence</button>
+            <button class="pf-mini pf-mini-gold" onclick="_cgDowngradeInsufficient()">Downgrade to Insufficient</button>
+          </div>
+        </div>`;
+      }
+      if (btn) { btn.disabled = false; btn.innerHTML = origLabel; }
+    }
+  } catch (e) {
+    showToast(e.message || 'Control rating update failed', 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = origLabel; }
+  }
+}
+
+function _cgResetEvidence() {
+  _cgFile = null;
+  const f = document.getElementById('cg-file');
+  if (f) f.value = '';
+  const nameEl = document.getElementById('cg-file-name');
+  if (nameEl) nameEl.style.display = 'none';
+  const res = document.getElementById('cg-result');
+  if (res) res.innerHTML = '';
+}
+
+function _cgDowngradeInsufficient() {
+  const sel = document.getElementById('cg-rating');
+  if (sel) sel.value = 'Insufficient';
+  _cgRatingChange();
 }
 
 function toggleProfileEdit() {
