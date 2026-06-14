@@ -3517,7 +3517,7 @@ function _renderControlGov(item, edit) {
   const just = item.control_ai_justification || '';
   const delta = item.control_ai_delta;
   const verifiedAt = item.control_evidence_verified_at;
-  let h = '<div class="pf-field" style="border-top:1px solid rgba(201,168,76,.18);margin-top:.7rem;padding-top:.9rem">';
+  let h = '<div class="pf-field" id="control-rating-section" style="border-top:1px solid rgba(201,168,76,.18);margin-top:.7rem;padding-top:.9rem">';
   h += '<div class="pf-label" style="color:var(--gold-light)">Control Rating Governance</div>';
   if (!edit) {
     h += `<div class="pf-view">${rating ? _pfEsc(rating) : '<span class="pf-empty">—</span>'}</div>`;
