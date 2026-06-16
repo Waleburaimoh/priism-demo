@@ -463,6 +463,73 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
 .obef-detail-table td{padding:6px 10px;border-bottom:1px solid var(--border);color:var(--cream-dark);vertical-align:middle}
 .obef-detail-table tr:last-child td{border-bottom:none}
 .obef-detail-empty{font-size:12px;color:var(--muted);font-style:italic;padding:.4rem 0}
+.obef-tab-bar {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  margin-bottom: 18px;
+  padding-bottom: 0;
+}
+.obef-tab {
+  padding: 8px 18px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  border-radius: 4px 4px 0 0;
+  transition: all 0.15s;
+}
+.obef-tab:hover { color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.06); }
+.obef-tab.active { color: #fff; border-bottom-color: var(--gold, #b98947); font-weight: 600; }
+.obef-tab-panel { display: none; }
+.obef-tab-panel:first-of-type { display: block; }
+.obef-kpi-profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.obef-kpi-profile-item {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.obef-kpi-profile-item.full-width { grid-column: 1 / -1; }
+.obef-kpi-profile-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--cream, #faf0a1);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+  opacity: 0.7;
+}
+.obef-kpi-profile-value {
+  font-size: 13px;
+  color: rgba(255,255,255,0.9);
+  line-height: 1.5;
+}
+.obef-kpi-profile-formula {
+  font-family: monospace;
+  font-size: 12px;
+  background: rgba(0,0,0,0.2);
+  padding: 8px 10px;
+  border-radius: 4px;
+  color: rgba(255,255,255,0.85);
+  word-break: break-word;
+}
+.obef-empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: rgba(255,255,255,0.4);
+  font-size: 13px;
+  line-height: 1.8;
+}
 </style>
 </head>
 <body>
@@ -6032,6 +6099,32 @@ function resetProjectActivityForm() {
 }
 
 // ── OBEF COMPLIANCE ──
+const OBEF_KPI_PROFILES = {
+  '1.1': { pillar:'Student Achievement', weight:'20%', formula:'(Graduates meeting threshold / Total graduates) × 100', timeframe:'Annual', dataSource:'SIS / Registrar', benchmark:'≥ 80%', description:'Measures the proportion of graduates who meet the institutional academic achievement threshold.' },
+  '1.2': { pillar:'Student Achievement', weight:'20%', formula:'(Students passing all modules / Total enrolled) × 100', timeframe:'Annual', dataSource:'SIS / Registrar', benchmark:'≥ 75%', description:'Proportion of enrolled students who pass all registered modules in the academic year.' },
+  '1.3': { pillar:'Student Achievement', weight:'20%', formula:'(Students retained year-on-year / Total enrolled prior year) × 100', timeframe:'Annual', dataSource:'SIS', benchmark:'≥ 85%', description:'Measures year-on-year student retention, excluding planned graduations.' },
+  '1.4': { pillar:'Student Achievement', weight:'20%', formula:'(Graduates employed or in further study within 6 months / Total graduates surveyed) × 100', timeframe:'Annual', dataSource:'Graduate tracer survey', benchmark:'≥ 70%', description:'Graduate employment or further study rate within six months of graduation.' },
+  '2.1': { pillar:'Teaching & Learning Quality', weight:'15%', formula:'(Qualified faculty / Total faculty) × 100', timeframe:'Annual', dataSource:'HR System', benchmark:'≥ 80%', description:'Proportion of teaching faculty holding qualifications at least one level above the programme they deliver.' },
+  '2.2': { pillar:'Teaching & Learning Quality', weight:'15%', formula:'Student-to-faculty ratio', timeframe:'Annual', dataSource:'SIS / HR', benchmark:'≤ 20:1', description:'Average number of enrolled students per full-time equivalent teaching faculty member.' },
+  '2.3': { pillar:'Teaching & Learning Quality', weight:'15%', formula:'(Positive satisfaction responses / Total responses) × 100', timeframe:'Per semester', dataSource:'Student survey', benchmark:'≥ 75%', description:'Student satisfaction score from the institutional teaching and learning survey.' },
+  '2.4': { pillar:'Teaching & Learning Quality', weight:'15%', formula:'(Faculty completing CPD hours / Total faculty) × 100', timeframe:'Annual', dataSource:'HR / CPD records', benchmark:'≥ 90%', description:'Proportion of faculty who complete the minimum required continuing professional development hours.' },
+  '3.1': { pillar:'Research & Innovation', weight:'10%', formula:'Total peer-reviewed publications / Total full-time faculty', timeframe:'Annual', dataSource:'Research office', benchmark:'≥ 0.5 per faculty', description:'Average number of peer-reviewed publications per full-time faculty member.' },
+  '3.2': { pillar:'Research & Innovation', weight:'10%', formula:'Total externally funded research projects active in year', timeframe:'Annual', dataSource:'Research office / Finance', benchmark:'≥ 5 active projects', description:'Number of active research projects with confirmed external funding.' },
+  '3.3': { pillar:'Research & Innovation', weight:'10%', formula:'Total patents filed or granted in year', timeframe:'Annual', dataSource:'Research office', benchmark:'≥ 2 per year', description:'Number of patents filed or granted attributable to institutional research activity.' },
+  '3.4': { pillar:'Research & Innovation', weight:'10%', formula:'(Internationally co-authored publications / Total publications) × 100', timeframe:'Annual', dataSource:'Research office', benchmark:'≥ 25%', description:'Proportion of publications produced in collaboration with international partner institutions.' },
+  '4.1': { pillar:'Community & Industry Engagement', weight:'15%', formula:'(Students completing industry placement / Total eligible students) × 100', timeframe:'Annual', dataSource:'Placement office / SIS', benchmark:'≥ 60%', description:'Proportion of eligible students who complete a formal industry placement or internship.' },
+  '4.2': { pillar:'Community & Industry Engagement', weight:'15%', formula:'Number of active formal MoUs with industry or community partners', timeframe:'Annual', dataSource:'Partnerships office', benchmark:'≥ 10 active MoUs', description:'Count of active memoranda of understanding with external industry or community organisations.' },
+  '4.3': { pillar:'Community & Industry Engagement', weight:'15%', formula:'(Advisory board meetings held / Meetings scheduled) × 100', timeframe:'Annual', dataSource:'Governance records', benchmark:'≥ 80%', description:'Proportion of scheduled industry advisory board meetings that were held.' },
+  '4.4': { pillar:'Community & Industry Engagement', weight:'15%', formula:'Total community service hours logged by students and staff', timeframe:'Annual', dataSource:'Student affairs / HR', benchmark:'≥ 500 hours', description:'Aggregate community service hours contributed by students and staff during the academic year.' },
+  '5.1': { pillar:'Institutional Effectiveness', weight:'10%', formula:'(Accreditation standards met / Total standards assessed) × 100', timeframe:'Accreditation cycle', dataSource:'QA office', benchmark:'≥ 90%', description:'Proportion of accreditation standards rated as met or exceeding expectations in the most recent review.' },
+  '5.2': { pillar:'Institutional Effectiveness', weight:'10%', formula:'(Audit recommendations implemented / Total recommendations) × 100', timeframe:'Annual', dataSource:'Internal audit', benchmark:'≥ 85%', description:'Proportion of internal and external audit recommendations fully implemented within the target period.' },
+  '5.3': { pillar:'Institutional Effectiveness', weight:'10%', formula:'(Strategic plan KPIs on track or achieved / Total KPIs) × 100', timeframe:'Annual', dataSource:'Strategy office / PRiiSM', benchmark:'≥ 75%', description:'Proportion of strategic plan KPIs rated Green or achieved at the annual review point.' },
+  '5.4': { pillar:'Institutional Effectiveness', weight:'10%', formula:'(Budget lines within ±5% variance / Total budget lines) × 100', timeframe:'Annual', dataSource:'Finance system', benchmark:'≥ 80%', description:'Proportion of budget lines where actual spend falls within 5% of the approved budget.' },
+  '6.1': { pillar:'Internationalisation', weight:'10%', formula:'(International students / Total enrolled students) × 100', timeframe:'Annual', dataSource:'SIS / Registrar', benchmark:'≥ 10%', description:'Proportion of the enrolled student body holding international (non-UAE) nationality.' },
+  '6.2': { pillar:'Internationalisation', weight:'10%', formula:'(International faculty / Total faculty) × 100', timeframe:'Annual', dataSource:'HR System', benchmark:'≥ 20%', description:'Proportion of teaching faculty holding international (non-UAE) nationality.' },
+  '6.3': { pillar:'Internationalisation', weight:'10%', formula:'(Students participating in international exchange / Total eligible students) × 100', timeframe:'Annual', dataSource:'International office / SIS', benchmark:'≥ 5%', description:'Proportion of eligible students who participate in a formal international exchange or mobility programme.' },
+  '6.4': { pillar:'Internationalisation', weight:'10%', formula:'Number of active international academic partnership agreements', timeframe:'Annual', dataSource:'International office', benchmark:'≥ 8 active partnerships', description:'Count of active formal academic partnership agreements with accredited international institutions.' },
+};
 const OBEF_PILLAR_COLORS  = {1:'#2C4A52',2:'#4A7C59',3:'#C9A84C',4:'#7B5EA7',5:'#C05C3A',6:'#3A7DC0'};
 const OBEF_PILLAR_NAMES   = {1:'Employment Outcomes',2:'Learning Outcomes',3:'Industry Collaboration',4:'Research Outcomes',5:'Reputation',6:'Community Engagement'};
 const OBEF_PILLAR_WEIGHTS = {1:25,2:25,3:20,4:15,5:10,6:5};
@@ -6419,11 +6512,38 @@ async function openObefKpiDetail(kpiNumber) {
          </div>`
       : '';
 
-    body.innerHTML = summary + tva
+    // Tab 1 — MoHESR KPI Profile (hardcoded metadata)
+    const profileMeta = OBEF_KPI_PROFILES[kpiNumber];
+    const profileHtml = profileMeta ? `<div class="obef-kpi-profile-grid">
+      <div class="obef-kpi-profile-item full-width"><div class="obef-kpi-profile-label">Description</div><div class="obef-kpi-profile-value">${profileMeta.description}</div></div>
+      <div class="obef-kpi-profile-item"><div class="obef-kpi-profile-label">Pillar</div><div class="obef-kpi-profile-value">${profileMeta.pillar}</div></div>
+      <div class="obef-kpi-profile-item"><div class="obef-kpi-profile-label">Weight</div><div class="obef-kpi-profile-value">${profileMeta.weight}</div></div>
+      <div class="obef-kpi-profile-item"><div class="obef-kpi-profile-label">Benchmark</div><div class="obef-kpi-profile-value">${profileMeta.benchmark}</div></div>
+      <div class="obef-kpi-profile-item"><div class="obef-kpi-profile-label">Measurement Timeframe</div><div class="obef-kpi-profile-value">${profileMeta.timeframe}</div></div>
+      <div class="obef-kpi-profile-item"><div class="obef-kpi-profile-label">Data Source</div><div class="obef-kpi-profile-value">${profileMeta.dataSource}</div></div>
+      <div class="obef-kpi-profile-item full-width"><div class="obef-kpi-profile-label">Formula</div><div class="obef-kpi-profile-formula">${profileMeta.formula}</div></div>
+    </div>` : '<div class="obef-empty-state"><p>MoHESR profile not available for this KPI.</p></div>';
+
+    // Tab 2 — Performance Detail (the existing content, unchanged)
+    const performanceHtml = summary + tva
       + '<div class="obef-detail-section-label">Actuals History</div>' + historyHtml
       + '<div class="obef-detail-section-label">College Breakdown</div>' + collegeHtml
       + '<div class="obef-detail-section-label">Contributing Activities</div>' + actsHtml
       + evidenceHtml;
+
+    body.innerHTML = `<div class="obef-tab-bar">
+        <button class="obef-tab active" onclick="obefSwitchTab('profile')">KPI Profile</button>
+        <button class="obef-tab" onclick="obefSwitchTab('performance')">Performance Detail</button>
+        <button class="obef-tab" onclick="obefSwitchTab('programs')">Program-Level View</button>
+      </div>
+      <div id="obef-tab-profile" class="obef-tab-panel" style="display:block">${profileHtml}</div>
+      <div id="obef-tab-performance" class="obef-tab-panel" style="display:none">${performanceHtml}</div>
+      <div id="obef-tab-programs" class="obef-tab-panel" style="display:none">
+        <div class="obef-empty-state">
+          <p>Program-level data will appear here once SMA imports programme actuals via CSV upload.</p>
+          <p>Table: priism.obef_program_actuals — currently 0 rows.</p>
+        </div>
+      </div>`;
 
     const srcLabel = k.obef_source_system ? k.obef_source_system.replace(/_/g, ' + ').toUpperCase() : 'PRiiSM';
     document.getElementById('obef-detail-banner').innerHTML =
@@ -6438,6 +6558,14 @@ function closeObefKpiDetail() {
   document.getElementById('obef-detail-overlay').classList.remove('open');
   document.getElementById('obef-detail-body').innerHTML = '';
   document.getElementById('obef-detail-banner').innerHTML = '';
+}
+
+function obefSwitchTab(tab) {
+  document.querySelectorAll('.obef-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.obef-tab-panel').forEach(p => p.style.display = 'none');
+  document.querySelector(`.obef-tab[onclick="obefSwitchTab('${tab}')"]`).classList.add('active');
+  const panel = document.getElementById(`obef-tab-${tab}`);
+  if (panel) panel.style.display = 'block';
 }
 
 // ── STRATEGY DEVELOPMENT ENGINE ──
