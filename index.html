@@ -6100,30 +6100,222 @@ function resetProjectActivityForm() {
 
 // ── OBEF COMPLIANCE ──
 const OBEF_KPI_PROFILES = {
-  '1.1': { pillar:'Student Achievement', weight:'20%', formula:'(Graduates meeting threshold / Total graduates) × 100', timeframe:'Annual', dataSource:'SIS / Registrar', benchmark:'≥ 80%', description:'Measures the proportion of graduates who meet the institutional academic achievement threshold.' },
-  '1.2': { pillar:'Student Achievement', weight:'20%', formula:'(Students passing all modules / Total enrolled) × 100', timeframe:'Annual', dataSource:'SIS / Registrar', benchmark:'≥ 75%', description:'Proportion of enrolled students who pass all registered modules in the academic year.' },
-  '1.3': { pillar:'Student Achievement', weight:'20%', formula:'(Students retained year-on-year / Total enrolled prior year) × 100', timeframe:'Annual', dataSource:'SIS', benchmark:'≥ 85%', description:'Measures year-on-year student retention, excluding planned graduations.' },
-  '1.4': { pillar:'Student Achievement', weight:'20%', formula:'(Graduates employed or in further study within 6 months / Total graduates surveyed) × 100', timeframe:'Annual', dataSource:'Graduate tracer survey', benchmark:'≥ 70%', description:'Graduate employment or further study rate within six months of graduation.' },
-  '2.1': { pillar:'Teaching & Learning Quality', weight:'15%', formula:'(Qualified faculty / Total faculty) × 100', timeframe:'Annual', dataSource:'HR System', benchmark:'≥ 80%', description:'Proportion of teaching faculty holding qualifications at least one level above the programme they deliver.' },
-  '2.2': { pillar:'Teaching & Learning Quality', weight:'15%', formula:'Student-to-faculty ratio', timeframe:'Annual', dataSource:'SIS / HR', benchmark:'≤ 20:1', description:'Average number of enrolled students per full-time equivalent teaching faculty member.' },
-  '2.3': { pillar:'Teaching & Learning Quality', weight:'15%', formula:'(Positive satisfaction responses / Total responses) × 100', timeframe:'Per semester', dataSource:'Student survey', benchmark:'≥ 75%', description:'Student satisfaction score from the institutional teaching and learning survey.' },
-  '2.4': { pillar:'Teaching & Learning Quality', weight:'15%', formula:'(Faculty completing CPD hours / Total faculty) × 100', timeframe:'Annual', dataSource:'HR / CPD records', benchmark:'≥ 90%', description:'Proportion of faculty who complete the minimum required continuing professional development hours.' },
-  '3.1': { pillar:'Research & Innovation', weight:'10%', formula:'Total peer-reviewed publications / Total full-time faculty', timeframe:'Annual', dataSource:'Research office', benchmark:'≥ 0.5 per faculty', description:'Average number of peer-reviewed publications per full-time faculty member.' },
-  '3.2': { pillar:'Research & Innovation', weight:'10%', formula:'Total externally funded research projects active in year', timeframe:'Annual', dataSource:'Research office / Finance', benchmark:'≥ 5 active projects', description:'Number of active research projects with confirmed external funding.' },
-  '3.3': { pillar:'Research & Innovation', weight:'10%', formula:'Total patents filed or granted in year', timeframe:'Annual', dataSource:'Research office', benchmark:'≥ 2 per year', description:'Number of patents filed or granted attributable to institutional research activity.' },
-  '3.4': { pillar:'Research & Innovation', weight:'10%', formula:'(Internationally co-authored publications / Total publications) × 100', timeframe:'Annual', dataSource:'Research office', benchmark:'≥ 25%', description:'Proportion of publications produced in collaboration with international partner institutions.' },
-  '4.1': { pillar:'Community & Industry Engagement', weight:'15%', formula:'(Students completing industry placement / Total eligible students) × 100', timeframe:'Annual', dataSource:'Placement office / SIS', benchmark:'≥ 60%', description:'Proportion of eligible students who complete a formal industry placement or internship.' },
-  '4.2': { pillar:'Community & Industry Engagement', weight:'15%', formula:'Number of active formal MoUs with industry or community partners', timeframe:'Annual', dataSource:'Partnerships office', benchmark:'≥ 10 active MoUs', description:'Count of active memoranda of understanding with external industry or community organisations.' },
-  '4.3': { pillar:'Community & Industry Engagement', weight:'15%', formula:'(Advisory board meetings held / Meetings scheduled) × 100', timeframe:'Annual', dataSource:'Governance records', benchmark:'≥ 80%', description:'Proportion of scheduled industry advisory board meetings that were held.' },
-  '4.4': { pillar:'Community & Industry Engagement', weight:'15%', formula:'Total community service hours logged by students and staff', timeframe:'Annual', dataSource:'Student affairs / HR', benchmark:'≥ 500 hours', description:'Aggregate community service hours contributed by students and staff during the academic year.' },
-  '5.1': { pillar:'Institutional Effectiveness', weight:'10%', formula:'(Accreditation standards met / Total standards assessed) × 100', timeframe:'Accreditation cycle', dataSource:'QA office', benchmark:'≥ 90%', description:'Proportion of accreditation standards rated as met or exceeding expectations in the most recent review.' },
-  '5.2': { pillar:'Institutional Effectiveness', weight:'10%', formula:'(Audit recommendations implemented / Total recommendations) × 100', timeframe:'Annual', dataSource:'Internal audit', benchmark:'≥ 85%', description:'Proportion of internal and external audit recommendations fully implemented within the target period.' },
-  '5.3': { pillar:'Institutional Effectiveness', weight:'10%', formula:'(Strategic plan KPIs on track or achieved / Total KPIs) × 100', timeframe:'Annual', dataSource:'Strategy office / PRiiSM', benchmark:'≥ 75%', description:'Proportion of strategic plan KPIs rated Green or achieved at the annual review point.' },
-  '5.4': { pillar:'Institutional Effectiveness', weight:'10%', formula:'(Budget lines within ±5% variance / Total budget lines) × 100', timeframe:'Annual', dataSource:'Finance system', benchmark:'≥ 80%', description:'Proportion of budget lines where actual spend falls within 5% of the approved budget.' },
-  '6.1': { pillar:'Internationalisation', weight:'10%', formula:'(International students / Total enrolled students) × 100', timeframe:'Annual', dataSource:'SIS / Registrar', benchmark:'≥ 10%', description:'Proportion of the enrolled student body holding international (non-UAE) nationality.' },
-  '6.2': { pillar:'Internationalisation', weight:'10%', formula:'(International faculty / Total faculty) × 100', timeframe:'Annual', dataSource:'HR System', benchmark:'≥ 20%', description:'Proportion of teaching faculty holding international (non-UAE) nationality.' },
-  '6.3': { pillar:'Internationalisation', weight:'10%', formula:'(Students participating in international exchange / Total eligible students) × 100', timeframe:'Annual', dataSource:'International office / SIS', benchmark:'≥ 5%', description:'Proportion of eligible students who participate in a formal international exchange or mobility programme.' },
-  '6.4': { pillar:'Internationalisation', weight:'10%', formula:'Number of active international academic partnership agreements', timeframe:'Annual', dataSource:'International office', benchmark:'≥ 8 active partnerships', description:'Count of active formal academic partnership agreements with accredited international institutions.' },
+  '1.1': {
+    pillar: 'Employment Outcomes',
+    weight: '10%',
+    formula: '(Graduates employed within 6 months of graduation / Total graduates surveyed) × 100',
+    timeframe: 'Annual',
+    dataSource: 'Graduate tracer survey / Placement office',
+    benchmark: '≥ 70%',
+    description: 'Measures the proportion of graduates who secure employment within six months of completing their programme, regardless of sector or role.'
+  },
+  '1.2': {
+    pillar: 'Employment Outcomes',
+    weight: '10%',
+    formula: '(Graduates employed in a role relevant to their field of study / Total employed graduates surveyed) × 100',
+    timeframe: 'Annual',
+    dataSource: 'Graduate tracer survey',
+    benchmark: '≥ 60%',
+    description: 'Proportion of employed graduates whose job role aligns with the discipline or field of their completed programme.'
+  },
+  '2.1': {
+    pillar: 'Learning Outcomes',
+    weight: '10%',
+    formula: 'Proportion of assessments reviewed and validated against programme learning outcomes in the reporting year',
+    timeframe: 'Annual',
+    dataSource: 'QA office / Academic records',
+    benchmark: '100% of programmes reviewed',
+    description: 'Measures the completeness and quality of assessment review processes against stated programme learning outcomes.'
+  },
+  '2.2': {
+    pillar: 'Learning Outcomes',
+    weight: '10%',
+    formula: '(First-year students continuing to second year / Total first-year enrolments) × 100',
+    timeframe: 'Annual',
+    dataSource: 'SIS / Registrar',
+    benchmark: '≥ 85%',
+    description: 'First-year retention rate — proportion of first-year students who progress to the second year of their programme.'
+  },
+  '2.3': {
+    pillar: 'Learning Outcomes',
+    weight: '10%',
+    formula: '(Positive employer feedback responses / Total employer respondents) × 100',
+    timeframe: 'Annual',
+    dataSource: 'Employer feedback survey — placement cohort',
+    benchmark: '≥ 75%',
+    description: 'Employer satisfaction score for students on work placements, measuring preparedness, professionalism, and applied skills.'
+  },
+  '2.4': {
+    pillar: 'Learning Outcomes',
+    weight: '10%',
+    formula: '(Positive employer feedback responses / Total employer respondents) × 100',
+    timeframe: 'Annual',
+    dataSource: 'Graduate employer feedback survey',
+    benchmark: '≥ 75%',
+    description: 'Employer satisfaction score for graduates in employment, measuring the quality and relevance of their institutional preparation.'
+  },
+  '2.5': {
+    pillar: 'Learning Outcomes',
+    weight: '10%',
+    formula: '(Graduates who obtained at least one microcredential or professional licence / Total graduates) × 100',
+    timeframe: 'Annual',
+    dataSource: 'Registrar / Professional licensing bodies',
+    benchmark: '≥ 30%',
+    description: 'Proportion of graduates who have obtained a recognised microcredential, professional certification, or industry licence in addition to their degree.'
+  },
+  '2.6': {
+    pillar: 'Learning Outcomes',
+    weight: '10%',
+    formula: '(Positive student satisfaction responses / Total survey respondents) × 100',
+    timeframe: 'Per semester',
+    dataSource: 'Student satisfaction survey',
+    benchmark: '≥ 75%',
+    description: 'Overall student satisfaction with the learning experience, covering teaching quality, curriculum relevance, and support services.'
+  },
+  '3.1': {
+    pillar: 'Industry Collaboration',
+    weight: '10%',
+    formula: '(Students receiving a job offer from their placement employer / Total students completing placements) × 100',
+    timeframe: 'Annual',
+    dataSource: 'Placement office / Student records',
+    benchmark: '≥ 40%',
+    description: 'Proportion of students who receive a formal job offer from the organisation where they completed their work placement.'
+  },
+  '3.2': {
+    pillar: 'Industry Collaboration',
+    weight: '10%',
+    formula: '(Students completing at least one work placement / Total eligible students) × 100',
+    timeframe: 'Annual',
+    dataSource: 'Placement office / SIS',
+    benchmark: '≥ 80%',
+    description: 'Proportion of eligible students who complete at least one formal work placement or internship during their programme.'
+  },
+  '3.3': {
+    pillar: 'Industry Collaboration',
+    weight: '10%',
+    formula: 'Number of courses or modules co-developed or co-delivered with industry partners in the reporting year',
+    timeframe: 'Annual',
+    dataSource: 'Academic affairs / Partnerships office',
+    benchmark: '≥ 5 joint courses',
+    description: 'Count of formally approved courses or modules that have been co-designed or co-delivered in partnership with industry organisations.'
+  },
+  '3.4': {
+    pillar: 'Industry Collaboration',
+    weight: '10%',
+    formula: 'Total value or number of in-kind and financial contributions received from industry partners',
+    timeframe: 'Annual',
+    dataSource: 'Finance / Partnerships office',
+    benchmark: 'Year-on-year increase',
+    description: 'Aggregate industry contributions to the institution including sponsored projects, equipment, guest lectures, scholarships, and cash funding.'
+  },
+  '4.1': {
+    pillar: 'Research Outcomes',
+    weight: '10%',
+    formula: 'Total peer-reviewed publications / Total full-time equivalent academic staff',
+    timeframe: 'Annual',
+    dataSource: 'Research office / Scopus / Web of Science',
+    benchmark: '≥ 0.5 per FTE staff',
+    description: 'Average number of peer-reviewed publications per full-time equivalent academic staff member in the reporting year.'
+  },
+  '4.2': {
+    pillar: 'Research Outcomes',
+    weight: '10%',
+    formula: 'Field-Weighted Citation Impact score (FWCI) from Scopus or equivalent index',
+    timeframe: 'Annual',
+    dataSource: 'Scopus / Elsevier research intelligence',
+    benchmark: '≥ 1.0 (world average)',
+    description: 'Measures the citation impact of institutional publications relative to the world average for the same field, publication type, and year. A score above 1.0 indicates above-average impact.'
+  },
+  '4.3': {
+    pillar: 'Research Outcomes',
+    weight: '10%',
+    formula: 'Number of active research projects conducted jointly with industry partners',
+    timeframe: 'Annual',
+    dataSource: 'Research office / Finance',
+    benchmark: '≥ 3 active joint projects',
+    description: 'Count of active research projects formally conducted in collaboration with one or more industry organisations.'
+  },
+  '4.4': {
+    pillar: 'Research Outcomes',
+    weight: '10%',
+    formula: '(Students participating in a formal research project / Total enrolled students) × 100',
+    timeframe: 'Annual',
+    dataSource: 'Research office / SIS',
+    benchmark: '≥ 10%',
+    description: 'Proportion of enrolled students who participate in at least one formally registered research project during the reporting year.'
+  },
+  '4.5': {
+    pillar: 'Research Outcomes',
+    weight: '10%',
+    formula: 'Composite or qualitative assessment of societal and economic impact of institutional research outputs',
+    timeframe: 'Annual',
+    dataSource: 'Research office / Impact case studies',
+    benchmark: 'Evidenced impact cases submitted',
+    description: 'Assessment of the broader societal, economic, or policy impact of research outputs, evidenced through case studies or impact metrics.'
+  },
+  '4.6': {
+    pillar: 'Research Outcomes',
+    weight: '10%',
+    formula: 'Total patents filed or granted attributable to institutional research in the reporting year',
+    timeframe: 'Annual',
+    dataSource: 'Research office / IP registry',
+    benchmark: '≥ 1 per year',
+    description: 'Number of patents filed or granted as a result of research conducted at or in partnership with the institution.'
+  },
+  '5.1': {
+    pillar: 'Reputation',
+    weight: '10%',
+    formula: 'Position or band achieved in recognised global university or subject-specific rankings',
+    timeframe: 'Annual',
+    dataSource: 'QS / THE / Shanghai rankings',
+    benchmark: 'Ranked or improved position year-on-year',
+    description: 'Institutional presence and position in recognised global or regional university and subject rankings.'
+  },
+  '5.2': {
+    pillar: 'Reputation',
+    weight: '10%',
+    formula: 'Number and status of active international accreditations held by the institution or its programmes',
+    timeframe: 'Accreditation cycle',
+    dataSource: 'QA office / Accreditation bodies',
+    benchmark: '≥ 1 international accreditation maintained',
+    description: 'Count and status of active international programme or institutional accreditations from recognised bodies (e.g. AACSB, ABET, EQUIS).'
+  },
+  '5.3': {
+    pillar: 'Reputation',
+    weight: '10%',
+    formula: '(Students enrolled in an international dual or joint degree / Total enrolled students) × 100',
+    timeframe: 'Annual',
+    dataSource: 'International office / SIS',
+    benchmark: '≥ 5%',
+    description: 'Proportion of enrolled students participating in a formal dual or joint degree programme delivered in partnership with an international institution.'
+  },
+  '5.4': {
+    pillar: 'Reputation',
+    weight: '10%',
+    formula: '(Internationally co-authored publications / Total publications) × 100',
+    timeframe: 'Annual',
+    dataSource: 'Research office / Scopus',
+    benchmark: '≥ 25%',
+    description: 'Proportion of the institution\'s publications co-authored with researchers affiliated to international institutions.'
+  },
+  '6.1': {
+    pillar: 'Community Engagement',
+    weight: '10%',
+    formula: 'Number of academic or professional events organised by the institution with documented student participation',
+    timeframe: 'Annual',
+    dataSource: 'Student affairs / Academic affairs',
+    benchmark: '≥ 10 events per year',
+    description: 'Count of academic conferences, seminars, competitions, or professional events organised by or hosted at the institution where students actively participate.'
+  },
+  '6.2': {
+    pillar: 'Community Engagement',
+    weight: '10%',
+    formula: 'Number of community outreach events or social initiatives organised or co-organised by the institution',
+    timeframe: 'Annual',
+    dataSource: 'Student affairs / Community partnerships office',
+    benchmark: '≥ 5 initiatives per year',
+    description: 'Count of events or programmes delivered by the institution or its students and staff that directly benefit the wider community beyond the campus.'
+  }
 };
 const OBEF_PILLAR_COLORS  = {1:'#2C4A52',2:'#4A7C59',3:'#C9A84C',4:'#7B5EA7',5:'#C05C3A',6:'#3A7DC0'};
 const OBEF_PILLAR_NAMES   = {1:'Employment Outcomes',2:'Learning Outcomes',3:'Industry Collaboration',4:'Research Outcomes',5:'Reputation',6:'Community Engagement'};
