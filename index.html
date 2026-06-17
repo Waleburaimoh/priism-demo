@@ -530,6 +530,141 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
   font-size: 13px;
   line-height: 1.8;
 }
+
+/* P3 — Activity Deep-Drill Level 2 Modal */
+#obef-drill-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 10100;
+    align-items: center;
+    justify-content: center;
+}
+#obef-drill-overlay.active {
+    display: flex;
+}
+#obef-drill-modal {
+    background: linear-gradient(135deg, rgba(27,42,74,0.97) 0%, rgba(15,25,50,0.98) 100%);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 660px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+#obef-drill-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(201,168,76,0.25);
+    flex-shrink: 0;
+}
+#obef-drill-back {
+    background: none;
+    border: none;
+    color: var(--gold);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+#obef-drill-back:hover {
+    background: rgba(201,168,76,0.12);
+    text-decoration: underline;
+}
+#obef-drill-title {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+#obef-drill-close {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.5);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: color 0.2s;
+}
+#obef-drill-close:hover { color: #fff; }
+#obef-drill-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+.obef-drill-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.obef-drill-progress-wrap {
+    margin-bottom: 20px;
+}
+.obef-drill-progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 6px;
+}
+.obef-drill-progress-bar {
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.obef-drill-progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--gold), #e8c56a);
+    transition: width 0.5s ease;
+}
+.obef-drill-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.obef-drill-field {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+.obef-drill-field.full-width {
+    grid-column: 1 / -1;
+}
+.obef-drill-field-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--cream, #f5f0e8);
+    opacity: 0.6;
+    margin-bottom: 6px;
+}
+.obef-drill-field-value {
+    font-size: 13px;
+    color: rgba(255,255,255,0.9);
+    line-height: 1.5;
+}
+.obef-act-row { cursor: pointer; transition: background 0.15s; }
+.obef-act-row:hover { background: rgba(201,168,76,0.08) !important; }
 </style>
 </head>
 <body>
@@ -1556,6 +1691,18 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
       <button class="btn-cancel" onclick="closeObefKpiDetail()">Close</button>
     </div>
   </div>
+</div>
+
+<!-- P3 — OBEF Activity Deep-Drill Level 2 Modal -->
+<div id="obef-drill-overlay">
+    <div id="obef-drill-modal">
+        <div id="obef-drill-header">
+            <button id="obef-drill-back" onclick="closeObefActivityDrill()">← Back</button>
+            <span id="obef-drill-title"></span>
+            <button id="obef-drill-close" onclick="closeObefActivityDrill()">✕</button>
+        </div>
+        <div id="obef-drill-body"></div>
+    </div>
 </div>
 
 <!-- DETAIL PANEL -->
@@ -6683,10 +6830,11 @@ async function openObefKpiDetail(kpiNumber) {
 
     // Section 6 — contributing activities
     const acts = data.contributing_activities || [];
+    window._obefCurrentActivities = acts;
     const actsHtml = acts.length === 0
       ? '<div class="obef-detail-empty">No activities linked to this KPI.</div>'
       : `<table class="obef-detail-table"><thead><tr><th>Type</th><th>Activity</th><th>Department</th><th>Status</th><th style="text-align:right">Completion</th></tr></thead><tbody>${
-          acts.map(a => `<tr>
+          acts.map(a => `<tr class="obef-act-row" onclick="openObefActivityDrill('${a.activity_type}','${a.activity_id}','${kpiNumber}')">
             <td><span class="status-badge ${a.activity_type==='aop'?'badge-teal':'badge-purple'}">${a.activity_type==='aop'?'AOP':'Project'}</span></td>
             <td style="max-width:240px;line-height:1.35">${a.activity_name||'—'}</td>
             <td>${a.dept_name||'—'}</td>
@@ -6758,6 +6906,92 @@ function obefSwitchTab(tab) {
   document.querySelector(`.obef-tab[onclick="obefSwitchTab('${tab}')"]`).classList.add('active');
   const panel = document.getElementById(`obef-tab-${tab}`);
   if (panel) panel.style.display = 'block';
+}
+
+function openObefActivityDrill(type, activityId, kpiNumber) {
+    // Resolve back-button label from OBEF_KPI_PROFILES
+    const profile = (typeof OBEF_KPI_PROFILES !== 'undefined' && OBEF_KPI_PROFILES[kpiNumber]) || null;
+    const kpiLabel = profile
+        ? `${kpiNumber} ${profile.description || profile.pillar || ''}`
+        : `KPI ${kpiNumber}`;
+    document.getElementById('obef-drill-back').textContent = `← Back to ${kpiLabel}`;
+
+    // Show overlay with spinner
+    const overlay = document.getElementById('obef-drill-overlay');
+    const body    = document.getElementById('obef-drill-body');
+    body.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.5);">Loading...</div>';
+    overlay.classList.add('active');
+
+    // Find activity in cached array — no extra fetch needed
+    const acts = window._obefCurrentActivities || [];
+    const act  = acts.find(a => String(a.activity_id) === String(activityId));
+
+    if (!act) {
+        body.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.4);">Activity detail not available.</div>';
+        return;
+    }
+
+    // Set modal title
+    document.getElementById('obef-drill-title').textContent = act.activity_name || 'Activity Detail';
+
+    // Build status chip
+    const statusColor = {
+        'completed':'#27ae60','in progress':'#f39c12','on track':'#27ae60',
+        'at risk':'#e74c3c','not started':'#7f8c8d','delayed':'#e74c3c'
+    }[String(act.status||'').toLowerCase()] || '#7f8c8d';
+
+    // Build type badge
+    const typeBadge = type === 'aop'
+        ? '<span style="background:rgba(0,188,212,0.2);color:#00bcd4;border:1px solid rgba(0,188,212,0.4);border-radius:12px;padding:3px 10px;font-size:11px;font-weight:700;">AOP</span>'
+        : '<span style="background:rgba(156,39,176,0.2);color:#ce93d8;border:1px solid rgba(156,39,176,0.4);border-radius:12px;padding:3px 10px;font-size:11px;font-weight:700;">PROJECT</span>';
+
+    const statusChip = `<span style="background:${statusColor}22;color:${statusColor};border:1px solid ${statusColor}44;border-radius:12px;padding:3px 10px;font-size:11px;font-weight:700;">${act.status || 'Unknown'}</span>`;
+
+    // Progress bar
+    const pct = parseFloat(act.completion_pct) || 0;
+    const progressHtml = `
+        <div class="obef-drill-progress-wrap">
+            <div class="obef-drill-progress-label">
+                <span>Completion</span><span>${pct}%</span>
+            </div>
+            <div class="obef-drill-progress-bar">
+                <div class="obef-drill-progress-fill" style="width:${pct}%"></div>
+            </div>
+        </div>`;
+
+    // Detail fields — only render if value is non-null and non-empty
+    function drillField(label, value, fullWidth) {
+        if (value === null || value === undefined || String(value).trim() === '') return '';
+        return `<div class="obef-drill-field${fullWidth ? ' full-width' : ''}">
+            <div class="obef-drill-field-label">${label}</div>
+            <div class="obef-drill-field-value">${value}</div>
+        </div>`;
+    }
+
+    const dueDate = act.due_date ? new Date(act.due_date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : null;
+
+    const gridHtml = `<div class="obef-drill-grid">
+        ${drillField('Department',        act.dept_name)}
+        ${drillField('Owner',             act.owner_name)}
+        ${drillField('Due Date',          dueDate)}
+        ${drillField('Last Verified',     act.last_verified_pct !== null && act.last_verified_pct !== undefined ? act.last_verified_pct + '%' : null)}
+        ${drillField('Expected Output',   act.expected_output,  true)}
+        ${drillField('Actual Output',     act.actual_output,    true)}
+        ${drillField('Notes',             act.notes,            true)}
+    </div>`;
+
+    body.innerHTML = `
+        <div class="obef-drill-badge-row">${typeBadge}${statusChip}</div>
+        ${progressHtml}
+        ${gridHtml}`;
+}
+
+function closeObefActivityDrill() {
+    const overlay = document.getElementById('obef-drill-overlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+        document.getElementById('obef-drill-body').innerHTML = '';
+    }
 }
 
 // ── STRATEGY DEVELOPMENT ENGINE ──
