@@ -6788,6 +6788,7 @@ async function openObefKpiDetail(kpiNumber) {
 
     document.getElementById('obef-detail-title').textContent = k.title || '—';
     document.getElementById('obef-detail-code').textContent  = k.kpi_code || '';
+    window._obefCurrentKpiTitle = k.title || '';
 
     // Section 2 — summary strip
     const lastUpdated = k.last_updated ? new Date(k.last_updated).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) : '—';
@@ -6910,10 +6911,13 @@ function obefSwitchTab(tab) {
 
 function openObefActivityDrill(type, activityId, kpiNumber) {
     // Resolve back-button label from OBEF_KPI_PROFILES
+    const cachedTitle = window._obefCurrentKpiTitle || '';
     const profile = (typeof OBEF_KPI_PROFILES !== 'undefined' && OBEF_KPI_PROFILES[kpiNumber]) || null;
-    const kpiLabel = profile
-        ? `${kpiNumber} ${profile.description || profile.pillar || ''}`
-        : `KPI ${kpiNumber}`;
+    const kpiLabel = cachedTitle
+        ? `${kpiNumber} ${cachedTitle}`
+        : profile
+            ? `${kpiNumber} ${profile.pillar || profile.description || ''}`
+            : `KPI ${kpiNumber}`;
     document.getElementById('obef-drill-back').textContent = `← Back to ${kpiLabel}`;
 
     // Show overlay with spinner
@@ -6935,17 +6939,19 @@ function openObefActivityDrill(type, activityId, kpiNumber) {
     document.getElementById('obef-drill-title').textContent = act.activity_name || 'Activity Detail';
 
     // Build status chip
+    const statusNorm = String(act.status||'').toLowerCase().replace(/_/g,' ');
     const statusColor = {
         'completed':'#27ae60','in progress':'#f39c12','on track':'#27ae60',
         'at risk':'#e74c3c','not started':'#7f8c8d','delayed':'#e74c3c'
-    }[String(act.status||'').toLowerCase()] || '#7f8c8d';
+    }[statusNorm] || '#7f8c8d';
 
     // Build type badge
     const typeBadge = type === 'aop'
         ? '<span style="background:rgba(0,188,212,0.2);color:#00bcd4;border:1px solid rgba(0,188,212,0.4);border-radius:12px;padding:3px 10px;font-size:11px;font-weight:700;">AOP</span>'
         : '<span style="background:rgba(156,39,176,0.2);color:#ce93d8;border:1px solid rgba(156,39,176,0.4);border-radius:12px;padding:3px 10px;font-size:11px;font-weight:700;">PROJECT</span>';
 
-    const statusChip = `<span style="background:${statusColor}22;color:${statusColor};border:1px solid ${statusColor}44;border-radius:12px;padding:3px 10px;font-size:11px;font-weight:700;">${act.status || 'Unknown'}</span>`;
+    const statusLabel = act.status ? statusNorm.replace(/\b\w/g, c => c.toUpperCase()) : 'Unknown';
+    const statusChip = `<span style="background:${statusColor}22;color:${statusColor};border:1px solid ${statusColor}44;border-radius:12px;padding:3px 10px;font-size:11px;font-weight:700;">${statusLabel}</span>`;
 
     // Progress bar
     const pct = parseFloat(act.completion_pct) || 0;
