@@ -893,12 +893,12 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
     <!-- RISKS -->
     <!-- Programs Management Page -->
     <div class="page" id="page-programs" style="display:none">
-        <div class="page-header">
+        <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
             <div>
                 <h1 class="page-title">Programs Management</h1>
                 <p class="page-subtitle" id="programs-subtitle">Loading...</p>
             </div>
-            <button class="btn-primary" onclick="openAddProgramModal()">
+            <button class="btn-primary" onclick="openAddProgramModal()" style="flex-shrink:0;">
                 <i class="ti ti-plus"></i> Add Program
             </button>
         </div>
@@ -1954,10 +1954,10 @@ async function loadPrograms() {
                     <table style="width:100%;border-collapse:collapse;">
                         <thead>
                             <tr style="font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.06em;">
-                                <th style="text-align:left;padding:6px 12px;font-weight:600;">Code</th>
+                                <th style="text-align:left;padding:6px 12px;font-weight:600;width:140px;">Code</th>
                                 <th style="text-align:left;padding:6px 12px;font-weight:600;">Program Name</th>
-                                <th style="text-align:center;padding:6px 12px;font-weight:600;">Status</th>
-                                <th style="text-align:right;padding:6px 12px;font-weight:600;">Actions</th>
+                                <th style="text-align:center;padding:6px 12px;font-weight:600;width:120px;">Status</th>
+                                <th style="text-align:right;padding:6px 12px;font-weight:600;width:180px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>`;
@@ -1968,10 +1968,10 @@ async function loadPrograms() {
                     : '<span style="background:rgba(127,140,141,0.2);color:#7f8c8d;border:1px solid rgba(127,140,141,0.4);border-radius:12px;padding:2px 10px;font-size:11px;font-weight:700;">Inactive</span>';
                 html += `
                     <tr style="background:${bg};border-bottom:1px solid rgba(255,255,255,0.05);">
-                        <td style="padding:10px 12px;font-size:12px;color:var(--gold);font-weight:600;white-space:nowrap;">${p.program_code}</td>
+                        <td style="padding:10px 12px;font-size:12px;color:var(--gold);font-weight:600;white-space:nowrap;width:140px;">${p.program_code}</td>
                         <td style="padding:10px 12px;font-size:13px;color:rgba(255,255,255,0.9);">${p.program_name}</td>
-                        <td style="padding:10px 12px;text-align:center;">${statusBadge}</td>
-                        <td style="padding:10px 12px;text-align:right;">
+                        <td style="padding:10px 12px;text-align:center;width:120px;">${statusBadge}</td>
+                        <td style="padding:10px 12px;text-align:right;width:180px;">
                             <button onclick="openEditProgramModal('${p.program_id}')" style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:6px;padding:4px 12px;color:var(--gold);font-size:12px;cursor:pointer;">Edit</button>
                             <button onclick="toggleProgramActive('${p.program_id}',${!p.is_active})" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:4px 12px;color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer;margin-left:6px;">${p.is_active ? 'Deactivate' : 'Activate'}</button>
                         </td>
