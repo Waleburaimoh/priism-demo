@@ -730,6 +730,10 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
         <label>Organisation ID</label>
         <input type="text" id="login-org" placeholder="Organisation ID" value="b7d41f9f-7f15-49b2-8e3b-5850025e970f">
       </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="Enter your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
       <button class="btn-primary" id="login-btn" onclick="doLogin()">Sign in</button>
     </div>
   </div>
@@ -1737,8 +1741,8 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
             </div>
             <div>
                 <label style="display:block;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(245,240,232,0.6);margin-bottom:8px;">College</label>
-                <select id="program-edit-college-select" style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:10px 12px;color:#fff;font-size:14px;outline:none;">
-                    <option value="">Select college...</option>
+                <select id="program-edit-college-select" style="width:100%;background-color:#1b2a4a;border:1px solid #3d7a8a;border-radius:8px;padding:10px 12px;color:#ffffff;font-size:14px;outline:none;">
+                    <option value="" style="background:#1b2a4a;color:#ffffff;">Select college...</option>
                 </select>
             </div>
             <div>
@@ -1854,16 +1858,17 @@ function getObjPrefix(code){return (code||'').replace(/[\d\-_].*$/,'').toUpperCa
 
 // ── AUTH ──
 async function doLogin() {
-  const email  = document.getElementById('login-email').value.trim();
-  const org_id = document.getElementById('login-org').value.trim();
+  const email    = document.getElementById('login-email').value.trim();
+  const org_id   = document.getElementById('login-org').value.trim();
+  const password = document.getElementById('login-password').value;
   const btn    = document.getElementById('login-btn');
   const errEl  = document.getElementById('login-error');
   errEl.style.display = 'none';
-  if (!email || !org_id) { showLoginError('Please enter email and organisation ID'); return; }
+  if (!email || !org_id || !password) { showLoginError('Please enter your email, organisation ID and password.'); return; }
   btn.disabled = true; btn.textContent = 'Signing in…';
 
   const attempt = async () => {
-    const res  = await fetch(`${API}/auth/login`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,org_id})});
+    const res  = await fetch(`${API}/auth/login`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,org_id,password})});
     let data = {}; try { data = await res.json(); } catch {}
     return { res, data };
   };
@@ -1882,6 +1887,7 @@ async function doLogin() {
       result = await attempt();
     }
     const { res, data } = result;
+    if (res.status === 401) { showLoginError(data.error || 'Invalid credentials'); btn.disabled=false; btn.textContent='Sign in'; return; }
     if (!res.ok) { showLoginError(data.error || 'Login failed'); btn.disabled=false; btn.textContent='Sign in'; return; }
     SESSION = data;
     enterApp();
@@ -2037,8 +2043,8 @@ function openEditProgramModal(programId) {
 
     const sel      = document.getElementById('program-edit-college-select');
     const colleges = _departmentsData.filter(d => d.dept_name.startsWith('College of'));
-    sel.innerHTML  = '<option value="">Select college...</option>' +
-        colleges.map(c => `<option value="${c.dept_id}"${c.dept_id === p.college_id ? ' selected' : ''}>${c.dept_name}</option>`).join('');
+    sel.innerHTML  = '<option value="" style="background:#1b2a4a;color:#ffffff;">Select college...</option>' +
+        colleges.map(c => `<option value="${c.dept_id}" style="background:#1b2a4a;color:#ffffff;"${c.dept_id === p.college_id ? ' selected' : ''}>${c.dept_name}</option>`).join('');
 
     document.getElementById('program-edit-overlay').style.display = 'flex';
 }
@@ -7168,7 +7174,7 @@ async function openObefKpiDetail(kpiNumber) {
       <div id="obef-tab-performance" class="obef-tab-panel" style="display:none">${performanceHtml}</div>
       <div id="obef-tab-programs" class="obef-tab-panel" style="display:none">
         <div class="obef-empty-state">
-          <p>Program-level data will appear here once SMA imports programme actuals via CSV upload.</p>
+          <p>Program-level data will appear here once your institution imports programme actuals via CSV upload.</p>
           <p>Table: priism.obef_program_actuals — currently 0 rows.</p>
         </div>
       </div>`;
