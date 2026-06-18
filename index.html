@@ -665,6 +665,60 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
 }
 .obef-act-row { cursor: pointer; transition: background 0.15s; }
 .obef-act-row:hover { background: rgba(201,168,76,0.08) !important; }
+.cd-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1100;display:flex;align-items:center;justify-content:center;padding:1.5rem;backdrop-filter:blur(2px)}
+.cd-modal{background:var(--color-surface,#ffffff);border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,0.22);width:100%;max-width:680px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.cd-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:1.25rem 1.5rem;background:var(--color-primary,#1a3a4a);color:#fff;flex-shrink:0}
+.cd-header-text{display:flex;align-items:flex-start;gap:0.85rem}
+.cd-kpi-badge{display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.18);color:#fff;font-size:0.78rem;font-weight:700;letter-spacing:0.04em;border-radius:5px;padding:0.3rem 0.6rem;white-space:nowrap;margin-top:0.15rem;flex-shrink:0}
+.cd-college-name{margin:0 0 0.15rem;font-size:1.1rem;font-weight:700;color:#fff;line-height:1.3}
+.cd-kpi-title{margin:0;font-size:0.82rem;color:rgba(255,255,255,0.72);line-height:1.4}
+.cd-close-btn{background:none;border:none;color:rgba(255,255,255,0.75);font-size:1.1rem;cursor:pointer;padding:0.25rem 0.4rem;line-height:1;border-radius:4px;flex-shrink:0;transition:color 0.15s,background 0.15s}
+.cd-close-btn:hover{color:#fff;background:rgba(255,255,255,0.12)}
+.cd-body{overflow-y:auto;flex:1;padding:1.5rem}
+.cd-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.85rem;padding:3rem 1rem;color:var(--color-text-secondary,#6b7280);font-size:0.9rem}
+.cd-spinner{width:32px;height:32px;border:3px solid var(--color-border,#e5e7eb);border-top-color:var(--color-primary,#1a3a4a);border-radius:50%;animation:cd-spin 0.75s linear infinite}
+@keyframes cd-spin{to{transform:rotate(360deg)}}
+.cd-error{text-align:center;padding:2.5rem 1rem;color:var(--color-text-secondary,#6b7280);font-size:0.9rem}
+.cd-section{margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--color-border,#e5e7eb)}
+.cd-section-last{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.cd-section-title{font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-secondary,#6b7280);margin:0 0 0.85rem;display:flex;align-items:center;gap:0.6rem}
+.cd-perf-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0.75rem}
+@media(min-width:480px){.cd-perf-grid{grid-template-columns:repeat(4,1fr)}}
+.cd-stat-card{background:var(--color-surface-alt,#f8f9fa);border:1px solid var(--color-border,#e5e7eb);border-radius:7px;padding:0.75rem 0.85rem;display:flex;flex-direction:column;gap:0.35rem}
+.cd-stat-label{font-size:0.7rem;font-weight:600;color:var(--color-text-secondary,#6b7280);letter-spacing:0.04em;text-transform:uppercase}
+.cd-stat-value{font-size:1.15rem;font-weight:700;color:var(--color-text,#111827)}
+.cd-rag-pill{display:inline-block;padding:0.25rem 0.65rem;border-radius:20px;font-size:0.78rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;width:fit-content}
+.cd-rag-red{background:#fee2e2;color:#b91c1c}
+.cd-rag-amber{background:#fef3c7;color:#92400e}
+.cd-rag-green{background:#dcfce7;color:#15803d}
+.cd-rag-unknown{background:var(--color-surface-alt,#f3f4f6);color:var(--color-text-secondary,#6b7280)}
+.cd-formula-block{background:var(--color-surface-alt,#f8f9fa);border:1px solid var(--color-border,#e5e7eb);border-radius:7px;overflow:hidden;margin-bottom:0.75rem}
+.cd-formula-row{display:flex;align-items:baseline;gap:0.75rem;padding:0.7rem 1rem}
+.cd-formula-label{font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-secondary,#6b7280);min-width:90px;flex-shrink:0}
+.cd-formula-value{font-size:0.92rem;color:var(--color-text,#111827)}
+.cd-formula-divider{height:1px;background:var(--color-border,#e5e7eb);margin:0 1rem}
+.cd-formula-note{font-size:0.85rem;color:var(--color-text-secondary,#6b7280);display:flex;align-items:baseline;gap:0.5rem}
+.cd-inline-label{font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-secondary,#6b7280);flex-shrink:0}
+.cd-ai-flag{font-size:0.7rem;font-weight:700;padding:0.2rem 0.55rem;border-radius:20px;letter-spacing:0.04em}
+.cd-ai-verified{background:#dcfce7;color:#15803d}
+.cd-ai-unverified{background:#fee2e2;color:#b91c1c}
+.cd-ai-pending{background:#fef3c7;color:#92400e}
+.cd-ai-verdict{font-size:0.9rem;color:var(--color-text,#111827);line-height:1.6;margin-bottom:0.85rem;background:var(--color-surface-alt,#f8f9fa);border-left:3px solid var(--color-primary,#1a3a4a);padding:0.75rem 1rem;border-radius:0 6px 6px 0}
+.cd-evidence-sources{display:flex;flex-direction:column;gap:0.5rem}
+.cd-evidence-source-item{display:flex;align-items:flex-start;gap:0.6rem;font-size:0.85rem;color:var(--color-text,#111827);background:var(--color-surface-alt,#f8f9fa);border:1px solid var(--color-border,#e5e7eb);border-radius:6px;padding:0.6rem 0.85rem}
+.cd-source-icon{font-size:0.85rem;flex-shrink:0;margin-top:0.05rem;color:var(--color-text-secondary,#6b7280)}
+.cd-source-label{font-weight:600;color:var(--color-text-secondary,#6b7280);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:0.15rem}
+.cd-evidence-empty{font-size:0.85rem;color:var(--color-text-secondary,#6b7280);font-style:italic}
+.cd-endorsement-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.cd-endorsement-info{font-size:0.88rem;color:var(--color-text,#111827);line-height:1.6}
+.cd-endorsed-name{font-weight:600}
+.cd-endorsed-date{color:var(--color-text-secondary,#6b7280);font-size:0.8rem}
+.cd-unendorsed-notice{color:var(--color-text-secondary,#6b7280);font-style:italic;font-size:0.85rem}
+.cd-btn{font-size:0.85rem;font-weight:600;padding:0.5rem 1.1rem;border-radius:6px;border:none;cursor:pointer;transition:opacity 0.15s,background 0.15s;white-space:nowrap}
+.cd-btn:hover{opacity:0.88}
+.cd-btn-endorse{background:var(--color-primary,#1a3a4a);color:#fff}
+.cd-btn-endorsed{background:#dcfce7;color:#15803d;cursor:default}
+.cd-btn-secondary{background:var(--color-surface-alt,#f3f4f6);color:var(--color-text,#111827);border:1px solid var(--color-border,#e5e7eb)}
 </style>
 </head>
 <body>
@@ -1778,6 +1832,63 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
             </div>
         </div>
     </div>
+</div>
+
+<div id="college-drill-overlay" class="cd-overlay" role="dialog" aria-modal="true" aria-labelledby="cd-modal-title" style="display:none;">
+  <div class="cd-modal">
+    <div class="cd-header">
+      <div class="cd-header-text">
+        <span class="cd-kpi-badge" id="cd-kpi-badge">1.1</span>
+        <div>
+          <h2 class="cd-college-name" id="cd-college-name">College</h2>
+          <p class="cd-kpi-title" id="cd-kpi-title"></p>
+        </div>
+      </div>
+      <button class="cd-close-btn" onclick="closeCollegeDrillModal()" aria-label="Close">&#x2715;</button>
+    </div>
+    <div class="cd-body" id="cd-body">
+      <div class="cd-loading" id="cd-loading">
+        <div class="cd-spinner"></div>
+        <p>Loading college data…</p>
+      </div>
+      <div class="cd-error" id="cd-error" style="display:none;">
+        <p id="cd-error-msg">Unable to load data. Please try again.</p>
+        <button class="cd-btn cd-btn-secondary" onclick="cd_retry()">Retry</button>
+      </div>
+      <div id="cd-content" style="display:none;">
+        <section class="cd-section">
+          <h3 class="cd-section-title">Performance</h3>
+          <div class="cd-perf-grid">
+            <div class="cd-stat-card"><span class="cd-stat-label">Actual Value</span><span class="cd-stat-value" id="cd-actual-value">—</span></div>
+            <div class="cd-stat-card"><span class="cd-stat-label">Target</span><span class="cd-stat-value" id="cd-target-value">—</span></div>
+            <div class="cd-stat-card"><span class="cd-stat-label">RAG Status</span><span class="cd-rag-pill" id="cd-rag-pill">—</span></div>
+            <div class="cd-stat-card"><span class="cd-stat-label">Academic Year</span><span class="cd-stat-value" id="cd-academic-year">—</span></div>
+          </div>
+        </section>
+        <section class="cd-section">
+          <h3 class="cd-section-title">Formula</h3>
+          <div class="cd-formula-block">
+            <div class="cd-formula-row"><span class="cd-formula-label">Numerator</span><span class="cd-formula-value" id="cd-numerator">—</span></div>
+            <div class="cd-formula-divider"></div>
+            <div class="cd-formula-row"><span class="cd-formula-label">Denominator</span><span class="cd-formula-value" id="cd-denominator">—</span></div>
+          </div>
+          <div class="cd-formula-note"><span class="cd-inline-label">Data Source</span><span id="cd-source">—</span></div>
+        </section>
+        <section class="cd-section">
+          <h3 class="cd-section-title">AI Verification <span class="cd-ai-flag" id="cd-ai-flag">—</span></h3>
+          <div class="cd-ai-verdict" id="cd-ai-verdict">—</div>
+          <div class="cd-evidence-sources" id="cd-evidence-sources"></div>
+        </section>
+        <section class="cd-section cd-section-last">
+          <h3 class="cd-section-title">Human Endorsement</h3>
+          <div class="cd-endorsement-row">
+            <div class="cd-endorsement-info" id="cd-endorsement-info"></div>
+            <button class="cd-btn cd-btn-endorse" id="cd-endorse-btn" onclick="cd_endorse()" style="display:none;">✓ Endorse</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- DETAIL PANEL -->
@@ -8071,6 +8182,123 @@ document.getElementById('login-email').addEventListener('keydown', e=>{ if(e.key
 document.getElementById('login-org').addEventListener('keydown',   e=>{ if(e.key==='Enter') doLogin(); });
 document.getElementById('modal-overlay').addEventListener('click', e=>{ if(e.target===document.getElementById('modal-overlay')) closeModal(); });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeDetailPanel(); });
+
+const CollegeDrill = (() => {
+  let _currentKpi = null, _currentDept = null, _currentData = null;
+  function _el(id) { return document.getElementById(id); }
+  function _ragClass(rag) {
+    if (!rag) return 'cd-rag-unknown';
+    const r = rag.toLowerCase();
+    if (r === 'red') return 'cd-rag-red';
+    if (r === 'amber') return 'cd-rag-amber';
+    if (r === 'green') return 'cd-rag-green';
+    return 'cd-rag-unknown';
+  }
+  function _aiClass(v) { return v === true ? 'cd-ai-verified' : v === false ? 'cd-ai-unverified' : 'cd-ai-pending'; }
+  function _aiLabel(v) { return v === true ? 'AI Verified' : v === false ? 'Not Verified' : 'Pending'; }
+  function _formatDate(s) {
+    if (!s) return null;
+    return new Date(s).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  function _canEndorse() {
+    try { return typeof _isAdmin === 'function' && _isAdmin(); } catch(_) { return false; }
+  }
+  function _orgId() {
+    try { return typeof _currentOrgId === 'function' ? _currentOrgId() : (window.SESSION && SESSION.org_id); } catch(_) { return null; }
+  }
+  function _render(data) {
+    _currentData = data;
+    _el('cd-actual-value').textContent  = data.actual_value  ?? '—';
+    _el('cd-target-value').textContent  = data.target_value  ?? '—';
+    _el('cd-academic-year').textContent = data.academic_year ?? '—';
+    const rp = _el('cd-rag-pill');
+    rp.textContent = data.rag_status ? data.rag_status.toUpperCase() : '—';
+    rp.className = 'cd-rag-pill ' + _ragClass(data.rag_status);
+    _el('cd-numerator').textContent   = data.numerator_value   ?? '—';
+    _el('cd-denominator').textContent = data.denominator_value ?? '—';
+    _el('cd-source').textContent      = data.source            ?? '—';
+    const af = _el('cd-ai-flag');
+    af.textContent = _aiLabel(data.evidence_verified);
+    af.className = 'cd-ai-flag ' + _aiClass(data.evidence_verified);
+    _el('cd-ai-verdict').textContent = data.evidence_verdict || 'No AI verdict recorded.';
+    const se = _el('cd-evidence-sources');
+    const sources = data.evidence_sources || [];
+    se.innerHTML = sources.length === 0
+      ? '<p class="cd-evidence-empty">No evidence sources listed.</p>'
+      : sources.map(s => `<div class="cd-evidence-source-item"><span class="cd-source-icon">📄</span><div><span class="cd-source-label">${s.type||'Source'}</span><span>${s.label||''}${s.detail?' — '+s.detail:''}</span></div></div>`).join('');
+    const ei = _el('cd-endorsement-info');
+    const eb = _el('cd-endorse-btn');
+    if (data.validated_by && data.validated_at) {
+      ei.innerHTML = `<span class="cd-endorsed-name">✓ ${data.validated_by}</span><br><span class="cd-endorsed-date">${_formatDate(data.validated_at)}</span>`;
+      if (_canEndorse()) { eb.textContent='✓ Endorsed'; eb.className='cd-btn cd-btn-endorsed'; eb.disabled=true; eb.style.display='inline-block'; }
+    } else {
+      ei.innerHTML = '<span class="cd-unendorsed-notice">Not yet endorsed by a human reviewer.</span>';
+      if (_canEndorse()) { eb.textContent='✓ Endorse'; eb.className='cd-btn cd-btn-endorse'; eb.disabled=false; eb.style.display='inline-block'; }
+      else { eb.style.display='none'; }
+    }
+  }
+  function _showLoading() { _el('cd-loading').style.display=''; _el('cd-error').style.display='none'; _el('cd-content').style.display='none'; }
+  function _showError(msg) { _el('cd-error-msg').textContent=msg||'Unable to load data.'; _el('cd-loading').style.display='none'; _el('cd-error').style.display=''; _el('cd-content').style.display='none'; }
+  function _showContent() { _el('cd-loading').style.display='none'; _el('cd-error').style.display='none'; _el('cd-content').style.display=''; }
+  async function _fetch(kpiNumber, deptCode) {
+    const orgId = _orgId();
+    if (!orgId) { _showError('Could not determine organisation. Please reload.'); return; }
+    const url = `/organisations/${orgId}/obef/kpi/${encodeURIComponent(kpiNumber)}/college/${encodeURIComponent(deptCode)}`;
+    try {
+      const res = await fetch(url, { headers: { 'Authorization': `Bearer ${window.SESSION && SESSION.token || ''}` } });
+      if (!res.ok) { const b = await res.json().catch(()=>({})); _showError(b.message||`Server error (${res.status}).`); return; }
+      const data = await res.json();
+      _render(data); _showContent();
+    } catch(err) { console.error('[CollegeDrill] fetch error:', err); _showError('Network error. Check your connection and try again.'); }
+  }
+  return {
+    open(kpiNumber, deptCode, collegeName, kpiTitle) {
+      _currentKpi=kpiNumber; _currentDept=deptCode;
+      _el('cd-kpi-badge').textContent   = kpiNumber   || '';
+      _el('cd-college-name').textContent = collegeName || 'College';
+      _el('cd-kpi-title').textContent   = kpiTitle    || '';
+      _el('cd-endorse-btn').style.display = 'none';
+      _showLoading();
+      const overlay = _el('college-drill-overlay');
+      overlay.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      overlay.querySelector('.cd-close-btn').focus();
+      _fetch(kpiNumber, deptCode);
+    },
+    close() {
+      _el('college-drill-overlay').style.display='none';
+      document.body.style.overflow='';
+      _currentKpi=null; _currentDept=null; _currentData=null;
+    },
+    retry() { if (_currentKpi && _currentDept) { _showLoading(); _fetch(_currentKpi, _currentDept); } },
+    async endorse() {
+      const btn = _el('cd-endorse-btn');
+      btn.disabled=true; btn.textContent='Endorsing…';
+      const orgId = _orgId();
+      const url = `/organisations/${orgId}/obef/kpi/${encodeURIComponent(_currentKpi)}/college/${encodeURIComponent(_currentDept)}/endorse`;
+      try {
+        const res = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${window.SESSION&&SESSION.token||''}` } });
+        if (!res.ok) { const b=await res.json().catch(()=>({})); alert(b.message||'Endorsement failed.'); btn.disabled=false; btn.textContent='✓ Endorse'; return; }
+        const updated = await res.json(); _render(updated); _showContent();
+      } catch(err) { console.error('[CollegeDrill] endorse error:',err); alert('Network error. Please try again.'); btn.disabled=false; btn.textContent='✓ Endorse'; }
+    }
+  };
+})();
+
+function openCollegeDrillModal(kpiNumber, deptCode, collegeName, kpiTitle) { CollegeDrill.open(kpiNumber, deptCode, collegeName, kpiTitle); }
+function closeCollegeDrillModal() { CollegeDrill.close(); }
+function cd_retry() { CollegeDrill.retry(); }
+function cd_endorse() { CollegeDrill.endorse(); }
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const o = document.getElementById('college-drill-overlay');
+    if (o && o.style.display !== 'none') CollegeDrill.close();
+  }
+});
+document.getElementById('college-drill-overlay').addEventListener('click', function(e) {
+  if (e.target === this) CollegeDrill.close();
+});
 </script>
 <div id="print-frame" style="display:none"></div>
 
