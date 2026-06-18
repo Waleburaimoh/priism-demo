@@ -6816,15 +6816,6 @@ function obefSourceBadge(source) {
 }
 
 function renderObefDashboard(data) {
-  const OBEF_PILLARS = {
-    1: { name: 'Employment Outcomes',    weight: 25 },
-    2: { name: 'Learning Outcomes',      weight: 25 },
-    3: { name: 'Industry Collaboration', weight: 20 },
-    4: { name: 'Research Outcomes',      weight: 15 },
-    5: { name: 'Reputation',             weight: 10 },
-    6: { name: 'Community Engagement',   weight: 5  },
-  };
-
   // Flatten all KPIs regardless of how the API pre-grouped them
   // (obef_pillar_number may be null in DB — derive from obef_kpi_number instead)
   let allKpis = [];
@@ -6833,12 +6824,12 @@ function renderObefDashboard(data) {
   const pillarMap = {};
   allKpis.forEach(kpi => {
     const pillarNum = Math.floor(parseFloat(kpi.obef_kpi_number));
-    if (!pillarNum || !OBEF_PILLARS[pillarNum]) return;
+    if (!pillarNum || !OBEF_PILLAR_NAMES[pillarNum]) return;
     if (!pillarMap[pillarNum]) {
       pillarMap[pillarNum] = {
         number:        pillarNum,
-        name:          OBEF_PILLARS[pillarNum].name,
-        pillar_weight: OBEF_PILLARS[pillarNum].weight,
+        name:          OBEF_PILLAR_NAMES[pillarNum],
+        pillar_weight: OBEF_PILLAR_WEIGHTS[pillarNum],
         kpis:          []
       };
     }
