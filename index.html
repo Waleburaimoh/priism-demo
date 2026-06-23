@@ -8205,10 +8205,7 @@ const CollegeDrill = (() => {
     try { return typeof _isAdmin === 'function' && _isAdmin(); } catch(_) { return false; }
   }
   function _orgId() {
-    try {
-      console.log('[CollegeDrill _orgId] window.SESSION =', window.SESSION, '| SESSION.org_id =', window.SESSION && SESSION.org_id);
-      return window.SESSION && SESSION.org_id ? SESSION.org_id : null;
-    } catch(_) { return null; }
+    try { return SESSION && SESSION.org_id ? SESSION.org_id : null; } catch(_) { return null; }
   }
   function _render(data) {
     _currentData = data;
@@ -8249,7 +8246,7 @@ const CollegeDrill = (() => {
     if (!orgId) { _showError('Could not determine organisation. Please reload.'); return; }
     const url = `/organisations/${orgId}/obef/kpi/${encodeURIComponent(kpiNumber)}/college/${encodeURIComponent(deptCode)}`;
     try {
-      const res = await fetch(url, { headers: { 'Authorization': `Bearer ${window.SESSION && SESSION.token || ''}` } });
+      const res = await fetch(url, { headers: { 'Authorization': `Bearer ${SESSION && SESSION.token || ''}` } });
       if (!res.ok) { const b = await res.json().catch(()=>({})); _showError(b.message||`Server error (${res.status}).`); return; }
       const data = await res.json();
       _render(data); _showContent();
@@ -8281,7 +8278,7 @@ const CollegeDrill = (() => {
       const orgId = _orgId();
       const url = `/organisations/${orgId}/obef/kpi/${encodeURIComponent(_currentKpi)}/college/${encodeURIComponent(_currentDept)}/endorse`;
       try {
-        const res = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${window.SESSION&&SESSION.token||''}` } });
+        const res = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${SESSION&&SESSION.token||''}` } });
         if (!res.ok) { const b=await res.json().catch(()=>({})); alert(b.message||'Endorsement failed.'); btn.disabled=false; btn.textContent='✓ Endorse'; return; }
         const updated = await res.json(); _render(updated); _showContent();
       } catch(err) { console.error('[CollegeDrill] endorse error:',err); alert('Network error. Please try again.'); btn.disabled=false; btn.textContent='✓ Endorse'; }
