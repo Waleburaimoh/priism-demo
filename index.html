@@ -6972,12 +6972,12 @@ function renderObefDashboard(data) {
     const kpis  = p.kpis;
     const rows  = kpis.map(k => {
       const hasCollege = k.college_breakdown && k.college_breakdown.length > 0;
-      if (hasCollege) console.log('[college_breakdown sample]', JSON.stringify(k.college_breakdown[0]));
       const cbRows = hasCollege ? k.college_breakdown.map(c =>
-        `<tr><td>${c.college_name||'—'}</td>
+        `<tr style="cursor:pointer" onclick="openCollegeDrillModal('${k.obef_kpi_number}','${c.dept_code}')"><td>${c.college_name||'—'}</td>
         <td style="text-align:right">${c.target_value!=null?Number(c.target_value).toLocaleString():'—'}</td>
         <td style="text-align:right">${c.actual_value!=null?Number(c.actual_value).toLocaleString():'<span style="color:var(--muted);font-style:italic">—</span>'}</td>
-        <td style="text-align:center">${obefRagDot(c.actual_value,c.target_value)}</td></tr>`).join('') : '';
+        <td style="text-align:center">${obefRagDot(c.actual_value,c.target_value)}</td>
+        <td style="text-align:center">&#8250;</td></tr>`).join('') : '';
       return `<tr style="cursor:pointer" onclick="openObefKpiDetail('${k.obef_kpi_number}')">
         <td><span class="obef-ref-badge" style="background:${color}22;color:${color};border:1px solid ${color}44">${k.obef_kpi_number||k.kpi_code||'—'}</span></td>
         <td style="max-width:320px;line-height:1.4">${k.title||'—'}</td>
@@ -6987,7 +6987,7 @@ function renderObefDashboard(data) {
         <td style="text-align:center">${obefRagDot(k.institutional_actual,k.institutional_target)}</td>
         <td style="text-align:center">${hasCollege?`<button class="btn-cancel" style="font-size:11px;padding:3px 9px" onclick="event.stopPropagation();toggleObefCollege('${k.kpi_id}',this)">&#9660; ${k.college_breakdown.length}</button>`:'<span style="color:var(--muted);font-size:11px">—</span>'}</td>
       </tr>${hasCollege?`<tr id="obef-college-${k.kpi_id}" style="display:none"><td colspan="7" style="padding:0;background:rgba(20,40,50,.5)">
-        <table class="obef-cb-table"><thead><tr><th>College</th><th style="text-align:right">Target</th><th style="text-align:right">Actual</th><th style="text-align:center">RAG</th></tr></thead>
+        <table class="obef-cb-table"><thead><tr><th>College</th><th style="text-align:right">Target</th><th style="text-align:right">Actual</th><th style="text-align:center">RAG</th><th></th></tr></thead>
         <tbody>${cbRows}</tbody></table></td></tr>`:''}`;
     }).join('');
     return `<div id="obef-pillar-${p.number}">
