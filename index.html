@@ -8246,6 +8246,7 @@ const CollegeDrill = (() => {
     if (!orgId) { _showError('Could not determine organisation. Please reload.'); return; }
     const url = `/organisations/${orgId}/obef/kpi/${encodeURIComponent(kpiNumber)}/college/${encodeURIComponent(deptCode)}`;
     try {
+      console.log('[CollegeDrill _fetch] url =', url);
       const res = await fetch(url, { headers: { 'Authorization': `Bearer ${SESSION && SESSION.token || ''}` } });
       if (!res.ok) { const b = await res.json().catch(()=>({})); _showError(b.message||`Server error (${res.status}).`); return; }
       const data = await res.json();
