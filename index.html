@@ -8205,7 +8205,7 @@ const CollegeDrill = (() => {
     try { return typeof _isAdmin === 'function' && _isAdmin(); } catch(_) { return false; }
   }
   function _orgId() {
-    try { return typeof _currentOrgId === 'function' ? _currentOrgId() : (window.SESSION && SESSION.org_id); } catch(_) { return null; }
+    try { return window.SESSION && SESSION.org_id ? SESSION.org_id : null; } catch(_) { return null; }
   }
   function _render(data) {
     _currentData = data;
