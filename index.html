@@ -8205,7 +8205,10 @@ const CollegeDrill = (() => {
     try { return typeof _isAdmin === 'function' && _isAdmin(); } catch(_) { return false; }
   }
   function _orgId() {
-    try { return window.SESSION && SESSION.org_id ? SESSION.org_id : null; } catch(_) { return null; }
+    try {
+      console.log('[CollegeDrill _orgId] window.SESSION =', window.SESSION, '| SESSION.org_id =', window.SESSION && SESSION.org_id);
+      return window.SESSION && SESSION.org_id ? SESSION.org_id : null;
+    } catch(_) { return null; }
   }
   function _render(data) {
     _currentData = data;
