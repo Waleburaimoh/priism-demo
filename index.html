@@ -2027,9 +2027,9 @@ function applySectorChrome(){
   // Add-objective modal perspective select labels (#5)
   const fp = document.getElementById('f-perspective_number');
   if (fp) [...fp.options].forEach(opt => { if (opt.value) opt.textContent = `${opt.value} — ${perspName(opt.value)}`; });
-  // Academic-only KPI reporting period option (#11)
-  const ay = document.getElementById('opt-academic-year');
-  if (ay) ay.hidden = !cfg.academicNav;
+  // Note: the academic-only "Academic Year" KPI reporting-period option (#11)
+  // is gated in the KPI modal template itself (getModalContent), not here —
+  // the modal isn't in the DOM at login time.
 }
 const UNIT_LABELS = {INST:'Institutional',CA:'College of Agriculture',CVM:'College of Veterinary Medicine',BA:'College of Business Administration',CL:'College of Law',CI:'College of Computing & Intelligent Systems',CS:'College of Arts Humanities & Social Sciences',COE:'Centre of Excellence',SA:'Student Affairs',AD:'Admissions & Registration',RI:'Research & Innovation',LB:'Library',FN:'Finance',PC:'Procurement',IT:'Information Technology',HR:'Human Resources',GS:'Facilities',CD:'Corporate Communications',IEA:'Institutional Effectiveness',IA:'Internal Audit',SP:'Strategy & Development',LA:'Legal Affairs',VCA:'Vice Chancellor Academic',IN:'International Relations',VCCA:'Vice Chancellor Community',VCAF:'Vice Chancellor Admin & Finance'};
 const DEPT_NAMES = {
@@ -3299,7 +3299,7 @@ function getModalForm(type) {
           <option value="monthly">Monthly</option>
           <option value="quarterly">Quarterly</option>
           <option value="annual">Annual</option>
-          <option value="academic_year" id="opt-academic-year">Academic Year</option>
+          ${sectorCfg().academicNav ? '<option value="academic_year">Academic Year</option>' : ''}
           <option value="fiscal_year">Fiscal Year</option>
         </select>
       </div>
