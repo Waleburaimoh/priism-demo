@@ -450,6 +450,26 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
 .obef-rag-amber{background:var(--gold-light)}
 .obef-rag-red{background:#FCA5A5}
 .obef-rag-grey{background:rgba(245,240,232,.3)}
+/* ── REGULATORY COMPLIANCE (banking / CBUAE) ── */
+.reg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.85rem;padding:1rem 1.1rem}
+.reg-card{background:rgba(30,51,58,.55);border:1px solid var(--border);border-radius:10px;padding:.95rem 1.05rem;position:relative;overflow:hidden}
+.reg-card-accent{position:absolute;top:0;left:0;bottom:0;width:3px}
+.reg-card-code{font-size:10.5px;font-family:monospace;font-weight:600;letter-spacing:.4px;color:var(--gold);opacity:.9}
+.reg-card-name{font-family:var(--font-display);font-size:15px;font-weight:600;color:var(--cream);margin:.15rem 0 .7rem;line-height:1.25}
+.reg-actual{font-family:var(--font-display);font-size:30px;font-weight:600;line-height:1}
+.reg-actual-unit{font-size:15px;font-weight:400;color:var(--muted);margin-left:2px}
+.reg-threshold{font-size:11.5px;color:var(--cream-dark);margin-top:.55rem;display:flex;align-items:center;gap:5px}
+.reg-threshold i{font-size:12px;color:var(--gold);opacity:.85}
+.reg-meta-row{display:flex;gap:1.1rem;margin-top:.65rem;flex-wrap:wrap}
+.reg-meta{display:flex;flex-direction:column;gap:2px}
+.reg-meta-label{font-size:9px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.reg-meta-val{font-size:13px;color:var(--cream);font-weight:500}
+.reg-cal-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.reg-cal-table th{text-align:left;padding:7px 1.1rem;font-size:9px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--gold);border-bottom:1px solid var(--border);background:rgba(30,51,58,.28);opacity:.85}
+.reg-cal-table td{padding:8px 1.1rem;border-bottom:1px solid var(--border);color:var(--cream);vertical-align:middle}
+.reg-cal-table tr:last-child td{border-bottom:none}
+.reg-cal-table tr:hover td{background:rgba(201,168,76,.03)}
+.reg-demo-note{font-size:10.5px;color:var(--muted);font-style:italic;padding:.55rem 1.1rem .1rem}
 .obef-cb-table{width:100%;border-collapse:collapse;font-size:11.5px}
 .obef-cb-table th{padding:5px 1rem;font-size:9px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--gold);background:rgba(20,40,50,.6);border-bottom:1px solid var(--border);text-align:left;opacity:.8}
 .obef-cb-table td{padding:5px 1rem;border-bottom:1px solid var(--border);color:var(--cream-dark);vertical-align:middle}
@@ -853,6 +873,7 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
       <button class="nav-item" onclick="showPage('kpis')"><i class="ti ti-chart-line"></i> KPIs</button>
       <button class="nav-item" id="nav-obef" onclick="showPage('obef')"><i class="ti ti-certificate"></i> OBEF Compliance</button>
       <button class="nav-item" id="nav-programs" onclick="showPage('programs')"><i class="ti ti-school"></i> Programs</button>
+      <button class="nav-item" id="nav-regcompliance" onclick="showPage('regcompliance')" style="display:none"><i class="ti ti-gavel"></i> Regulatory Compliance</button>
       <button class="nav-item" onclick="showPage('risks')"><i class="ti ti-shield-exclamation"></i> Risks</button>
       <button class="nav-item" onclick="showPage('projects')"><i class="ti ti-clipboard-list"></i> Projects</button>
       <button class="nav-item" onclick="showPage('opplans')"><i class="ti ti-sitemap"></i> Operating Plans</button>
@@ -1660,6 +1681,25 @@ tr.row-active td{background:rgba(201,168,76,.09)!important;transition:background
       </div>
     </div>
 
+    <!-- REGULATORY COMPLIANCE (banking / CBUAE) -->
+    <div id="page-regcompliance" class="page" style="display:none">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Regulatory Compliance</div>
+          <div class="page-subtitle">UAE Central Bank (CBUAE) Prudential Framework</div>
+        </div>
+        <div class="obef-header-actions">
+          <span class="obef-badge-pill"><i class="ti ti-building-bank"></i> CBUAE Prudential Framework</span>
+          <span class="obef-badge-pill" id="reg-cycle-pill"><i class="ti ti-calendar"></i> —</span>
+        </div>
+      </div>
+      <div class="page-body">
+        <div id="regcompliance-loading" style="display:none"><div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+        <div id="regcompliance-error" class="msg-error" style="display:none"></div>
+        <div id="regcompliance-content" style="display:none"></div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -2013,6 +2053,10 @@ function applySectorChrome(){
   const navPrograms = document.getElementById('nav-programs');
   if (navObef)     navObef.style.display     = cfg.academicNav ? '' : 'none';
   if (navPrograms) navPrograms.style.display = cfg.academicNav ? '' : 'none';
+  // Banking-only Regulatory Compliance (CBUAE) nav item — the banking analogue
+  // of OBEF Compliance; never shown to academic or generic tenants.
+  const navReg = document.getElementById('nav-regcompliance');
+  if (navReg) navReg.style.display = (SECTOR === 'banking') ? '' : 'none';
   // Unit/department View selector (#3/#4) — academic only
   const unitWrap = document.getElementById('unit-select-wrap');
   if (unitWrap) unitWrap.style.display = cfg.showUnitSelector ? '' : 'none';
@@ -2363,14 +2407,18 @@ function showPage(page) {
   // Academic-only pages must never render for non-academic sectors (defensive —
   // the nav items are hidden, but guard against any other call path).
   if ((page === 'obef' || page === 'programs') && !sectorCfg().academicNav) page = 'dashboard';
+  // Regulatory Compliance is banking-only (CBUAE) — defensive guard mirrors the
+  // academic-page guard above; the nav item is hidden for other sectors.
+  if (page === 'regcompliance' && SECTOR !== 'banking') page = 'dashboard';
   document.querySelectorAll('.page').forEach(p => p.style.display='none');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-'+page).style.display = 'block';
-  const idx = {dashboard:0,objectives:1,kpis:2,obef:3,programs:4,risks:5,projects:6,opplans:7,strategy:8,roadmap:9,analysis:10};
+  const idx = {dashboard:0,objectives:1,kpis:2,obef:3,programs:4,regcompliance:5,risks:6,projects:7,opplans:8,strategy:9,roadmap:10,analysis:11};
   document.querySelectorAll('.nav-item')[idx[page]]?.classList.add('active');
   if (page==='dashboard') loadDashboard();
   if (page==='objectives') loadObjectives();
   if (page==='kpis')      loadKpis();
+  if (page==='regcompliance') loadRegCompliance();
   if (page==='obef')      loadObefDashboard();
   if (page==='risks')     loadRisks();
   if (page==='projects')  loadProjects();
@@ -2604,10 +2652,16 @@ function renderDashVisuals(filteredKpis, filteredRisks, filteredProjs, analysis)
   ].filter(Boolean).join('');
 
   // ── 2. Risk zone donut ──
+  // current_zone vocabulary differs by tenant: academic uses the 4-level
+  // title-case scheme (Critical/High/Medium/Low); banking uses a 5-level
+  // lowercase scheme (extreme/high/moderate/low). Normalise both onto the four
+  // display buckets. Every academic value maps to the bucket it already hit —
+  // this only ADDS recognition of 'extreme'/'moderate', which previously
+  // title-cased to non-keys and fell through to "Unclassified".
+  const ZONE_ALIAS = {extreme:'Critical', critical:'Critical', high:'High', moderate:'Medium', medium:'Medium', low:'Low'};
   const zc = {Critical: 0, High: 0, Medium: 0, Low: 0};
   filteredRisks.forEach(r => {
-    let z = r.current_zone;
-    if (z) z = z.charAt(0).toUpperCase() + z.slice(1).toLowerCase();
+    let z = r.current_zone ? ZONE_ALIAS[String(r.current_zone).trim().toLowerCase()] : null;
     if (!z) {
       const s = (r.initial_likelihood || 0) * (r.initial_impact_overall || 0);
       if (!s) return;
@@ -6765,6 +6819,201 @@ function resetProjectActivityForm() {
     ['pa-name','pa-owner','pa-due-date'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     const s = document.getElementById('pa-status'); if (s) s.value = 'not_started';
     const p = document.getElementById('pa-pct'); if (p) p.value = 0;
+}
+
+// ── REGULATORY COMPLIANCE (banking / CBUAE) ──────────────────────────────
+// Banking analogue of the academic OBEF Compliance screen; gated SECTOR==='banking'.
+// Thresholds/targets, the regulatory risk, and KRI metadata are pulled LIVE from
+// the existing /kpis, /risks and /risks/{id}/kris endpoints. The per-KPI and KRI
+// *latest actual* values are not exposed by any GET endpoint (the kpi_actual /
+// kri_actual tables have no read route), so those actuals — and the reporting
+// calendar — are held here as clearly-labelled illustrative demo constants.
+const CBUAE_PRUDENTIAL = [
+  { code:'KPI-CAR', min:13.0,  minLabel:'CBUAE minimum: 13% (Basel III UAE)', actual:16.5,  higher:true  },
+  { code:'KPI-LCR', min:100.0, minLabel:'CBUAE minimum: 100%',                actual:142.0, higher:true  },
+  { code:'KPI-NPL', min:5.0,   minLabel:'CBUAE watch level: below 5%',        actual:3.8,   higher:false },
+];
+const CBUAE_CONTEXT_CODE = 'KPI-NIM';   // no regulatory floor — context only
+const CBUAE_KRI_ACTUAL   = 0;           // KRI-REG-01 latest (Q3 2026) — actuals not exposed via GET
+const CBUAE_CALENDAR = [
+  { ret:'Liquidity Coverage Ratio (LCR) Monthly Return', due:'10 July 2026',      status:'Due soon'  },
+  { ret:'Q2 2026 Prudential Return (BRF-9)',             due:'31 July 2026',      status:'Upcoming'  },
+  { ret:'Basel III Capital Adequacy Report',             due:'15 August 2026',    status:'Upcoming'  },
+  { ret:'Annual ICAAP Submission',                       due:'30 September 2026', status:'Scheduled' },
+];
+
+function _regRag(status){
+  return {
+    green: {c:'#6EE7B7',           bg:'rgba(16,185,129,.12)', l:'GREEN'},
+    amber: {c:'var(--gold-light)', bg:'rgba(201,168,76,.14)', l:'AMBER'},
+    red:   {c:'#FCA5A5',           bg:'rgba(239,68,68,.14)',  l:'RED'},
+  }[status] || {c:'var(--muted)', bg:'rgba(255,255,255,.06)', l:'—'};
+}
+function _regEsc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// RAG for a prudential metric: green if it clears the internal target, amber if
+// it still clears the CBUAE regulatory threshold, red if it breaches CBUAE.
+function _prudentialRag(row, target){
+  const a = row.actual;
+  if (row.higher){
+    if (target != null && a >= target) return 'green';
+    return a >= row.min ? 'amber' : 'red';
+  }
+  if (target != null && a <= target) return 'green';
+  return a <= row.min ? 'amber' : 'red';
+}
+// Findings KRI is below-is-better against 0 / 1-2 / >2 thresholds.
+function _kriFindingsRag(v){ return v <= 0 ? 'green' : v <= 2 ? 'amber' : 'red'; }
+
+async function loadRegCompliance(){
+  if (!SESSION || !SESSION.org_id || SECTOR !== 'banking') return;
+  const loading = document.getElementById('regcompliance-loading');
+  const content = document.getElementById('regcompliance-content');
+  const errEl   = document.getElementById('regcompliance-error');
+  loading.style.display = ''; content.style.display = 'none'; errEl.style.display = 'none';
+  try {
+    const org = SESSION.org_id;
+    const [kpiRes, riskRes] = await Promise.all([
+      fetch(`${API}/organisations/${org}/kpis`).then(r=>r.json()),
+      fetch(`${API}/organisations/${org}/risks`).then(r=>r.json()),
+    ]);
+    const kpis    = kpiRes.kpis  || [];
+    const risks   = riskRes.risks || [];
+    const regRisk = risks.find(r => (r.risk_code||'').toUpperCase() === 'RISK-REG-01') || null;
+    let kri = null;
+    if (regRisk){
+      const kriRes = await fetch(`${API}/organisations/${org}/risks/${regRisk.risk_id}/kris`)
+        .then(r => r.ok ? r.json() : {kris:[]}).catch(() => ({kris:[]}));
+      kri = (kriRes.kris||[]).find(k => (k.kri_code||'').toUpperCase() === 'KRI-REG-01') || null;
+    }
+    renderRegCompliance(kpis, regRisk, kri);
+    loading.style.display = 'none'; content.style.display = '';
+  } catch(err){
+    loading.style.display = 'none';
+    errEl.textContent = 'Failed to load Regulatory Compliance: ' + (err.message || err);
+    errEl.style.display = '';
+  }
+}
+
+function renderRegCompliance(kpis, regRisk, kri){
+  const byCode = {};
+  kpis.forEach(k => { byCode[(k.kpi_code||'').toUpperCase()] = k; });
+
+  // Header cycle pill — reporting year derived from the KPI target_year (live).
+  const anyKpi = kpis.find(k => k.target_year) || {};
+  const cyclePill = document.getElementById('reg-cycle-pill');
+  if (cyclePill) cyclePill.innerHTML = `<i class="ti ti-calendar"></i> FY${anyKpi.target_year || new Date().getFullYear()} Reporting Cycle`;
+
+  // ── Panel 1 — Prudential Threshold Status ──
+  const prudentialCards = CBUAE_PRUDENTIAL.map(row => {
+    const k = byCode[row.code] || {};
+    const target = k.target_value != null ? Number(k.target_value) : null;
+    const r = _regRag(_prudentialRag(row, target));
+    const arrow = row.higher ? '↑ higher is better' : '↓ lower is better';
+    const unit = k.unit || '%';
+    return `<div class="reg-card">
+      <div class="reg-card-accent" style="background:${r.c}"></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+        <div><div class="reg-card-code">${_regEsc(row.code)}</div>
+          <div class="reg-card-name">${_regEsc(k.title || row.code)}</div></div>
+        <span class="status-badge" style="background:${r.bg};color:${r.c};flex-shrink:0">${r.l}</span>
+      </div>
+      <div><span class="reg-actual" style="color:${r.c}">${row.actual}</span><span class="reg-actual-unit">${_regEsc(unit)}</span></div>
+      <div class="reg-threshold"><i class="ti ti-flag"></i> ${_regEsc(row.minLabel)}</div>
+      <div class="reg-meta-row">
+        <div class="reg-meta"><span class="reg-meta-label">Internal target</span><span class="reg-meta-val">${target!=null?target+unit:'—'}</span></div>
+        <div class="reg-meta"><span class="reg-meta-label">Direction</span><span class="reg-meta-val" style="font-size:12px;color:var(--muted)">${arrow}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // NIM — context only (no regulatory floor)
+  const nim = byCode[CBUAE_CONTEXT_CODE];
+  const contextCard = nim ? `<div class="reg-card">
+      <div class="reg-card-accent" style="background:var(--muted)"></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+        <div><div class="reg-card-code">${_regEsc(nim.kpi_code)}</div>
+          <div class="reg-card-name">${_regEsc(nim.title)}</div></div>
+        <span class="status-badge" style="background:rgba(255,255,255,.06);color:var(--muted);flex-shrink:0">CONTEXT</span>
+      </div>
+      <div class="reg-threshold"><i class="ti ti-info-circle"></i> No CBUAE regulatory floor — monitored for context</div>
+      <div class="reg-meta-row">
+        <div class="reg-meta"><span class="reg-meta-label">Internal target</span><span class="reg-meta-val">${nim.target_value!=null?nim.target_value+(nim.unit||'%'):'—'}</span></div>
+      </div>
+    </div>` : '';
+
+  const panel1 = `<div class="section-card">
+    <div class="section-card-header">
+      <div class="section-card-title"><i class="ti ti-scale"></i> Prudential Threshold Status</div>
+      <span class="obef-section-hdr-meta">CBUAE Basel III minimums vs latest actuals</span>
+    </div>
+    <div class="reg-grid">${prudentialCards}${contextCard}</div>
+  </div>`;
+
+  // ── Panel 2 — Regulatory Risk Status ──
+  const zoneAlias = {extreme:'Critical',critical:'Critical',high:'High',moderate:'Medium',medium:'Medium',low:'Low'};
+  const zoneDisp = regRisk ? (zoneAlias[String(regRisk.current_zone||'').toLowerCase()] || (regRisk.current_zone||'—')) : '—';
+  const zoneCol = {Critical:'#FCA5A5',High:'#ff9a6b',Medium:'var(--gold-light)',Low:'#6EE7B7'}[zoneDisp] || 'var(--muted)';
+  const zoneBg  = {Critical:'rgba(239,68,68,.14)',High:'rgba(251,146,60,.14)',Medium:'rgba(201,168,76,.14)',Low:'rgba(16,185,129,.12)'}[zoneDisp] || 'rgba(255,255,255,.06)';
+  const appetite = regRisk && regRisk.appetite_status ? regRisk.appetite_status : null;
+  const appetiteGreen = (appetite||'').toLowerCase() === 'within';
+  const panel2 = `<div class="section-card">
+    <div class="section-card-header">
+      <div class="section-card-title"><i class="ti ti-shield-check"></i> Regulatory Risk Status</div>
+      <span class="obef-section-hdr-meta">Compliance &amp; Legal register</span>
+    </div>
+    <div style="padding:1rem 1.1rem">
+      ${regRisk ? `<div class="reg-card" style="max-width:660px">
+        <div class="reg-card-accent" style="background:${zoneCol}"></div>
+        <div class="reg-card-code">${_regEsc(regRisk.risk_code)}</div>
+        <div class="reg-card-name">${_regEsc(regRisk.title)}</div>
+        <div class="reg-meta-row" style="gap:1.8rem">
+          <div class="reg-meta"><span class="reg-meta-label">Current zone</span><span class="reg-meta-val"><span class="status-badge" style="background:${zoneBg};color:${zoneCol}">${_regEsc(zoneDisp)}</span></span></div>
+          <div class="reg-meta"><span class="reg-meta-label">Control rating</span><span class="reg-meta-val">${_regEsc(regRisk.control_rating||'—')}</span></div>
+          <div class="reg-meta"><span class="reg-meta-label">Risk appetite</span><span class="reg-meta-val">${appetite ? `<span class="status-badge" style="background:${appetiteGreen?'rgba(16,185,129,.12)':'rgba(201,168,76,.14)'};color:${appetiteGreen?'#6EE7B7':'var(--gold-light)'}">${_regEsc(appetite)}</span>` : '—'}</span></div>
+          ${regRisk.trend ? `<div class="reg-meta"><span class="reg-meta-label">Trend</span><span class="reg-meta-val">${_regEsc(regRisk.trend)}</span></div>` : ''}
+        </div>
+      </div>` : `<div class="obef-detail-empty">RISK-REG-01 not found for this organisation.</div>`}
+    </div>
+  </div>`;
+
+  // ── Panel 3 — Open Findings Tracker ──
+  const findRag = _regRag(_kriFindingsRag(CBUAE_KRI_ACTUAL));
+  const panel3 = `<div class="section-card">
+    <div class="section-card-header">
+      <div class="section-card-title"><i class="ti ti-file-alert"></i> Open Findings Tracker</div>
+      <span class="obef-section-hdr-meta">${kri ? _regEsc(kri.kri_code) : 'KRI-REG-01'}</span>
+    </div>
+    <div style="padding:1rem 1.1rem">
+      <div class="reg-card" style="max-width:660px">
+        <div class="reg-card-accent" style="background:${findRag.c}"></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+          <div><div class="reg-card-code">${kri ? _regEsc(kri.kri_code) : 'KRI-REG-01'}</div>
+            <div class="reg-card-name">Open CBUAE Findings Past Due Date</div></div>
+          <span class="status-badge" style="background:${findRag.bg};color:${findRag.c};flex-shrink:0">${findRag.l}</span>
+        </div>
+        <div><span class="reg-actual" style="color:${findRag.c}">${CBUAE_KRI_ACTUAL}</span><span class="reg-actual-unit">open</span></div>
+        <div class="reg-threshold"><i class="ti ti-traffic-lights"></i> Green ${kri?_regEsc(kri.green_threshold):'0'} · Amber ${kri?_regEsc(kri.amber_threshold):'1-2'} · Red ${kri?_regEsc(kri.red_threshold):'&gt;2'}</div>
+        <div class="reg-meta-row"><div class="reg-meta"><span class="reg-meta-label">Latest reported</span><span class="reg-meta-val">Q3 2026</span></div></div>
+      </div>
+    </div>
+  </div>`;
+
+  // ── Panel 4 — Regulatory Calendar ──
+  const calRows = CBUAE_CALENDAR.map(c => {
+    const isDue = c.status.toLowerCase().includes('due');
+    const sc = isDue ? {c:'var(--gold-light)',bg:'rgba(201,168,76,.14)'} : {c:'#7dd3e8',bg:'rgba(44,74,82,.45)'};
+    return `<tr><td style="font-weight:500">${_regEsc(c.ret)}</td><td>${_regEsc(c.due)}</td><td><span class="status-badge" style="background:${sc.bg};color:${sc.c}">${_regEsc(c.status)}</span></td></tr>`;
+  }).join('');
+  const panel4 = `<div class="section-card">
+    <div class="section-card-header">
+      <div class="section-card-title"><i class="ti ti-calendar-event"></i> Regulatory Calendar — Upcoming Obligations</div>
+    </div>
+    <table class="reg-cal-table"><tr><th>CBUAE Return / Obligation</th><th>Due date</th><th>Status</th></tr>${calRows}</table>
+    <div class="reg-demo-note">Illustrative reporting schedule for demonstration — not sourced from a live CBUAE filing calendar.</div>
+  </div>`;
+
+  document.getElementById('regcompliance-content').innerHTML = panel1 + panel2 + panel3 + panel4;
 }
 
 // ── OBEF COMPLIANCE ──
