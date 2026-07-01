@@ -2039,6 +2039,62 @@ function bankingRegisterKey(code){
 }
 const BANK_REGISTER_LABELS = {inst:'Institutional', retail:'Retail Banking', corp:'Corporate Banking', proj:'Digital Transformation Programme'};
 
+// ── Banking department (unit) model ───────────────────────────────────────
+// Academic filters by risk_code/kpi_code prefix (CA-, BA- …). Banking has no
+// code-prefix unit dimension, so a selected department maps to explicit
+// membership rules instead. currentUnitPrefix holds the department code
+// (RETAIL/CORP/TREASURY/DIGITAL/RISK) or null for the institutional (all) view.
+// Every predicate below returns the ORIGINAL prefix behaviour when
+// SECTOR !== 'banking', so academic paths are unchanged.
+const BANKING_UNIT_LABELS = {
+  INST:     'All / Institutional',
+  RETAIL:   'Retail Banking',
+  CORP:     'Corporate & Commercial Banking',
+  TREASURY: 'Treasury & Capital Markets',
+  DIGITAL:  'Digital Transformation',
+  RISK:     'Risk & Compliance',
+};
+// Department → risk membership (risk_code patterns). Treasury owns KPIs & AOP
+// activities but no risks — enterprise risks live in the institutional register.
+const BANKING_DEPT_RISK = {
+  RETAIL:   c => c.startsWith('RISK-RETAIL-'),
+  CORP:     c => c.startsWith('RISK-CORP-'),
+  DIGITAL:  c => c.startsWith('RISK-PROJ-'),
+  RISK:     c => /^RISK-(REG|CYB|LIQ|CREDIT|OPS|REP)-/.test(c),
+  TREASURY: () => false,
+};
+// Department → KPI membership (explicit codes; banking KPIs carry no dept prefix).
+const BANKING_DEPT_KPI = {
+  RETAIL:   ['KPI-CSAT'],
+  CORP:     ['KPI-NIM', 'KPI-ROE'],
+  TREASURY: ['KPI-CAR', 'KPI-LCR'],
+  DIGITAL:  ['KPI-DIGI', 'KPI-CTI'],
+  RISK:     ['KPI-NPL'],
+};
+
+// Display label for a unit code, sector-aware. Academic → UNIT_LABELS (unchanged).
+function unitLabel(code){
+  return (SECTOR === 'banking' ? BANKING_UNIT_LABELS[code] : UNIT_LABELS[code]) || code;
+}
+// Unit-membership predicates. Return true (include) for the institutional view.
+function riskInCurrentUnit(r){
+  if (!currentUnitPrefix) return true;
+  if (SECTOR === 'banking'){ const f = BANKING_DEPT_RISK[currentUnitPrefix]; return f ? f(String(r.risk_code||'').toUpperCase()) : false; }
+  return (r.risk_code||'').startsWith(currentUnitPrefix+'-');
+}
+function kpiInCurrentUnit(k){
+  if (!currentUnitPrefix) return true;
+  if (SECTOR === 'banking') return (BANKING_DEPT_KPI[currentUnitPrefix]||[]).includes(String(k.kpi_code||'').toUpperCase());
+  return (k.kpi_code||'').startsWith(currentUnitPrefix+'-') || (k.kpi_code||'').startsWith('CMN-');
+}
+// Banking has no unit dimension for projects/objectives — a department selection
+// leaves them unfiltered (institutional). Academic keeps its prefix behaviour.
+function projectInCurrentUnit(p){
+  if (!currentUnitPrefix) return true;
+  if (SECTOR === 'banking') return true;
+  return (p.project_code||'').startsWith(currentUnitPrefix+'-');
+}
+
 function setLoginPreset(which){
   const orgs = { banking:'9a446a09-3823-485b-9bf3-cc1289fcb791', academic:'b7d41f9f-7f15-49b2-8e3b-5850025e970f' };
   const el = document.getElementById('login-org');
@@ -2057,9 +2113,17 @@ function applySectorChrome(){
   // of OBEF Compliance; never shown to academic or generic tenants.
   const navReg = document.getElementById('nav-regcompliance');
   if (navReg) navReg.style.display = (SECTOR === 'banking') ? '' : 'none';
-  // Unit/department View selector (#3/#4) — academic only
+  // Unit/department View selector (#3/#4) — academic (college hierarchy) and
+  // banking (department dimension). Banking keeps showUnitSelector:false so
+  // hasUnitHierarchy() stays false (its INST view is unchanged); the selector is
+  // shown separately and repopulated with banking department options.
   const unitWrap = document.getElementById('unit-select-wrap');
-  if (unitWrap) unitWrap.style.display = cfg.showUnitSelector ? '' : 'none';
+  if (unitWrap) unitWrap.style.display = (cfg.showUnitSelector || SECTOR === 'banking') ? '' : 'none';
+  if (SECTOR === 'banking'){
+    const sel = document.getElementById('unit-selector');
+    if (sel) sel.innerHTML = Object.entries(BANKING_UNIT_LABELS)
+      .map(([code, label]) => `<option value="${code}">${label}</option>`).join('');
+  }
   // Objectives "by unit" tab — only meaningful where a unit hierarchy exists
   const objTabBar = document.getElementById('obj-tab-bar');
   if (objTabBar) objTabBar.style.display = cfg.showUnitSelector ? '' : 'none';
@@ -2431,15 +2495,16 @@ function showPage(page) {
 function setUnit(unit) {
   currentUnit = unit;
   currentUnitPrefix = (unit === 'INST') ? null : unit;
-  const label = UNIT_LABELS[unit] || unit;
+  const label = unitLabel(unit);
   const isInst = unit === 'INST';
   document.querySelectorAll('.unit-banner').forEach(el => {
     if (isInst) { el.classList.remove('show'); el.innerHTML = ''; }
     else { el.innerHTML = `<i class="ti ti-building"></i> Viewing: <strong>${label}</strong>`; el.classList.add('show'); }
   });
-  // Sync obj-tab-bar visibility
+  // Sync obj-tab-bar visibility — only sectors with a unit hierarchy (academic)
+  // have the by-unit objectives tab; banking must never show it.
   const tabBar = document.getElementById('obj-tab-bar');
-  if (tabBar) tabBar.style.display = isInst ? '' : 'none';
+  if (tabBar) tabBar.style.display = (isInst && sectorCfg().showUnitSelector) ? '' : 'none';
   // Refresh current visible page
   const cur = [...document.querySelectorAll('.page')].find(p=>p.style.display!=='none');
   if (!cur) return;
@@ -2476,9 +2541,9 @@ async function loadDashboard() {
     // Compute filtered arrays — same logic as the individual screens
     let filteredKpis, filteredRisks, filteredProjs;
     if (currentUnitPrefix) {
-      filteredKpis  = _kpisData.filter(k=>(k.kpi_code||'').startsWith(currentUnitPrefix+'-'));
-      filteredRisks = _risksData.filter(r=>(r.risk_code||'').startsWith(currentUnitPrefix+'-'));
-      filteredProjs = _projectsData.filter(p=>(p.project_code||'').startsWith(currentUnitPrefix+'-'));
+      filteredKpis  = _kpisData.filter(kpiInCurrentUnit);
+      filteredRisks = _risksData.filter(riskInCurrentUnit);
+      filteredProjs = _projectsData.filter(projectInCurrentUnit);
     } else {
       const instObjIds = new Set(_objectivesData.filter(isInstObjective).map(o=>o.objective_id));
       filteredKpis  = _kpisData.filter(k=> !hasUnitHierarchy() || instObjIds.has(k.objective_id));
@@ -2488,14 +2553,17 @@ async function loadDashboard() {
     const kpiStat  = filteredKpis.length;
     const riskStat = filteredRisks.length;
     const projStat = filteredProjs.length;
-    const objStat = _objectivesData.filter(o => currentUnitPrefix
+    // Banking has no unit dimension for objectives — a department selection shows
+    // the institutional set (isInstObjective returns all for banking).
+    const _unitObjFilter = o => (currentUnitPrefix && SECTOR !== 'banking')
       ? (o.objective_code||'').startsWith(currentUnitPrefix+'-')
-      : isInstObjective(o)).length;
+      : isInstObjective(o);
+    const objStat = _objectivesData.filter(_unitObjFilter).length;
     renderDashVisuals(filteredKpis, filteredRisks, filteredProjs, _dashAnalysis);
     // "View all X" helper — count is always pre-computed, passed as first arg
     const _va = (count, noun, page) => {
-      const unitLabel = currentUnitPrefix ? (UNIT_LABELS[currentUnitPrefix]||currentUnitPrefix)+' ' : '';
-      return `<div style="padding:.5rem 1.1rem;border-top:1px solid var(--border)"><a href="#" onclick="showPage('${page}');return false" style="font-size:12px;color:var(--gold);text-decoration:none;font-weight:500">View all ${count} ${unitLabel}${noun} →</a></div>`;
+      const _lbl = currentUnitPrefix ? unitLabel(currentUnitPrefix)+' ' : '';
+      return `<div style="padding:.5rem 1.1rem;border-top:1px solid var(--border)"><a href="#" onclick="showPage('${page}');return false" style="font-size:12px;color:var(--gold);text-decoration:none;font-weight:500">View all ${count} ${_lbl}${noun} →</a></div>`;
     };
     // Widget rows — unit views use filtered arrays (already computed above)
     const dashKpis     = filteredKpis.slice(0,5);
@@ -2511,15 +2579,13 @@ async function loadDashboard() {
         + [...dashRisks].sort((a,b)=>((b.initial_likelihood||0)*(b.initial_impact_overall||0))-((a.initial_likelihood||0)*(a.initial_impact_overall||0))).map(r=>`<tr><td><span class="code-badge">${r.risk_code}</span></td><td>${r.title}</td><td>${r.risk_type}</td></tr>`).join('')
         + '</table></div>' + _va(riskStat,'risks','risks')
       : '<div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>No risks yet</p></div>';
-    const _dashObjs = _objectivesData.filter(o => currentUnitPrefix
-      ? o.objective_code.startsWith(currentUnitPrefix+'-')
-      : isInstObjective(o));
+    const _dashObjs = _objectivesData.filter(_unitObjFilter);
     const _objScroll = _dashObjs.length > 15 ? 'max-height:480px;overflow-y:auto' : '';
     document.getElementById('dash-objectives').innerHTML = _dashObjs.length
       ? `<div style="${_objScroll}"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Perspective</th></tr>`
         + _dashObjs.map(function(o){var pl=perspName(o.perspective_number);return '<tr><td><span class="code-badge">'+o.objective_code+'</span></td><td style="font-weight:500">'+o.title+'</td><td>'+pl+'</td></tr>';}).join('')
         + '</table></div>' + _va(_dashObjs.length,'objectives','objectives')
-      : `<div class="empty-state"><i class="ti ti-target"></i><p>No ${UNIT_LABELS[currentUnit]||currentUnit} objectives found</p></div>`;
+      : `<div class="empty-state"><i class="ti ti-target"></i><p>No ${unitLabel(currentUnit)} objectives found</p></div>`;
     document.getElementById('dash-projects').innerHTML = dashProjects.length
       ? '<div style="max-height:300px;overflow-y:auto"><table class="data-table"><tr><th>Code</th><th>Title</th><th>Type</th><th>Phase</th></tr>'
         + [...dashProjects].sort((a,b)=>{const o={Active:0,active:0,Planning:1,planning:1,'On Hold':2,'on hold':2,Complete:3,complete:3,Closed:3,closed:3};return (o[a.status]??4)-(o[b.status]??4);}).map(p=>`<tr><td><span class="code-badge">${p.project_code}</span></td><td>${p.title}</td><td>${p.project_type}</td><td>${p.current_phase||'—'}</td></tr>`).join('')
@@ -2706,7 +2772,7 @@ function renderDashVisuals(filteredKpis, filteredRisks, filteredProjs, analysis)
   let healthSrc = filteredProjs.filter(p => p.health_schedule_pct != null);
   if (!healthSrc.length) {
     healthSrc = (analysis?.unhealthy_projects || []).filter(p =>
-      !currentUnitPrefix || (p.project_code || '').startsWith(currentUnitPrefix + '-')
+      projectInCurrentUnit(p)
     );
   }
   let avgSched = null, avgBudget = null, scopePct = null;
@@ -2798,7 +2864,9 @@ function renderObjectivesTab() {
     ? `<div style="margin-bottom:.75rem;padding:.6rem 1rem;background:rgba(201,168,76,.07);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:.5rem"><i class="ti ti-info-circle" style="color:var(--gold)"></i> Showing ${_objectivesData.length} of ${_objectivesTotalCount} objectives — full list requires a dedicated <code style="color:var(--gold)">/objectives</code> endpoint</div>`
     : '';
 
-  if (currentUnit !== 'INST') {
+  // Banking has no per-department objectives — a department selection falls
+  // through to the institutional objectives view (never the by-unit branch).
+  if (currentUnit !== 'INST' && SECTOR !== 'banking') {
     const unitObjs = _objectivesData.filter(o => o.objective_code.startsWith(currentUnit+'-') && perspMatch(o));
     const label = UNIT_LABELS[currentUnit] || currentUnit;
     if (!unitObjs.length) {
@@ -2881,8 +2949,7 @@ async function loadKpis() {
     const d   = await res.json();
     _kpisData = d.kpis || [];
     if (currentUnitPrefix) {
-      _kpisData = _kpisData.filter(k => k.kpi_code &&
-        (k.kpi_code.startsWith(currentUnitPrefix+'-') || k.kpi_code.startsWith('CMN-')));
+      _kpisData = _kpisData.filter(k => k.kpi_code && kpiInCurrentUnit(k));
     } else {
       const instObjIds = new Set(_objectivesData.filter(isInstObjective).map(o=>o.objective_id));
       _kpisData = _kpisData.filter(k => !hasUnitHierarchy() || instObjIds.has(k.objective_id));
@@ -2947,12 +3014,18 @@ function renderKpis() {
     `<div class="pc-section-hdr"${extraStyle?` style="${extraStyle}"`:''}><span class="pc-section-title"><i class="ti ${icon}" style="margin-right:.45rem;opacity:.85"></i>${title}</span><span class="pc-section-meta">${meta}</span></div>`;
 
   // ── INST VIEW: Section 1 only ──
-  if (currentUnit === 'INST') {
+  // Banking has no college/dept KPI code structure (INST-/CMN-), so it always
+  // uses this objective-grouped layout — a department selection simply narrows
+  // `visible` (via kpiInCurrentUnit) to that department's KPIs.
+  if (currentUnit === 'INST' || SECTOR === 'banking') {
     const instObjs = _objectivesData.filter(isInstObjective)
       .sort((a,b)=>(a.objective_code||'').localeCompare(b.objective_code||''));
     const cards = instObjs.map(o => { const ok = visible.filter(k=>k.objective_id===o.objective_id); return objCard(o, ok, ok.length > 0, 'inst'); }).filter(Boolean).join('');
+    const kpiViewTitle = (SECTOR === 'banking' && currentUnitPrefix)
+      ? `${esc(unitLabel(currentUnitPrefix))} Objectives &amp; KPIs`
+      : 'Institutional Objectives &amp; KPIs';
     el.innerHTML = `<div class="pc-section">
-      ${sectionHdr('ti-building-bank','Institutional Objectives &amp; KPIs',`${visible.length} KPI${visible.length!==1?'s':''} across ${instObjs.length} objectives`)}
+      ${sectionHdr('ti-building-bank',kpiViewTitle,`${visible.length} KPI${visible.length!==1?'s':''} across ${instObjs.length} objectives`)}
       ${cards || '<div class="empty-state" style="padding:2.5rem"><i class="ti ti-chart-line"></i><p>No KPIs found for current filter.</p></div>'}
     </div>`;
     return;
@@ -3012,7 +3085,7 @@ async function loadRisks() {
     const d   = await res.json();
     let risks = d.risks || [];
     if (currentUnitPrefix) {
-      risks = risks.filter(r => r.risk_code && r.risk_code.startsWith(currentUnitPrefix+'-'));
+      risks = risks.filter(r => r.risk_code && riskInCurrentUnit(r));
     } else {
       risks = risks.filter(isInstRisk);
     }
@@ -3028,12 +3101,19 @@ function renderRisks() {
   const f = document.getElementById('risk-type-filter')?.value||'';
   const q = (document.getElementById('risk-search')?.value||'').toLowerCase();
   const filtered = _risksData.filter(r =>
-    (!currentUnitPrefix || r.risk_code.startsWith(currentUnitPrefix+'-')) &&
+    riskInCurrentUnit(r) &&
     (!f || r.risk_type===f) &&
     (!q || (r.title||'').toLowerCase().includes(q) || (r.risk_code||'').toLowerCase().includes(q))
   );
   const el = document.getElementById('risks-table');
-  if (!filtered.length) { el.innerHTML='<div class="section-card"><div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>No risks match your filter.</p></div></div>'; return; }
+  if (!filtered.length) {
+    // Banking departments with no registered risks (e.g. Treasury) get a clear
+    // message rather than the generic "no match" empty state.
+    const emptyMsg = (SECTOR === 'banking' && currentUnitPrefix && !f && !q)
+      ? `No department-specific risks registered for ${unitLabel(currentUnitPrefix)} — enterprise risks are held in the Institutional register.`
+      : 'No risks match your filter.';
+    el.innerHTML=`<div class="section-card"><div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>${emptyMsg}</p></div></div>`; return;
+  }
   const scoreColor = s => s>=15?'badge-red':s>=8?'badge-amber':'badge-green';
   const liBadge = v => v!=null?`<span class="status-badge ${v<=2?'badge-green':v<=3?'badge-amber':'badge-red'}">${v}</span>`:'—';
   const rowsFor = items => { items.forEach(r => { _dpMap['risk_'+r.risk_id] = r; }); return items.map(r => `<tr onclick="openDetailPanel('risk','risk_${r.risk_id}',this)" style="cursor:pointer" title="Click to view details">
@@ -3083,7 +3163,7 @@ async function loadProjects() {
     const d   = await res.json();
     _projectsData = d.projects || [];
     if (currentUnitPrefix) {
-      _projectsData = _projectsData.filter(p => p.project_code && p.project_code.startsWith(currentUnitPrefix+'-'));
+      _projectsData = _projectsData.filter(p => p.project_code && projectInCurrentUnit(p));
     } else {
       _projectsData = _projectsData.filter(isInstProject);
     }
@@ -3099,7 +3179,7 @@ function renderProjects() {
   const q = (document.getElementById('project-search')?.value||'').toLowerCase();
   const filtered = _projectsData.filter(p =>
     !(p.title||'').includes('?') &&
-    (!currentUnitPrefix || p.project_code.startsWith(currentUnitPrefix+'-')) &&
+    projectInCurrentUnit(p) &&
     (!f || (p.status||'').toLowerCase()===f) &&
     (!q || (p.title||'').toLowerCase().includes(q) || (p.project_code||'').toLowerCase().includes(q))
   );
@@ -4710,8 +4790,7 @@ function renderKpiTrends() {
   const el = document.getElementById('kpis-trends-table');
   const q = (document.getElementById('kpi-search')?.value||'').toLowerCase();
   const f = document.getElementById('kpi-freq-filter')?.value||'';
-  let data = _kpiTrendsData;
-  if (currentUnitPrefix) data = data.filter(k => (k.kpi_code||'').startsWith(currentUnitPrefix+'-'));
+  let data = _kpiTrendsData.filter(kpiInCurrentUnit);
   if (q) data = data.filter(k => (k.title||'').toLowerCase().includes(q) || (k.kpi_code||'').toLowerCase().includes(q));
   if (f) data = data.filter(k => (k.measurement_frequency||'').toLowerCase() === f);
   if (!data.length) { el.innerHTML = '<div class="section-card"><div class="empty-state"><i class="ti ti-chart-line"></i><p>No KPI trend data available.</p></div></div>'; return; }
@@ -4742,7 +4821,7 @@ async function loadRiskTrends() {
   const el = document.getElementById('risks-trends-table');
   el.innerHTML = '<div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
   try {
-    const url = `${API}/organisations/${SESSION.org_id}/risks/trends${currentUnitPrefix?'?dept_code='+currentUnitPrefix:''}`;
+    const url = `${API}/organisations/${SESSION.org_id}/risks/trends${(currentUnitPrefix && SECTOR !== 'banking')?'?dept_code='+currentUnitPrefix:''}`;
     const res = await fetch(url);
     const d = await res.json();
     _riskTrendsData = d.risks || [];
@@ -4752,8 +4831,7 @@ async function loadRiskTrends() {
 
 function renderRiskTrends() {
   const el = document.getElementById('risks-trends-table');
-  let data = _riskTrendsData;
-  if (currentUnitPrefix) data = data.filter(r => (r.risk_code||'').startsWith(currentUnitPrefix+'-'));
+  let data = _riskTrendsData.filter(riskInCurrentUnit);
   if (!data.length) { el.innerHTML = '<div class="section-card"><div class="empty-state"><i class="ti ti-shield-exclamation"></i><p>No risk trend data available.</p></div></div>'; return; }
   const zoneColor = z => ({Critical:'#FCA5A5',High:'#FB923C',Medium:'var(--gold-light)',Low:'var(--muted)'})[z]||'var(--muted)';
   const zoneBg    = z => ({Critical:'rgba(239,68,68,.14)',High:'rgba(251,146,60,.14)',Medium:'rgba(201,168,76,.14)',Low:'rgba(255,255,255,.07)'})[z]||'rgba(255,255,255,.07)';
